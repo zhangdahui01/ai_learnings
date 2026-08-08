@@ -41,30 +41,17 @@ UI 自动化仓库 ─┘          │
 
 ## 4. 最低环境与安装
 
-### 必需：基础静态扫描
+### 一键基础安装（推荐）
 
-- macOS、Linux 或 Windows；建议 macOS/Linux。
-- Python **3.10+**。不需要 `pip install`，脚本只使用 Python 标准库。
-- 可读的本地代码目录。
-- Git 仅在需要分享/版本管理 Skill 时需要。
-
-检查环境：
+小白只需要在本仓库根目录运行一条命令：
 
 ```bash
-python3 --version
-git --version
+bash scripts/bootstrap.sh --install-core
 ```
 
-### 推荐：生成图片
+脚本会在 macOS/Linux 上检查并安装 Python 3、Git、GitHub CLI 和 Graphviz；macOS 缺少 Homebrew 时，会先使用 Homebrew 官方安装器。它会下载软件并可能要求管理员密码，所以只应在你确认后运行。基础脚本不使用 `pip`、不读取业务仓库内容、也不启动服务器。
 
-安装 Graphviz 后，扫描会从 `overview.dot` 自动生成 `overview.svg` 和 `overview.png`：
-
-```bash
-brew install graphviz
-dot -V
-```
-
-没有 Graphviz 也完全可以使用；把 `.dot` 文件交给安装了 Graphviz 的同事，或在 VS Code 安装 Graphviz 预览扩展。
+安装完成后图片能力已经可用：`overview.dot` 会自动同时输出 `overview.svg` 和 `overview.png`。若只想检查环境而不安装，运行 `bash scripts/bootstrap.sh --check`。
 
 ### 可选：深度语义分析
 
@@ -75,9 +62,20 @@ dot -V
 | 多语言精确语义/数据流 | CodeQL CLI；编译型语言可能需要正常构建 | 要验证调用关系/数据流或做安全规则时。 |
 | 通用语法树 | Tree-sitter | 没有对应语义引擎时；不能证明调用/数据流。 |
 
-这些均为可选项；不要为了第一次扫描安装它们。jQAssistant 会在本机启动嵌入式 Neo4j，不会部署到服务器；Joern 和 CodeQL 可能需要较多磁盘/内存。安装请只跟随官方文档，并在公司网络/许可证规则允许时进行。
+这些均为可选项；不要为了第一次扫描安装它们。若确实需要，在确认软件许可和网络策略后运行一条命令：`bash scripts/bootstrap.sh --install-all`。它会继续调用 `install_advanced_tools.sh`，本机安装 JDK、jQAssistant、Joern 和 CodeQL；Joern 官方安装器仍会显示确认提示。jQAssistant 会在本机启动嵌入式 Neo4j，不会部署到服务器；Joern 和 CodeQL 可能需要较多磁盘/内存。
 
-## 5. 在 Codex 中调用（推荐）
+## 5. 支持哪些 AI 编程 Agent
+
+| Agent | 入口文件/位置 | 如何使用 |
+|---|---|---|
+| Codex | 根目录 `SKILL.md`；安装到 `~/.codex/skills/` | 在对话中输入 `$regression-gap-analyzer`。 |
+| Claude Code | 根目录 `CLAUDE.md`（会导入 `AGENTS.md`） | 在该仓库目录运行 Claude Code，然后要求它按 `SKILL.md` 扫描。 |
+| Devin | `.agents/skills/regression-gap-analyzer/SKILL.md` | 将 repo 连接到 Devin，在会话使用 `@skills:regression-gap-analyzer`。 |
+| 其他兼容 Agent | `AGENTS.md` + 根目录 `SKILL.md` | 要求 agent 先读 `AGENTS.md` 和 `SKILL.md`。 |
+
+这些入口共享同一份核心流程，避免不同 agent 的规则漂移。
+
+## 6. 在 Codex 中调用（推荐）
 
 在新对话或当前对话粘贴下列内容并替换路径：
 
@@ -100,35 +98,23 @@ UI 自动化仓库：
 
 如果只关注一个功能，把“全量静态扫描”替换为：`分析 refund 模块，包含 Git range <base>..<head>`。全量扫描用于建立知识库；后续工作优先使用 feature/module 的有界切图，避免图片不可读。
 
-## 6. 手工使用
+## 7. 手工使用（已简化）
 
-### 第一步：预检
+一条命令完成预检和静态索引：
 
 ```bash
-python3 scripts/preflight.py \
+bash scripts/run_static_scan.sh \
   --repo /absolute/path/payment-service \
   --repo /absolute/path/order-service \
   --automation /absolute/path/payment-ui-e2e \
   --out /absolute/path/payment-analysis
 ```
 
-查看 `repo-inventory.json`，确认路径、语言、测试文件和工具发现结果正确。
-
-### 第二步：静态索引
-
-```bash
-python3 scripts/static_index.py \
-  --repo /absolute/path/payment-service \
-  --repo /absolute/path/order-service \
-  --automation /absolute/path/payment-ui-e2e \
-  --out /absolute/path/payment-analysis
-```
-
-### 第三步：评审
+它会自动依次执行预检和静态索引。随后评审：
 
 先打开 `knowledge-base.md` 和 `ui-static-risk-and-gaps.csv`；再把输出目录交给 Codex，请它按证据逐条生成 `gap-report.md`。P0/P1 必须由 QE 和服务 owner 复核，尤其是“硬编码密钥”类发现：只报告文件/行号，绝不在报告中复制值。
 
-## 7. 会产生什么
+## 8. 会产生什么
 
 - `repo-inventory.json`：扫描范围和环境盘点。
 - `graphs/overview.dot`：所有扫描均生成的图谱源文件。
@@ -138,13 +124,13 @@ python3 scripts/static_index.py \
 - `static-ui-analysis.json`：静态 UI 风险与端点映射候选。
 - `ui-static-risk-and-gaps.csv`：可导入 Jira/测试管理工具前的评审清单。
 
-## 8. 创新点与边界
+## 9. 创新点与边界
 
 创新点：不要求接入生产或部署 JaCoCo；将“代码可达性、UI 测试意图、风险规则、证据等级”放在同一个本地知识层；支持由全量图谱切出可读的 feature/module 图；对小白默认使用零安装路径。
 
 边界：基础索引器是通用启发式，不是编译器；反射、动态路由、代理、配置化依赖、远端调用和生成代码可能遗漏或误报。不要把图中的所有边当成真实运行路径，也不要仅为提高行覆盖率而新增 UI 测试。
 
-## 9. 打包和分享给小白
+## 10. 打包和分享给小白
 
 此目录就是可分享的仓库根目录。初始化并推送前，确认其中**没有**任何业务源代码、真实测试报告、`.env`、token 或输出目录：
 
@@ -154,10 +140,10 @@ git add SKILL.md GUIDELINE.zh-CN.md GUIDELINE.en.md agents scripts references .g
 git commit -m "Add regression gap analyzer skill"
 ```
 
-接收者安装方式：
+Codex 接收者安装方式：
 
 ```bash
 git clone <YOUR_REPOSITORY_URL> ~/.codex/skills/regression-gap-analyzer
 ```
 
-随后重启或刷新 Codex，在对话中输入 `$regression-gap-analyzer`。接收者只需先安装 Python；Graphviz 和高级图谱工具按需安装。不要让接收者把待分析业务 repo 复制进这个 Skill 仓库。
+随后重启或刷新 Codex，在对话中输入 `$regression-gap-analyzer`。所有接收者先运行 `bash scripts/bootstrap.sh --install-core`，再运行 `run_static_scan.sh`；高级语义工具仍按需安装。不要让接收者把待分析业务 repo 复制进这个 Skill 仓库。

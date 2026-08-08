@@ -9,7 +9,7 @@ Create a reproducible, local and source-grounded analysis pack. Support a full-r
 
 ## Minimum setup and shared distribution
 
-Require Python 3.10 or later for the baseline scripts; they use only the Python standard library and require no `pip` package. Install Graphviz only when SVG/PNG output is required (`brew install graphviz` on macOS with Homebrew). Keep outputs outside this skill/repository. For a complete beginner-oriented setup, optional advanced tools, troubleshooting, and Git sharing instructions, read `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md`.
+Require Python 3.10 or later for the baseline scripts; they use only the Python standard library. For a beginner setup run `bash scripts/bootstrap.sh --install-core`; it installs/checks Python, Git, and Graphviz on supported macOS/Linux systems and enables graph images. Then use `bash scripts/run_static_scan.sh --repo <path> --out <path>`. The installer changes the local machine and may download packages, so obtain user approval before running it. Keep outputs outside this skill/repository. Read `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for optional advanced engines and non-Codex agents.
 
 ## Invocation
 

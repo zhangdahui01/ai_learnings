@@ -35,27 +35,17 @@ Evidence levels are `static-candidate` (direct source fact), `inferred` (semanti
 
 ## 4. Setup and dependencies
 
-### Required baseline
+### One-command baseline setup (recommended)
 
-- Python **3.10+**; no `pip` packages are required because the scripts use only the standard library.
-- Readable local source directories.
-- Git only for sharing/versioning the Skill.
+From this repository root, run:
 
 ```bash
-python3 --version
-git --version
+bash scripts/bootstrap.sh --install-core
 ```
 
-### Recommended rendering
+On supported macOS/Linux systems it checks and installs Python 3, Git, GitHub CLI, and Graphviz. If Homebrew is missing on macOS, it invokes the official Homebrew installer first. It downloads software and may require an administrator password, so run it only after approval. It uses no `pip` package, reads no target repository, and starts no server.
 
-On macOS with Homebrew, install Graphviz for automatic SVG/PNG generation:
-
-```bash
-brew install graphviz
-dot -V
-```
-
-DOT is always produced. Graphviz is optional.
+Afterwards, scans automatically produce DOT, SVG, and PNG. To inspect without installing, run `bash scripts/bootstrap.sh --check`.
 
 ### Optional semantic tools
 
@@ -66,9 +56,20 @@ DOT is always produced. Graphviz is optional.
 | Precise multi-language semantics | CodeQL CLI; normal builds may be needed for compiled languages | You need validated call/data-flow or security queries. |
 | Syntax inventory fallback | Tree-sitter | A semantic engine does not support the language. |
 
-Do not install advanced tools for a first run. jQAssistant runs an embedded local Neo4j only; it does not deploy a server. Follow official documentation and company license/network policy for optional tools.
+Do not install advanced tools for a first run. When they are needed and licensing/network policy permits it, run `bash scripts/bootstrap.sh --install-all`. It invokes `install_advanced_tools.sh` to install JDKs, jQAssistant, Joern, and CodeQL locally; the official Joern installer still presents its own confirmation prompts. jQAssistant runs an embedded local Neo4j only; it does not deploy a server.
 
-## 5. Recommended Codex invocation
+## 5. Supported coding agents
+
+| Agent | Entry point | Invocation |
+|---|---|---|
+| Codex | root `SKILL.md`; install under `~/.codex/skills/` | Use `$regression-gap-analyzer`. |
+| Claude Code | root `CLAUDE.md`, importing `AGENTS.md` | Run Claude Code in this repository and ask it to follow `SKILL.md`. |
+| Devin | `.agents/skills/regression-gap-analyzer/SKILL.md` | Connect the repo and use `@skills:regression-gap-analyzer`. |
+| Other compatible agents | `AGENTS.md` and root `SKILL.md` | Ask the agent to read both files before analysis. |
+
+The entry points share one canonical workflow to prevent agent-specific drift.
+
+## 6. Recommended Codex invocation
 
 ```text
 Use $regression-gap-analyzer for a full static scan.
@@ -89,16 +90,10 @@ Do not run builds, tests, Docker, deployment, or install tools.
 
 For a focused re-run, specify a feature, module, endpoint group, or Git range. Build the full knowledge base once; use bounded slices afterward for readable graphs.
 
-## 6. Manual workflow
+## 7. Simplified manual workflow
 
 ```bash
-python3 scripts/preflight.py \
-  --repo /absolute/path/payment-service \
-  --repo /absolute/path/order-service \
-  --automation /absolute/path/payment-ui-e2e \
-  --out /absolute/path/payment-analysis
-
-python3 scripts/static_index.py \
+bash scripts/run_static_scan.sh \
   --repo /absolute/path/payment-service \
   --repo /absolute/path/order-service \
   --automation /absolute/path/payment-ui-e2e \
@@ -107,7 +102,7 @@ python3 scripts/static_index.py \
 
 Review `knowledge-base.md` and `ui-static-risk-and-gaps.csv` first. Ask Codex to draft the final report only from source evidence. QE and service owners must review P0/P1 candidates; never copy possible secret values into a report.
 
-## 7. Outputs
+## 8. Outputs
 
 - `repo-inventory.json`: scan scope and environment inventory.
 - `graphs/overview.dot`: graph source for every scan.
@@ -117,13 +112,13 @@ Review `knowledge-base.md` and `ui-static-risk-and-gaps.csv` first. Ask Codex to
 - `static-ui-analysis.json`: UI static risks and route-mapping candidates.
 - `ui-static-risk-and-gaps.csv`: review backlog before import to a test-management tool.
 
-## 8. Innovations and limitations
+## 9. Innovations and limitations
 
 The design does not require production access or server-side JaCoCo. It joins code structure, UI test intent, risk rules, and evidence level in one local knowledge layer; it creates readable feature/module slices from a full graph; and it gives beginners a zero-install path.
 
 The baseline extractor is heuristic, not a compiler. Reflection, generated code, dynamic routing, proxies, configuration-driven injection, and remote calls can create false positives or omissions. Do not interpret every graph edge as a runtime path or add UI tests merely to increase line coverage.
 
-## 9. Package and share
+## 10. Package and share
 
 This folder is the shareable repository root. Before pushing, verify that no business code, real reports, `.env` files, tokens, or output directories are present:
 
@@ -139,4 +134,4 @@ Recipients install it with:
 git clone <YOUR_REPOSITORY_URL> ~/.codex/skills/regression-gap-analyzer
 ```
 
-Restart or refresh Codex, then invoke `$regression-gap-analyzer`. Install Python first; install Graphviz and advanced graph tools only as needed. Never copy target business repositories into this Skill repository.
+Restart or refresh Codex, then invoke `$regression-gap-analyzer`. Every recipient should first run `bash scripts/bootstrap.sh --install-core`, then `run_static_scan.sh`; advanced semantic engines remain optional. Never copy target business repositories into this Skill repository.
