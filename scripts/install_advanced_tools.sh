@@ -2,6 +2,14 @@
 # Install optional semantic graph engines locally. Requires a network connection.
 set -euo pipefail
 usage(){ echo "Usage: bash scripts/install_advanced_tools.sh [--all|--jqassistant|--joern|--codeql] [--yes]"; }
+if [ "${BASH_VERSINFO[0]}" -lt 4 ]; then
+  if [ "$(uname -s)" = Darwin ] && [ -x /opt/homebrew/bin/brew ]; then
+    echo "Installing modern Bash required by SDKMAN..."
+    /opt/homebrew/bin/brew install bash
+    exec /opt/homebrew/bin/bash "$0" "$@"
+  fi
+  echo "Bash 4+ is required for advanced-tool installation." >&2; exit 1
+fi
 tools=(); assume_yes=false
 for arg in "$@"; do case "$arg" in --all) tools=(jqassistant joern codeql);; --jqassistant) tools+=(jqassistant);; --joern) tools+=(joern);; --codeql) tools+=(codeql);; --yes) assume_yes=true;; -h|--help) usage; exit 0;; *) echo "Unknown option: $arg" >&2; usage >&2; exit 2;; esac; done
 [ "${#tools[@]}" -gt 0 ] || { usage >&2; exit 2; }
@@ -17,9 +25,15 @@ for tool in "${tools[@]}"; do
   case "$tool" in
     jqassistant)
       if [ "$platform" = Darwin ]; then brew install openjdk@17; fi
-      if [ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]; then curl -s "https://get.sdkman.io" | bash; fi
+      if [ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
+        # SDKMAN may fail only while editing a shell profile in sandboxed environments;
+        # its installation files are still usable when the initializer exists afterwards.
+        curl -s "https://get.sdkman.io" | bash || true
+      fi
+      [ -s "$HOME/.sdkman/bin/sdkman-init.sh" ] || { echo "SDKMAN installation did not create its initializer." >&2; exit 1; }
+      # SDKMAN's own initializer references optional unset variables.
       # shellcheck disable=SC1090
-      source "$HOME/.sdkman/bin/sdkman-init.sh"; sdk install jqassistant
+      set +u; source "$HOME/.sdkman/bin/sdkman-init.sh"; sdk install jqassistant; set -u
       ;;
     joern)
       if [ "$platform" = Darwin ]; then brew install openjdk@19 coreutils; fi

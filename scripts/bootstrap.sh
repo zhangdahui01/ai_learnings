@@ -7,8 +7,13 @@ if [ -x /usr/local/bin/brew ]; then eval "$(/usr/local/bin/brew shellenv)"; fi
 mode=check; assume_yes=false
 for arg in "$@"; do case "$arg" in --check) mode=check;; --install-core) mode=install;; --install-all) mode=all;; --yes) assume_yes=true;; -h|--help) usage; exit 0;; *) echo "Unknown option: $arg" >&2; usage >&2; exit 2;; esac; done
 missing=(); for tool in python3 git gh dot; do command -v "$tool" >/dev/null 2>&1 || missing+=("$tool"); done
-if [ "${#missing[@]}" -eq 0 ]; then echo "Baseline ready: Python=$(python3 --version 2>&1), Git=$(git --version), GitHubCLI=$(gh --version | head -n 1), Graphviz=$(dot -V 2>&1)"; [ "$mode" != all ] && exit 0; fi
-echo "Missing baseline tools: ${missing[*]}"; [ "$mode" = check ] && { echo "Run: bash scripts/bootstrap.sh --install-core"; exit 1; }
+if [ "${#missing[@]}" -eq 0 ]; then
+  echo "Baseline ready: Python=$(python3 --version 2>&1), Git=$(git --version), GitHubCLI=$(gh --version | head -n 1), Graphviz=$(dot -V 2>&1)"
+  [ "$mode" != all ] && exit 0
+else
+  echo "Missing baseline tools: ${missing[*]}"
+  [ "$mode" = check ] && { echo "Run: bash scripts/bootstrap.sh --install-core"; exit 1; }
+fi
 if [ "$assume_yes" = false ]; then printf 'This will install local development packages and may request an administrator password. Continue? [y/N] '; read -r answer; case "$answer" in y|Y|yes|YES) ;; *) echo "Cancelled."; exit 0;; esac; fi
 platform=$(uname -s)
 if [ "$platform" = Darwin ]; then
