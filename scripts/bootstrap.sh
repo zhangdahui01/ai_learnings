@@ -2,6 +2,8 @@
 # Install the beginner baseline: Python 3, Git, GitHub CLI, and Graphviz. No source repo is touched.
 set -euo pipefail
 usage(){ echo "Usage: bash scripts/bootstrap.sh [--check|--install-core|--install-all] [--yes]"; }
+if [ -x /opt/homebrew/bin/brew ]; then eval "$(/opt/homebrew/bin/brew shellenv)"; fi
+if [ -x /usr/local/bin/brew ]; then eval "$(/usr/local/bin/brew shellenv)"; fi
 mode=check; assume_yes=false
 for arg in "$@"; do case "$arg" in --check) mode=check;; --install-core) mode=install;; --install-all) mode=all;; --yes) assume_yes=true;; -h|--help) usage; exit 0;; *) echo "Unknown option: $arg" >&2; usage >&2; exit 2;; esac; done
 missing=(); for tool in python3 git gh dot; do command -v "$tool" >/dev/null 2>&1 || missing+=("$tool"); done
