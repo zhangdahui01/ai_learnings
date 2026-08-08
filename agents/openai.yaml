@@ -1,0 +1,4 @@
+interface:
+  display_name: "Regression Gap Analyzer"
+  short_description: "Multi-language static test-gap analysis"
+  default_prompt: "Use $regression-gap-analyzer to scan my local repositories, build a code graph and knowledge base, and identify static UI automation risks and test gaps."

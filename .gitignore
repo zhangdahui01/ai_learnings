@@ -1,0 +1,20 @@
+# Generated analysis artifacts
+analysis-output/
+output/
+reports/
+graphs/
+*.dot
+*.svg
+*.png
+*.jsonl
+
+# Local environment and editor state
+.DS_Store
+.venv/
+.idea/
+.vscode/
+
+# Never commit secrets or copied target repositories
+.env
+.env.*
+repos/
