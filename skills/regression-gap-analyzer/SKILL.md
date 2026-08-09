@@ -13,7 +13,7 @@ Run commands from this module directory: `skills/regression-gap-analyzer/`. Requ
 
 - **Check only:** `bash scripts/bootstrap.sh --check`.
 - **Beginner baseline:** `bash scripts/bootstrap.sh --install-core`. This installs/checks Python 3.10+, Git, GitHub CLI, and Graphviz; it enables SVG/PNG graph output and requires no `pip` package.
-- **All graph engines:** `bash scripts/bootstrap.sh --install-all`. This runs the baseline plus the optional jQAssistant, Joern, and CodeQL installers. It downloads software, may require JDK 17/19, Rosetta/Xcode tools on Apple Silicon, and an interactive confirmation from Joern.
+- **All graph engines:** `bash scripts/bootstrap.sh --install-all`. This runs the baseline plus the optional jQAssistant, Joern, and CodeQL installers. It downloads software, installs JDK 17/21 (Joern documents JDK 19 as tested; Homebrew no longer ships it), may require Rosetta/Xcode tools on Apple Silicon, and installs Joern under `~/.local/opt/joern` without requiring a system-wide symlink.
 - **Scan:** `bash scripts/run_static_scan.sh --repo <path> [--repo <path>] [--automation <path>] --out <path>`.
 
 Keep output outside this repository. Read `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for OS-specific installation, PATH setup, verification, troubleshooting, agent-specific invocation, and GitHub Pages publishing.

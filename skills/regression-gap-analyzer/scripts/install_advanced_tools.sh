@@ -25,6 +25,9 @@ for tool in "${tools[@]}"; do
   case "$tool" in
     jqassistant)
       if [ "$platform" = Darwin ]; then brew install openjdk@17; fi
+      jdk_home=""
+      if [ "$platform" = Darwin ]; then jdk_home="$(brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"; fi
+      [ -z "$jdk_home" ] || [ -x "$jdk_home/bin/java" ] || { echo "JDK 17 installation could not be located." >&2; exit 1; }
       if [ ! -s "$HOME/.sdkman/bin/sdkman-init.sh" ]; then
         # SDKMAN may fail only while editing a shell profile in sandboxed environments;
         # its installation files are still usable when the initializer exists afterwards.
@@ -36,14 +39,44 @@ for tool in "${tools[@]}"; do
       set +u; source "$HOME/.sdkman/bin/sdkman-init.sh"; sdk install jqassistant; set -u
       jqassistant_bin="$HOME/.sdkman/candidates/jqassistant/current/bin/jqassistant"
       [ -x "$jqassistant_bin" ] || { echo "jQAssistant installed but its executable was not found." >&2; exit 1; }
-      ln -sf "$jqassistant_bin" "$local_bin/jqassistant"; "$local_bin/jqassistant" --version
+      # Homebrew JDKs are keg-only on macOS. A wrapper avoids sudo and avoids
+      # requiring the user to edit shell startup files merely to run this tool.
+      cat > "$local_bin/jqassistant" <<EOF
+#!/usr/bin/env bash
+export JAVA_HOME="\${JAVA_HOME:-$jdk_home}"
+exec "$jqassistant_bin" "\$@"
+EOF
+      chmod u+x "$local_bin/jqassistant"
+      # jQAssistant has no --version/--help switches. Verify the executable and
+      # the selected JDK without triggering a plugin download on every install.
+      "$jdk_home/bin/java" -version >/dev/null 2>&1
+      echo "jQAssistant installed. Verify with: jqassistant effective-configuration"
       ;;
     joern)
-      if [ "$platform" = Darwin ]; then brew install openjdk@19 coreutils; fi
+      # Joern marks JDK 19 as tested, but Homebrew no longer supplies it.
+      # Use the supported newer JDK 21 and pass it explicitly to Joern.
+      jdk_home=""
+      if [ "$platform" = Darwin ]; then
+        brew install openjdk@21 coreutils
+        jdk_home="$(brew --prefix openjdk@21)/libexec/openjdk.jdk/Contents/Home"
+        [ -x "$jdk_home/bin/java" ] || { echo "JDK 21 installation could not be located." >&2; exit 1; }
+      fi
       installer="$local_opt/joern-install.sh"; curl -fL "https://github.com/joernio/joern/releases/latest/download/joern-install.sh" -o "$installer"; chmod u+x "$installer"
-      echo "Starting the official Joern installer. Accept its prompts to complete installation."
-      "$installer" --interactive
-      [ ! -x "$HOME/bin/joern" ] || ln -sf "$HOME/bin/joern" "$local_bin/joern"
+      joern_home="$local_opt/joern"
+      echo "Running the official Joern installer non-interactively in $joern_home."
+      JAVA_HOME="$jdk_home" PATH="$jdk_home/bin:$PATH" "$installer" --install-dir="$joern_home"
+      joern_bin="$joern_home/joern-cli/joern"
+      if [ -x "$joern_bin" ]; then
+        cat > "$local_bin/joern" <<EOF
+#!/usr/bin/env bash
+export JAVA_HOME="\${JAVA_HOME:-$jdk_home}"
+exec "$joern_bin" "\$@"
+EOF
+        chmod u+x "$local_bin/joern"
+        "$local_bin/joern" --version
+      else
+        echo "Joern installer finished but $joern_bin was not found." >&2; exit 1
+      fi
       ;;
     codeql)
       case "$platform" in Darwin) asset=codeql-bundle-osx64.tar.gz;; Linux) asset=codeql-bundle-linux64.tar.gz;; *) echo "CodeQL automatic install supports macOS/Linux only." >&2; continue;; esac

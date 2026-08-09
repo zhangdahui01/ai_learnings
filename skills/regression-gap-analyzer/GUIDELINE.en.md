@@ -70,7 +70,7 @@ This adds:
 | Tool | Use | Prerequisite / note |
 |---|---|---|
 | jQAssistant | Java/JVM architecture, Maven/module/dependency graph | JDK 17 and SDKMAN. |
-| Joern | CPG, CFG, PDG, deep data-flow analysis | JDK 19; official installer is interactive. |
+| Joern | CPG, CFG, PDG, deep data-flow analysis | JDK 19 is the documented tested version; Homebrew no longer provides it, so the script uses JDK 21 (a newer version that should be verified); installed under `~/.local/opt/joern` without a system-wide symlink. |
 | CodeQL | Multi-language semantic/call/data-flow analysis | Compiled languages can need a regular build; Apple Silicon can require Rosetta/Xcode tools. |
 
 Install individual tools with `bash scripts/install_advanced_tools.sh --jqassistant`, `--joern`, or `--codeql`.
@@ -98,7 +98,7 @@ python3 --version
 git --version
 gh --version
 dot -V
-jqassistant --version  # after full install
+jqassistant effective-configuration  # first run downloads its plugins; jQAssistant has no --version flag
 joern --version        # after full install
 codeql version         # after full install
 ```

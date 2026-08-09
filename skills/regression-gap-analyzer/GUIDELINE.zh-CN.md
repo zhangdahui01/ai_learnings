@@ -95,7 +95,7 @@ bash scripts/bootstrap.sh --install-all
 | 工具 | 用途 | 额外要求 |
 |---|---|---|
 | jQAssistant | Java/JVM 架构、Maven/模块/依赖图；本地嵌入 Neo4j | JDK 17、SDKMAN。 |
-| Joern | 多语言 CPG、CFG、PDG、数据流深挖 | JDK 19；官方安装器会交互确认。 |
+| Joern | 多语言 CPG、CFG、PDG、数据流深挖 | 官方验证 JDK 19；Homebrew 已不再提供它，脚本改用 JDK 21（较新版本，需验证）；自动安装到 `~/.local/opt/joern`，不需要系统级 symlink。 |
 | CodeQL | 多语言语义、调用关系、数据流/安全查询 | 编译型语言常需正常构建；Apple Silicon 可能需要 Rosetta/Xcode CLI。 |
 
 完整安装的独立形式：
@@ -134,7 +134,7 @@ python3 --version
 git --version
 gh --version
 dot -V
-jqassistant --version   # 仅完整安装后
+jqassistant effective-configuration  # 首次执行会下载其插件；jQAssistant 没有 --version 参数
 joern --version         # 仅完整安装后
 codeql version          # 仅完整安装后
 ```
