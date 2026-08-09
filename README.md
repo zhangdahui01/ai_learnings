@@ -7,7 +7,8 @@
 ```text
 ai_learnings/
 ├── skills/                         # Reusable agent skills
-│   └── regression-gap-analyzer/    # Code graph and regression-gap analysis
+│   ├── regression-gap-analyzer/    # Code graph and regression-gap analysis
+│   └── local-web-test-recorder/    # Local browser test recording and replay
 ├── experiments/                    # Future prototypes and notebooks
 ├── notes/                          # Future learning notes and decision records
 ├── templates/                      # Future reusable prompts/templates
@@ -15,9 +16,10 @@ ai_learnings/
 └── .github/workflows/              # Pages deployment
 ```
 
-## Current module
+## Current modules
 
-`skills/regression-gap-analyzer` analyzes local source and UI-automation repositories, producing code graphs, a knowledge base, CSV backlog, and an accessible HTML report. Read that module's `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for installation and use.
+- `skills/regression-gap-analyzer` analyzes local source and UI-automation repositories, producing code graphs, a knowledge base, CSV backlog, and an accessible HTML report. Read that module's `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for installation and use.
+- `skills/local-web-test-recorder` provides a self-hosted Playwright recorder and replay application with test-plan management, assertions, waits, retries, proxy/browser configuration, artifacts, and bilingual beginner documentation. Start with its `references/guideline.zh-CN.md` or `references/guideline.en.md`.
 
 ## Add a new AI module
 

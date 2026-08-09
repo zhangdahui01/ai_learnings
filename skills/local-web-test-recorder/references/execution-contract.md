@@ -1,0 +1,88 @@
+# Execution contract
+
+## Case JSON shape
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "case-login-valid",
+  "name": "Valid user signs in",
+  "version": 3,
+  "accountRef": "accounts.standard-user",
+  "tags": ["smoke", "login"],
+  "defaults": {
+    "browser": "chromium",
+    "baseUrl": "https://example.test",
+    "proxyRef": "proxies.corp",
+    "timeoutMs": 10000
+  },
+  "dataSetRefs": ["data.login-valid"],
+  "steps": [
+    {
+      "id": "step-1",
+      "kind": "action",
+      "action": "fill",
+      "locator": {"primary": {"strategy": "label", "value": "Email"}, "fallbacks": []},
+      "value": "${data.email}",
+      "sensitive": false,
+      "timeoutMs": 10000
+    },
+    {
+      "id": "step-2",
+      "kind": "assertion",
+      "assertion": "toHaveURL",
+      "expected": "/dashboard$",
+      "timeoutMs": 10000
+    }
+  ]
+}
+```
+
+Reject unknown `action` and `assertion` values. Encrypt secret values at rest and store only `${secret.name}` references in this format.
+
+## Actions
+
+| Group | Actions |
+|---|---|
+| Navigation/window | `goto`, `back`, `forward`, `reload`, `newPage`, `switchPage`, `closePage` |
+| Pointer/keyboard | `click`, `dblclick`, `hover`, `focus`, `press`, `keyDown`, `keyUp`, `scroll`, `dragTo`, `mouseMove` |
+| Text/editable | `fill`, `clear`, `type`, `selectText`, `setInputFiles` |
+| Choice controls | `check`, `uncheck`, `selectOption`, `chooseRadio`, `setSliderValue` |
+| Rich widgets | `selectAutocompleteOption`, `expandTreeNode`, `collapseTreeNode`, `selectGridRow`, `dismissDialog`, `acceptDialog` |
+| Wait/data | `waitForVisible`, `waitForHidden`, `waitForURL`, `waitForLoadState`, `waitForDownload`, `extractText` |
+| Frames/shadow | `switchFrame`, `switchMainFrame`, `pierceShadow` |
+
+Use `fill` for text/password/textarea/contenteditable when supported; detect password fields and always set `sensitive: true`. Treat file chooser and native dialogs as browser-adapter-dependent.
+
+## Assertions
+
+Support at least:
+
+`toBeVisible`, `toBeHidden`, `toBeEnabled`, `toBeDisabled`, `toBeChecked`, `toHaveText`, `toContainText`, `toHaveValue`, `toHaveAttribute`, `toHaveClass`, `toHaveCount`, `toHaveURL`, `toHaveTitle`, `toMatchScreenshot`, `toHaveDownload`, `toHaveResponseStatus`.
+
+Each assertion takes `expected` where applicable, `negated`, `timeoutMs`, and optional `soft`. Screenshot baselines need an explicit review/approval workflow; never overwrite them after a failure.
+
+## Locator bundle
+
+```json
+{
+  "primary": {"strategy": "role", "value": "button", "name": "Continue", "confidence": 0.97},
+  "fallbacks": [
+    {"strategy": "testId", "value": "continue-button", "confidence": 0.96},
+    {"strategy": "css", "value": "button[type=submit]", "confidence": 0.60}
+  ]
+}
+```
+
+Allowed strategies: `testId`, `role`, `label`, `placeholder`, `text`, `altText`, `title`, `css`, `xpath`. Prefer exactly one semantic primary locator. XPath is last-resort and needs a recorder warning.
+
+## Browser adapters
+
+| Target | Adapter | Requirement |
+|---|---|---|
+| Chrome/Chromium | Playwright Chromium; optionally Chrome channel | Full core support |
+| Firefox | Playwright Firefox | Full core support except platform-specific deviations |
+| WebKit | Playwright WebKit | Label as WebKit, never Safari |
+| Safari | Selenium WebDriver + SafariDriver on macOS | Capability-limited adapter; document unsupported traces, downloads, and interactions |
+
+Apply proxy before creating the browser/context. Support `{server, usernameRef, passwordRef, bypass}` and `direct`; do not mutate global OS proxy settings.

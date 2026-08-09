@@ -1,0 +1,4 @@
+interface:
+  display_name: "Local Web Test Recorder"
+  short_description: "Install and run local browser test recording"
+  default_prompt: "Use $local-web-test-recorder to install, configure, record, replay, troubleshoot, or extend a local browser test suite."
