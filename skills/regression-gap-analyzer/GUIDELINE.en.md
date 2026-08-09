@@ -1,98 +1,140 @@
-# Regression Gap Analyzer Guide
+# Regression Gap Analyzer — Complete Guide
 
-## 1. Purpose
+## Quick start
 
-This is a local Codex Skill for scanning multiple source repositories and an optional UI automation repository. Without running code, deploying services, or uploading source, it produces a code graph, a local knowledge base, UI automation risk candidates, and reviewable regression-test gaps.
+Run commands from this module, not from the AI Hub root:
 
-It is intended for multi-service systems where UI automation is local-only and code-to-test traceability is weak.
-
-## 2. How it works
-
-```text
-Local code repositories ─┐
-                         ├─> read-only static scan ─> DOT graph ─> SVG/PNG (optional)
-UI automation repository ─┘             │
-                                        ├─> knowledge-base.json / .md
-                                        └─> UI risks, mapping candidates, test gaps
+```bash
+cd skills/regression-gap-analyzer
+bash scripts/bootstrap.sh --install-core
+bash scripts/run_static_scan.sh \
+  --repo /absolute/path/service-repo \
+  --automation /absolute/path/ui-automation-repo \
+  --out /absolute/path/regression-analysis
 ```
 
-The zero-install layer indexes files, declarations, imports, endpoint literals, tests, and common UI-risk patterns. Optional semantic engines add more precise architecture, control-flow, or data-flow facts. Every claim must retain source/line evidence.
+Open `/absolute/path/regression-analysis/report.html`. It is the human-facing deliverable; CSV is for Excel/Jira and JSON is for agents and evidence review.
 
-Evidence levels are `static-candidate` (direct source fact), `inferred` (semantic/domain mapping requiring review), and `proven-runtime` (only with supplied local execution evidence). A missing mapping is an investigation candidate, not proof that a test is missing.
+## Purpose and evidence model
 
-## 3. Files
+This local, read-only-first Skill scans one or more application repositories plus an optional UI automation repository. It produces code graphs, a source-grounded knowledge base, static UI automation risks, mapping candidates, and regression-test gaps without executing target code, deploying services, accessing production, or uploading source.
 
-| File | Purpose |
+| Evidence level | Meaning |
 |---|---|
-| `SKILL.md` | Codex execution contract and safety/evidence rules. |
-| `scripts/preflight.py` | Read-only inventory of repositories, languages, tests, and tools. |
-| `scripts/static_index.py` | Zero-install graph, local KB, and static UI risk/gap generator. |
-| `scripts/render_html_report.py` | Renders a readable, offline `report.html` from structured artifacts. |
-| `scripts/publish_to_pages.sh` | Copies a reviewed report into the AI Hub's GitHub Pages source. |
-| `references/toolchain.md` | Tool-selection rules. |
-| `references/static-ui-analysis.md` | UI source-risk and gap rules. |
-| `references/report-contract.md` | Required report fields and confidence definitions. |
-| `agents/openai.yaml` | Codex UI metadata. |
-| `.gitignore` | Prevents generated output, copied repos, and secrets from commits. |
+| `static-candidate` | Direct source fact, such as a skipped test, hard wait, or literal route. |
+| `inferred` | Domain/page-object/test-name mapping that needs review. |
+| `proven-runtime` | Only allowed with supplied local test, JaCoCo, or trace evidence. |
 
-## 4. Setup and dependencies
+A missing literal mapping is never proof that a test is absent. Review all P0/P1 candidates with QE and the service owner.
 
-### One-command baseline setup (recommended)
+## Contents
 
-From this repository root, run:
+| Path | Purpose |
+|---|---|
+| `SKILL.md` | Canonical workflow, evidence contract, safety rules, and outputs. |
+| `AGENTS.md` / `CLAUDE.md` | Module-specific generic-agent and Claude Code entry points. |
+| `.agents/skills/regression-gap-analyzer/SKILL.md` | Devin / Agent Skills entry point. |
+| `scripts/bootstrap.sh` | Check, core installation, or all-tools installation. |
+| `scripts/install_advanced_tools.sh` | Install only jQAssistant, Joern, and/or CodeQL. |
+| `scripts/run_static_scan.sh` | Inventory + static index + HTML report in one command. |
+| `scripts/render_html_report.py` | Render `report.html` from scan artifacts. |
+| `scripts/publish_to_pages.sh` | Copy a reviewed report into GitHub Pages source. |
+| `references/` | Toolchain, UI static analysis, and report-contract details. |
+
+## Installation
+
+### Check only
+
+```bash
+bash scripts/bootstrap.sh --check
+```
+
+It checks Python, Git, GitHub CLI, and Graphviz without changing the machine.
+
+### Core install — recommended for nearly everyone
 
 ```bash
 bash scripts/bootstrap.sh --install-core
 ```
 
-On supported macOS/Linux systems it checks and installs Python 3, Git, GitHub CLI, and Graphviz. If Homebrew is missing on macOS, it invokes the official Homebrew installer first. It downloads software and may require an administrator password, so run it only after approval. It uses no `pip` package, reads no target repository, and starts no server.
+Installs/checks Python 3.10+, Git, GitHub CLI (`gh`), and Graphviz. It uses no `pip` package. On macOS it installs Homebrew first when necessary; on Linux it supports `apt-get`. It downloads software and can request administrator approval, so an agent must ask before running it.
 
-Afterwards, scans automatically produce DOT, SVG, and PNG. To inspect without installing, run `bash scripts/bootstrap.sh --check`.
+### Full install — only for semantic/deep graph work
 
-### Optional semantic tools
-
-| Goal | Tool / prerequisite | Install only when |
-|---|---|---|
-| Java architecture and dependency graph | jQAssistant; JDK 11+, preferably 17 | Persistent JVM architecture queries are needed. |
-| CFG/PDG/data-flow deep dive | Joern; JDK 19 per its documentation | Branch or parameter-flow analysis is required. |
-| Precise multi-language semantics | CodeQL CLI; normal builds may be needed for compiled languages | You need validated call/data-flow or security queries. |
-| Syntax inventory fallback | Tree-sitter | A semantic engine does not support the language. |
-
-Do not install advanced tools for a first run. When they are needed and licensing/network policy permits it, run `bash scripts/bootstrap.sh --install-all`. It invokes `install_advanced_tools.sh` to install JDKs, jQAssistant, Joern, and CodeQL locally; the official Joern installer still presents its own confirmation prompts. jQAssistant runs an embedded local Neo4j only; it does not deploy a server.
-
-## 5. Supported coding agents
-
-| Agent | Entry point | Invocation |
-|---|---|---|
-| Codex | root `SKILL.md`; install under `~/.codex/skills/` | Use `$regression-gap-analyzer`. |
-| Claude Code | root `CLAUDE.md`, importing `AGENTS.md` | Run Claude Code in this repository and ask it to follow `SKILL.md`. |
-| Devin | `.agents/skills/regression-gap-analyzer/SKILL.md` | Connect the repo and use `@skills:regression-gap-analyzer`. |
-| Other compatible agents | `AGENTS.md` and root `SKILL.md` | Ask the agent to read both files before analysis. |
-
-The entry points share one canonical workflow to prevent agent-specific drift.
-
-## 6. Recommended Codex invocation
-
-```text
-Use $regression-gap-analyzer for a full static scan.
-
-Code repositories:
-- /absolute/path/payment-service
-- /absolute/path/order-service
-
-UI automation repository:
-- /absolute/path/payment-ui-e2e
-
-Output directory:
-- /absolute/path/payment-analysis
-
-Create a code graph, local knowledge base, UI static risks, and regression-test gaps.
-Do not run builds, tests, Docker, deployment, or install tools.
+```bash
+bash scripts/bootstrap.sh --install-all
 ```
 
-For a focused re-run, specify a feature, module, endpoint group, or Git range. Build the full knowledge base once; use bounded slices afterward for readable graphs.
+This adds:
 
-## 7. Simplified manual workflow
+| Tool | Use | Prerequisite / note |
+|---|---|---|
+| jQAssistant | Java/JVM architecture, Maven/module/dependency graph | JDK 17 and SDKMAN. |
+| Joern | CPG, CFG, PDG, deep data-flow analysis | JDK 19; official installer is interactive. |
+| CodeQL | Multi-language semantic/call/data-flow analysis | Compiled languages can need a regular build; Apple Silicon can require Rosetta/Xcode tools. |
+
+Install individual tools with `bash scripts/install_advanced_tools.sh --jqassistant`, `--joern`, or `--codeql`.
+
+### Install Graphviz manually
+
+```bash
+# macOS
+brew install graphviz
+
+# Ubuntu / Debian
+sudo apt-get update && sudo apt-get install -y graphviz
+
+dot -V
+```
+
+Without Graphviz, the scan still produces `overview.dot`; SVG/PNG and the in-report graph image are unavailable.
+
+### Verify and repair PATH
+
+Open a new terminal and run:
+
+```bash
+python3 --version
+git --version
+gh --version
+dot -V
+jqassistant --version  # after full install
+joern --version        # after full install
+codeql version         # after full install
+```
+
+If advanced commands are not found:
+
+```bash
+export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+```
+
+## Agent usage
+
+### Codex
+
+```text
+Use $regression-gap-analyzer to statically scan:
+- Code repositories: /absolute/path/payment-service, /absolute/path/order-service
+- UI automation repository: /absolute/path/payment-ui-e2e
+- Output: /absolute/path/payment-analysis
+Create a code graph, knowledge base, HTML report, CSV risks, and test gaps.
+Do not run builds, tests, Docker, deployment, or installation.
+```
+
+### Claude Code
+
+Run Claude Code in this module directory and ask it to read `SKILL.md` before analysis. `CLAUDE.md` imports the module's `AGENTS.md`.
+
+### Devin
+
+Connect the AI Hub repository, then invoke `@skills:regression-gap-analyzer`. Devin discovers the standard file under `.agents/skills/`.
+
+### Other agents
+
+Ask the agent to read this module's `AGENTS.md` and `SKILL.md`, not only the AI Hub root instructions.
+
+## Scan outputs
 
 ```bash
 bash scripts/run_static_scan.sh \
@@ -102,24 +144,18 @@ bash scripts/run_static_scan.sh \
   --out /absolute/path/payment-analysis
 ```
 
-Review `knowledge-base.md` and `ui-static-risk-and-gaps.csv` first. Ask Codex to draft the final report only from source evidence. QE and service owners must review P0/P1 candidates; never copy possible secret values into a report.
+| Artifact | Audience | Purpose |
+|---|---|---|
+| `report.html` | QE, owners, management | Primary readable report: summary, graph, endpoint and risk/gap tables. |
+| `ui-static-risk-and-gaps.csv` | Excel, Jira, test tools | Importable risk/gap backlog. |
+| `static-ui-analysis.json` | Agents/scripts | Raw static UI findings and mapping candidates. |
+| `knowledge-base.md/json` | Humans/agents | System summary and retrieval graph data. |
+| `graphs/overview.dot/svg/png` | Developers/reviewers | Code graph source and images. |
+| `repo-inventory.json` | Audit/reproduction | Scope, revisions, languages, and tool inventory. |
 
-Open `report.html` after the scan for summary cards, graph links, endpoints, and a prioritized risk/gap table. Keep CSV for Excel, Jira, or test-management import.
+## GitHub Pages
 
-## 8. Outputs
-
-- `repo-inventory.json`: scan scope and environment inventory.
-- `graphs/overview.dot`: graph source for every scan.
-- `graphs/overview.svg` / `.png`: when Graphviz is available.
-- `knowledge-base.json`: graph nodes/edges, symbols, endpoints, tests, risks, and evidence for later local retrieval.
-- `knowledge-base.md`: human-readable summary.
-- `static-ui-analysis.json`: UI static risks and route-mapping candidates.
-- `ui-static-risk-and-gaps.csv`: review backlog before import to a test-management tool.
-- `report.html`: shareable, human-readable HTML summary for QE, owners, and management.
-
-## 8.1 Optional GitHub Pages publishing
-
-Review the report first. Do not publish source code, credentials, customer data, or unreviewed sensitive findings. Then run:
+Publish only reviewed, non-sensitive output. Never publish source code, credentials, customer data, internal URLs, or unreviewed sensitive P0/P1 findings.
 
 ```bash
 bash scripts/publish_to_pages.sh \
@@ -127,28 +163,21 @@ bash scripts/publish_to_pages.sh \
   --name payment-analysis-2026-08
 ```
 
-This copies the report, graph, CSV, and JSON into `docs/reports/payment-analysis-2026-08/` in the AI Hub. Commit and push, then enable **Settings → Pages → Source → GitHub Actions**. The included workflow publishes `docs/`; the report path is `/ai_learnings/reports/payment-analysis-2026-08/`.
+The script copies the HTML, graph, CSV, and JSON to `docs/reports/payment-analysis-2026-08/` in the AI Hub. Commit and push; then enable **Settings → Pages → Source → GitHub Actions**. The repository workflow deploys `docs/` and the usual URL is:
 
-## 9. Innovations and limitations
-
-The design does not require production access or server-side JaCoCo. It joins code structure, UI test intent, risk rules, and evidence level in one local knowledge layer; it creates readable feature/module slices from a full graph; and it gives beginners a zero-install path.
-
-The baseline extractor is heuristic, not a compiler. Reflection, generated code, dynamic routing, proxies, configuration-driven injection, and remote calls can create false positives or omissions. Do not interpret every graph edge as a runtime path or add UI tests merely to increase line coverage.
-
-## 10. Package and share
-
-This folder is the shareable repository root. Before pushing, verify that no business code, real reports, `.env` files, tokens, or output directories are present:
-
-```bash
-git init
-git add SKILL.md GUIDELINE.zh-CN.md GUIDELINE.en.md agents scripts references .gitignore
-git commit -m "Add regression gap analyzer skill"
+```text
+https://zhangdahui01.github.io/ai_learnings/reports/payment-analysis-2026-08/
 ```
 
-Recipients install it with:
+## Troubleshooting and limits
 
-```bash
-git clone <YOUR_REPOSITORY_URL> ~/.codex/skills/regression-gap-analyzer
-```
+| Symptom | Action |
+|---|---|
+| `dot: command not found` | Run `bootstrap.sh --install-core` or install Graphviz manually. |
+| No Homebrew on macOS | Run the core installer; it invokes the official installer. Open a new terminal afterwards. |
+| SDKMAN reports Bash 3 | Full install upgrades to Homebrew Bash. |
+| `jqassistant`, `joern`, or `codeql` not found | Open a new terminal and repair PATH as above. |
+| No SVG/PNG | Verify `dot -V`, then rerun the scan. |
+| Pages shows 404 | Enable GitHub Actions as the Pages source and inspect the deploy workflow. |
 
-Restart or refresh Codex, then invoke `$regression-gap-analyzer`. Every recipient should first run `bash scripts/bootstrap.sh --install-core`, then `run_static_scan.sh`; advanced semantic engines remain optional. Never copy target business repositories into this Skill repository.
+The baseline indexer is heuristic, not a compiler. Reflection, proxies, generated code, dynamic routing, remote calls, feature flags, and configuration-driven dependencies can cause false positives or omissions. Do not add UI tests merely to raise line coverage; choose the lowest suitable layer for the business risk.

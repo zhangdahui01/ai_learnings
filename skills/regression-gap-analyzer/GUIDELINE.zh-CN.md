@@ -1,108 +1,188 @@
-# Regression Gap Analyzer 使用指南
+# Regression Gap Analyzer 完整使用指南
 
-## 1. 它解决什么问题
+## 0. 给小白的最短路径
 
-这是一个给 Codex 使用的本地 Skill。它可以读取多个本地代码仓库和一个 UI 自动化仓库，在**不运行代码、不部署服务、不上传源代码**的前提下，生成：代码关系图、本地代码知识库、UI 自动化风险，以及回归测试 Gap 候选。
+先进入本 Skill 目录。AI Hub 根目录下的正确位置是：`skills/regression-gap-analyzer/`。
 
-它尤其适合以下情况：后端由多个服务组成、UI 自动化只能在本机运行、现有测试与代码缺乏可追溯关系、需要先给 QE/开发一个可审核的风险清单。
-
-## 2. 工作原理
-
-```text
-本地代码仓库 ─┐
-              ├─> 只读静态扫描 ─> DOT code graph ─> SVG/PNG（可选）
-UI 自动化仓库 ─┘          │
-                           ├─> knowledge-base.json / .md
-                           └─> UI 风险、映射候选、测试 Gap
+```bash
+cd skills/regression-gap-analyzer
+bash scripts/bootstrap.sh --install-core
+bash scripts/run_static_scan.sh \
+  --repo /absolute/path/service-repo \
+  --automation /absolute/path/ui-automation-repo \
+  --out /absolute/path/regression-analysis
 ```
 
-第一层是零安装静态索引：识别文件、声明、import、端点字面量、测试声明和常见 UI 风险模式。第二层是可选的语义图谱工具：Java 多模块架构可使用 jQAssistant；需要控制流/数据流时使用 Joern 或 CodeQL。AI 只能依据产物推理，每个结论必须保留文件和行号证据。
+完成后打开：`/absolute/path/regression-analysis/report.html`。它是给人阅读的交付物；CSV 用于 Excel/Jira，JSON 用于 AI 检索和复核。
 
-静态分析的结论分为三种：
+## 1. 这是什么、解决什么问题
 
-- `static-candidate`：源代码可直接看见的事实，例如 `@Disabled`、固定等待或 literal route。
-- `inferred`：根据测试名称、Page Object、领域词或间接关系推断，需人工确认。
-- `proven-runtime`：仅在提供本机测试/JaCoCo/trace 产物时使用；默认不会出现。
+这是一个本地、只读优先的 Agent Skill：扫描一个或多个后端/客户端代码仓库，加上可选的 UI 自动化仓库，生成代码图、代码知识库、静态 UI 自动化风险、测试映射候选和回归测试 Gap。
 
-“没有发现映射”不等于“没有测试”。例如 UI 测试可能通过页面操作间接调用 API，因此它会被报告成待确认的 Gap 候选。
+默认不运行目标代码、不部署服务、不访问生产、不上传源码。它适合 UI 自动化只能在本机运行，或暂时拿不到 JaCoCo/trace 的团队。
 
-## 3. 文件说明
+```text
+代码仓库 + UI 自动化仓库
+          │
+          ▼
+     静态扫描与索引
+          ├── Code graph: DOT / SVG / PNG
+          ├── Knowledge base: Markdown / JSON
+          ├── UI risk & test-gap: CSV / JSON
+          └── Human report: report.html
+```
 
-| 文件 | 用途 |
+## 2. 结论可信度：必须理解
+
+| 等级 | 意义 | 示例 |
+|---|---|---|
+| `static-candidate` | 源码直接证明的候选事实 | `@Disabled`、固定 `sleep`、字面量 API route。 |
+| `inferred` | 名称、页面对象、领域词等推断 | UI 用例名与后端退款模块可能对应。 |
+| `proven-runtime` | 本机测试/JaCoCo/trace 明确证明 | 只有你提供执行产物时才允许使用。 |
+
+没有找到字面量映射，不代表一定没有测试；UI 操作可能间接调用后端。所有 P0/P1 候选必须由 QE 和服务 owner 复核。
+
+## 3. 目录与文件说明
+
+| 路径 | 作用 |
 |---|---|
-| `SKILL.md` | Codex 的执行契约：输入、边界、证据标准、产物和风险规则。 |
-| `scripts/preflight.py` | 只读盘点仓库、语言、构建标记、测试文件和工具是否已安装。 |
-| `scripts/static_index.py` | 零安装静态索引器；输出 code graph、知识库、UI 风险与 Gap CSV/JSON。 |
-| `scripts/render_html_report.py` | 从结构化扫描产物生成可读、可离线打开的 `report.html`。 |
-| `scripts/publish_to_pages.sh` | 将已审核报告复制到 AI Hub 的 GitHub Pages 目录。 |
-| `references/toolchain.md` | 多语言工具选择：jQAssistant、Joern、CodeQL、Tree-sitter、Graphviz。 |
-| `references/static-ui-analysis.md` | UI 源码风险与测试 Gap 的判定规则。 |
-| `references/report-contract.md` | QE/开发评审报告需要的字段和证据等级。 |
-| `agents/openai.yaml` | Codex UI 显示名称和默认提示词。 |
-| `.gitignore` | 防止分析输出、目标 repo、密钥和本地环境被提交。 |
+| `SKILL.md` | Agent 执行契约：范围、证据、产物和安全边界。 |
+| `AGENTS.md` | 通用 Agent 的最小工作流。 |
+| `CLAUDE.md` | Claude Code 入口，导入本模块 Agent 说明。 |
+| `.agents/skills/regression-gap-analyzer/SKILL.md` | Devin / Agent Skills 标准入口。 |
+| `scripts/bootstrap.sh` | 环境检查、基础一键安装、完整一键安装。 |
+| `scripts/install_advanced_tools.sh` | 单独安装 jQAssistant、Joern、CodeQL。 |
+| `scripts/run_static_scan.sh` | 一条命令执行预检、索引和 HTML 报告渲染。 |
+| `scripts/preflight.py` | 仓库/语言/构建标记/工具盘点。 |
+| `scripts/static_index.py` | 零安装通用静态索引与 DOT 图生成。 |
+| `scripts/render_html_report.py` | 将扫描 JSON/CSV 渲染为 `report.html`。 |
+| `scripts/publish_to_pages.sh` | 将已审核报告导出到 AI Hub 的 `docs/reports/`。 |
+| `references/` | 图谱工具、UI 静态分析和报告字段规范。 |
 
-## 4. 最低环境与安装
+## 4. 环境安装：三种选择
 
-### 一键基础安装（推荐）
+### 4.1 只检查，不改变电脑
 
-小白只需要在本仓库根目录运行一条命令：
+```bash
+bash scripts/bootstrap.sh --check
+```
+
+它会检查 `python3`、`git`、`gh` 和 `dot`。缺少任何一个时，会告诉你下一步命令。
+
+### 4.2 基础安装：绝大多数人只需要这个
 
 ```bash
 bash scripts/bootstrap.sh --install-core
 ```
 
-脚本会在 macOS/Linux 上检查并安装 Python 3、Git、GitHub CLI 和 Graphviz；macOS 缺少 Homebrew 时，会先使用 Homebrew 官方安装器。它会下载软件并可能要求管理员密码，所以只应在你确认后运行。基础脚本不使用 `pip`、不读取业务仓库内容、也不启动服务器。
+安装内容：
 
-安装完成后图片能力已经可用：`overview.dot` 会自动同时输出 `overview.svg` 和 `overview.png`。若只想检查环境而不安装，运行 `bash scripts/bootstrap.sh --check`。
+- Python 3.10+：运行扫描/报告脚本；不需要 `pip install`。
+- Git：版本管理与共享。
+- GitHub CLI (`gh`)：推送、认证和 GitHub 操作。
+- Graphviz：把 DOT 图转换为 SVG/PNG。
 
-### 可选：深度语义分析
+macOS 会在缺少 Homebrew 时调用 Homebrew 官方安装器；Linux 目前支持 `apt-get`。脚本会联网、可能要求管理员密码，因此 Agent 必须先获得用户批准。
 
-| 目标 | 工具与依赖 | 何时安装 |
-|---|---|---|
-| Java 架构/模块/依赖图 | jQAssistant；JDK 11+，建议 JDK 17 | 要查询大型 Java 多模块系统或保存 Neo4j 图谱时。 |
-| 语句级 CFG/PDG/数据流 | Joern；官方文档要求 JDK 19 | 需要追分支、参数流向或 CPG 时。 |
-| 多语言精确语义/数据流 | CodeQL CLI；编译型语言可能需要正常构建 | 要验证调用关系/数据流或做安全规则时。 |
-| 通用语法树 | Tree-sitter | 没有对应语义引擎时；不能证明调用/数据流。 |
+### 4.3 完整安装：需要深度语义图时再用
 
-这些均为可选项；不要为了第一次扫描安装它们。若确实需要，在确认软件许可和网络策略后运行一条命令：`bash scripts/bootstrap.sh --install-all`。它会继续调用 `install_advanced_tools.sh`，本机安装 JDK、jQAssistant、Joern 和 CodeQL；Joern 官方安装器仍会显示确认提示。jQAssistant 会在本机启动嵌入式 Neo4j，不会部署到服务器；Joern 和 CodeQL 可能需要较多磁盘/内存。
-
-## 5. 支持哪些 AI 编程 Agent
-
-| Agent | 入口文件/位置 | 如何使用 |
-|---|---|---|
-| Codex | 根目录 `SKILL.md`；安装到 `~/.codex/skills/` | 在对话中输入 `$regression-gap-analyzer`。 |
-| Claude Code | 根目录 `CLAUDE.md`（会导入 `AGENTS.md`） | 在该仓库目录运行 Claude Code，然后要求它按 `SKILL.md` 扫描。 |
-| Devin | `.agents/skills/regression-gap-analyzer/SKILL.md` | 将 repo 连接到 Devin，在会话使用 `@skills:regression-gap-analyzer`。 |
-| 其他兼容 Agent | `AGENTS.md` + 根目录 `SKILL.md` | 要求 agent 先读 `AGENTS.md` 和 `SKILL.md`。 |
-
-这些入口共享同一份核心流程，避免不同 agent 的规则漂移。
-
-## 6. 在 Codex 中调用（推荐）
-
-在新对话或当前对话粘贴下列内容并替换路径：
-
-```text
-使用 $regression-gap-analyzer 进行全量静态扫描。
-
-代码仓库：
-- /Users/your-name/workspace/payment-service
-- /Users/your-name/workspace/order-service
-
-UI 自动化仓库：
-- /Users/your-name/workspace/payment-ui-e2e
-
-输出目录：
-- /Users/your-name/Desktop/payment-analysis
-
-生成 code graph、本地知识库、UI 静态风险和测试 Gap。
-不要运行 build、测试、Docker 或部署；不要安装额外工具。
+```bash
+bash scripts/bootstrap.sh --install-all
 ```
 
-如果只关注一个功能，把“全量静态扫描”替换为：`分析 refund 模块，包含 Git range <base>..<head>`。全量扫描用于建立知识库；后续工作优先使用 feature/module 的有界切图，避免图片不可读。
+在基础安装之上安装：
 
-## 7. 手工使用（已简化）
+| 工具 | 用途 | 额外要求 |
+|---|---|---|
+| jQAssistant | Java/JVM 架构、Maven/模块/依赖图；本地嵌入 Neo4j | JDK 17、SDKMAN。 |
+| Joern | 多语言 CPG、CFG、PDG、数据流深挖 | JDK 19；官方安装器会交互确认。 |
+| CodeQL | 多语言语义、调用关系、数据流/安全查询 | 编译型语言常需正常构建；Apple Silicon 可能需要 Rosetta/Xcode CLI。 |
 
-一条命令完成预检和静态索引：
+完整安装的独立形式：
+
+```bash
+bash scripts/install_advanced_tools.sh --all
+# 或只安装一个：--jqassistant / --joern / --codeql
+```
+
+### 4.4 手工安装 Graphviz
+
+一键脚本失败或你只想要图片功能时，可按系统手工安装：
+
+```bash
+# macOS（Homebrew）
+brew install graphviz
+
+# Ubuntu/Debian
+sudo apt-get update && sudo apt-get install -y graphviz
+```
+
+验证：
+
+```bash
+dot -V
+```
+
+预期输出包含 `graphviz version`。没有 Graphviz 时扫描仍会生成 `overview.dot`，但不会有 SVG/PNG 和 HTML 内嵌图片。
+
+### 4.5 PATH 与安装验证
+
+新开一个 Terminal，再运行：
+
+```bash
+python3 --version
+git --version
+gh --version
+dot -V
+jqassistant --version   # 仅完整安装后
+joern --version         # 仅完整安装后
+codeql version          # 仅完整安装后
+```
+
+如果高级命令找不到，可临时执行：
+
+```bash
+export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
+```
+
+## 5. 调用方式
+
+### 5.1 Codex（推荐）
+
+```text
+使用 $regression-gap-analyzer 扫描以下仓库：
+- 代码仓库：/absolute/path/payment-service, /absolute/path/order-service
+- UI 自动化仓库：/absolute/path/payment-ui-e2e
+- 输出：/absolute/path/payment-analysis
+进行全量静态扫描，生成代码图、知识库、HTML report、CSV 风险和测试 Gap。
+不要运行 build、测试、Docker、部署或安装额外工具。
+```
+
+如果从 AI Hub 安装到 Codex，Skill 目录是 `skills/regression-gap-analyzer/`，而不是 AI Hub 根目录。
+
+### 5.2 Claude Code
+
+在 Skill 目录运行 Claude Code；`CLAUDE.md` 会导入模块 `AGENTS.md`。提示 Claude：
+
+```text
+Read SKILL.md and analyze these local repositories without executing tests.
+```
+
+### 5.3 Devin
+
+将 AI Hub repo 接入 Devin，然后使用：
+
+```text
+@skills:regression-gap-analyzer scan the selected local repositories statically.
+```
+
+Devin 会识别 `.agents/skills/regression-gap-analyzer/SKILL.md`。
+
+### 5.4 其他 Agent
+
+要求 Agent 先读取本模块的 `AGENTS.md` 与 `SKILL.md`；不要只读 AI Hub 根目录的 `AGENTS.md`。
+
+## 6. 手工扫描与交付物
 
 ```bash
 bash scripts/run_static_scan.sh \
@@ -112,26 +192,22 @@ bash scripts/run_static_scan.sh \
   --out /absolute/path/payment-analysis
 ```
 
-它会自动依次执行预检和静态索引。随后评审：
+输出目录包含：
 
-扫描完成后直接打开 `report.html`，它提供摘要卡片、代码图链接、端点表和按优先级排列的风险/Gap 表；CSV 仍保留用于 Excel、Jira 或测试管理系统。
+| 文件 | 面向谁 | 用途 |
+|---|---|---|
+| `report.html` | QE/开发/管理者 | 首选阅读入口：摘要、图、风险表、端点表、证据链接。 |
+| `ui-static-risk-and-gaps.csv` | Excel/Jira/测试平台 | 可导入的风险/GAP Backlog。 |
+| `static-ui-analysis.json` | Agent/脚本 | 静态风险与映射候选原始数据。 |
+| `knowledge-base.md` | 人 | 系统概览。 |
+| `knowledge-base.json` | Agent | 可检索的节点、边、符号和证据。 |
+| `graphs/overview.dot` | 工具/开发 | 代码图原始格式。 |
+| `graphs/overview.svg/png` | 人 | Graphviz 可用时的图片。 |
+| `repo-inventory.json` | 审计/复现 | 仓库 revision、语言、工具盘点。 |
 
-先打开 `knowledge-base.md` 和 `ui-static-risk-and-gaps.csv`；再把输出目录交给 Codex，请它按证据逐条生成 `gap-report.md`。P0/P1 必须由 QE 和服务 owner 复核，尤其是“硬编码密钥”类发现：只报告文件/行号，绝不在报告中复制值。
+## 7. 发布到 GitHub Pages
 
-## 8. 会产生什么
-
-- `repo-inventory.json`：扫描范围和环境盘点。
-- `graphs/overview.dot`：所有扫描均生成的图谱源文件。
-- `graphs/overview.svg` / `.png`：安装 Graphviz 时生成的图片。
-- `knowledge-base.json`：结构化节点、边、符号、端点、测试和证据，可供 Codex 后续检索。
-- `knowledge-base.md`：人类可读摘要。
-- `static-ui-analysis.json`：静态 UI 风险与端点映射候选。
-- `ui-static-risk-and-gaps.csv`：可导入 Jira/测试管理工具前的评审清单。
-- `report.html`：适合直接发给 QE、开发 owner 和管理者阅读的 HTML 报告。
-
-## 8.1 发布到 GitHub Pages（可选）
-
-先人工检查 `report.html` 中没有业务源码、token、客户信息或未复核的敏感结论，再运行：
+仅发布已经过人工审核、可公开分享的报告。禁止发布源代码、密钥、客户数据、内部 URL、未复核的敏感 P0/P1 结论。
 
 ```bash
 bash scripts/publish_to_pages.sh \
@@ -139,28 +215,29 @@ bash scripts/publish_to_pages.sh \
   --name payment-analysis-2026-08
 ```
 
-这会复制报告及其图谱/CSV/JSON 到 AI Hub 的 `docs/reports/payment-analysis-2026-08/`。提交并推送后，在 GitHub 仓库的 **Settings → Pages → Source → GitHub Actions** 启用 Pages。工作流会发布 `docs/`；报告链接形式为 `/ai_learnings/reports/payment-analysis-2026-08/`。
+它复制 HTML、图、CSV 和 JSON 到 AI Hub 的 `docs/reports/payment-analysis-2026-08/`。提交、推送后，到 GitHub 仓库 **Settings → Pages → Source → GitHub Actions** 启用 Pages。部署地址通常是：
 
-## 9. 创新点与边界
-
-创新点：不要求接入生产或部署 JaCoCo；将“代码可达性、UI 测试意图、风险规则、证据等级”放在同一个本地知识层；支持由全量图谱切出可读的 feature/module 图；对小白默认使用零安装路径。
-
-边界：基础索引器是通用启发式，不是编译器；反射、动态路由、代理、配置化依赖、远端调用和生成代码可能遗漏或误报。不要把图中的所有边当成真实运行路径，也不要仅为提高行覆盖率而新增 UI 测试。
-
-## 10. 打包和分享给小白
-
-此目录就是可分享的仓库根目录。初始化并推送前，确认其中**没有**任何业务源代码、真实测试报告、`.env`、token 或输出目录：
-
-```bash
-git init
-git add SKILL.md GUIDELINE.zh-CN.md GUIDELINE.en.md agents scripts references .gitignore
-git commit -m "Add regression gap analyzer skill"
+```text
+https://zhangdahui01.github.io/ai_learnings/reports/payment-analysis-2026-08/
 ```
 
-Codex 接收者安装方式：
+仓库已含 `.github/workflows/deploy-pages.yml`，每次 `docs/` 变更推送后都会部署。
 
-```bash
-git clone <YOUR_REPOSITORY_URL> ~/.codex/skills/regression-gap-analyzer
-```
+## 8. 常见问题
 
-随后重启或刷新 Codex，在对话中输入 `$regression-gap-analyzer`。所有接收者先运行 `bash scripts/bootstrap.sh --install-core`，再运行 `run_static_scan.sh`；高级语义工具仍按需安装。不要让接收者把待分析业务 repo 复制进这个 Skill 仓库。
+| 现象 | 解决方式 |
+|---|---|
+| `dot: command not found` | 运行 `bash scripts/bootstrap.sh --install-core`，或手工 `brew install graphviz`。 |
+| macOS 报没有 `brew` | 运行基础脚本；它会使用 Homebrew 官方安装器。安装完成后新开 Terminal。 |
+| SDKMAN 报 Bash 版本过低 | 运行 `--install-all`；脚本会安装 Homebrew Bash。 |
+| `jqassistant` / `codeql` 找不到 | 新开 Terminal；必要时执行 `export PATH="$HOME/.local/bin:$HOME/bin:$PATH"`。 |
+| 没有 `overview.svg/png` | 检查 `dot -V`；无 Graphviz 只能生成 DOT。 |
+| HTML 没有图片 | 确认输出目录存在 `graphs/overview.svg`；重新运行扫描。 |
+| Pages 404 | 确认 Settings → Pages 选择 GitHub Actions，随后查看 Actions 中的 Deploy GitHub Pages。 |
+| 报告内容看起来像真实覆盖 | 检查证据等级；静态模式不能称为 runtime coverage。 |
+
+## 9. 安全与边界
+
+基础索引器是启发式工具，不是完整编译器。反射、代理、动态路由、远端服务、生成代码、feature flag 和配置化依赖可能造成遗漏或误报。不要为覆盖私有实现细节而新增 UI 测试；建议最低合适测试层。
+
+永远把风险报告视为草稿：对业务关键、支付、安全、数据损失、权限等场景，由 QE 与服务 owner 共同确认。

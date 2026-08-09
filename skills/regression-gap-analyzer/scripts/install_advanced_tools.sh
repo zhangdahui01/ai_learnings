@@ -34,12 +34,16 @@ for tool in "${tools[@]}"; do
       # SDKMAN's own initializer references optional unset variables.
       # shellcheck disable=SC1090
       set +u; source "$HOME/.sdkman/bin/sdkman-init.sh"; sdk install jqassistant; set -u
+      jqassistant_bin="$HOME/.sdkman/candidates/jqassistant/current/bin/jqassistant"
+      [ -x "$jqassistant_bin" ] || { echo "jQAssistant installed but its executable was not found." >&2; exit 1; }
+      ln -sf "$jqassistant_bin" "$local_bin/jqassistant"; "$local_bin/jqassistant" --version
       ;;
     joern)
       if [ "$platform" = Darwin ]; then brew install openjdk@19 coreutils; fi
       installer="$local_opt/joern-install.sh"; curl -fL "https://github.com/joernio/joern/releases/latest/download/joern-install.sh" -o "$installer"; chmod u+x "$installer"
       echo "Starting the official Joern installer. Accept its prompts to complete installation."
       "$installer" --interactive
+      [ ! -x "$HOME/bin/joern" ] || ln -sf "$HOME/bin/joern" "$local_bin/joern"
       ;;
     codeql)
       case "$platform" in Darwin) asset=codeql-bundle-osx64.tar.gz;; Linux) asset=codeql-bundle-linux64.tar.gz;; *) echo "CodeQL automatic install supports macOS/Linux only." >&2; continue;; esac

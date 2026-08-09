@@ -9,7 +9,14 @@ Create a reproducible, local and source-grounded analysis pack. Support a full-r
 
 ## Minimum setup and shared distribution
 
-Require Python 3.10 or later for the baseline scripts; they use only the Python standard library. For a beginner setup run `bash scripts/bootstrap.sh --install-core`; it installs/checks Python, Git, and Graphviz on supported macOS/Linux systems and enables graph images. Then use `bash scripts/run_static_scan.sh --repo <path> --out <path>`. The installer changes the local machine and may download packages, so obtain user approval before running it. Keep outputs outside this skill/repository. Read `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for optional advanced engines and non-Codex agents.
+Run commands from this module directory: `skills/regression-gap-analyzer/`. Require explicit user approval before any installer, build, test, container, deployment, or source upload.
+
+- **Check only:** `bash scripts/bootstrap.sh --check`.
+- **Beginner baseline:** `bash scripts/bootstrap.sh --install-core`. This installs/checks Python 3.10+, Git, GitHub CLI, and Graphviz; it enables SVG/PNG graph output and requires no `pip` package.
+- **All graph engines:** `bash scripts/bootstrap.sh --install-all`. This runs the baseline plus the optional jQAssistant, Joern, and CodeQL installers. It downloads software, may require JDK 17/19, Rosetta/Xcode tools on Apple Silicon, and an interactive confirmation from Joern.
+- **Scan:** `bash scripts/run_static_scan.sh --repo <path> [--repo <path>] [--automation <path>] --out <path>`.
+
+Keep output outside this repository. Read `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for OS-specific installation, PATH setup, verification, troubleshooting, agent-specific invocation, and GitHub Pages publishing.
 
 ## Invocation
 
