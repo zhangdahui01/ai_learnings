@@ -99,7 +99,7 @@ git --version
 gh --version
 dot -V
 jqassistant effective-configuration  # first run downloads its plugins; jQAssistant has no --version flag
-joern --version        # after full install
+command -v joern       # Joern has no --version flag; `joern` opens its REPL, then type exit
 codeql version         # after full install
 ```
 

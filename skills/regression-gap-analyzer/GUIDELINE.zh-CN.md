@@ -135,7 +135,7 @@ git --version
 gh --version
 dot -V
 jqassistant effective-configuration  # 首次执行会下载其插件；jQAssistant 没有 --version 参数
-joern --version         # 仅完整安装后
+command -v joern        # Joern 没有 --version 参数；执行 joern 会进入交互式界面，输入 exit 退出
 codeql version          # 仅完整安装后
 ```
 

@@ -73,7 +73,8 @@ export JAVA_HOME="\${JAVA_HOME:-$jdk_home}"
 exec "$joern_bin" "\$@"
 EOF
         chmod u+x "$local_bin/joern"
-        "$local_bin/joern" --version
+        # Joern has no --version flag; do not launch its interactive REPL here.
+        echo "Joern installed. Start it with: joern  (then type exit to leave)"
       else
         echo "Joern installer finished but $joern_bin was not found." >&2; exit 1
       fi
