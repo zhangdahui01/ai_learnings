@@ -59,6 +59,58 @@ bash scripts/run_static_scan.sh \
 | `scripts/publish_to_pages.sh` | 将已审核报告导出到 AI Hub 的 `docs/reports/`。 |
 | `references/` | 图谱工具、UI 静态分析和报告字段规范。 |
 
+### 3.1 图中红框文件：逐个深入说明
+
+这些文件不是“扫描出来的业务代码”，而是这个 Skill 自己的**方法说明与可执行流水线**。它们一起把输入仓库变成可审计的报告。它们不会修改、构建或运行被扫描仓库。
+
+```text
+你的代码仓库 / UI 自动化仓库
+                 │
+                 ▼
+        run_static_scan.sh（命令门面）
+                 │
+       ┌─────────┴─────────┐
+       ▼                   ▼
+preflight.py         static_index.py
+环境与范围盘点        图 + 知识库 + UI 风险/GAP
+       │                   │
+repo-inventory.json   DOT/SVG/PNG + JSON/CSV/Markdown
+                 │
+                 ▼
+          render_html_report.py → report.html
+```
+
+| 红框文件 | 类型 / 谁会使用 | 在本 Skill 中具体做什么 | 读取什么 | 产生什么 |
+|---|---|---|---|---|
+| `references/report-contract.md` | 规则文档；Agent 在生成或审核报告前读取 | 定义每条风险/GAP 必须带哪些证据字段、可信度和优先级，防止 Agent 把“静态推断”写成“真实覆盖”。 | 不读取仓库或文件。 | 不直接产物；约束 `static-ui-analysis.json`、CSV 和 HTML 报告的内容。 |
+| `references/static-ui-analysis.md` | 规则文档；Agent 与 `static_index.py` 的设计依据 | 定义静态 UI 自动化风险规则：固定等待、脆弱 selector、skip/retry、缺少断言、共享状态、潜在密钥；并规定如何把后端入口点转为“待确认”的测试 GAP。 | 不读取仓库或文件。 | 不直接产物；决定风险的分类、证据等级与措辞。 |
+| `references/toolchain.md` | 决策文档；Agent 选择图谱引擎前读取 | 说明 `static_index.py`、Graphviz、jQAssistant、Joern、CodeQL、Tree-sitter 各自的能力边界和选择条件。 | 不读取仓库或文件。 | 不直接产物；指导是否从零安装索引升级到语义图。 |
+| `scripts/preflight.py` | Python 可执行脚本；由总入口自动执行 | 扫描仓库元信息：Git SHA、语言数量、构建文件、疑似测试文件、以及本机工具是否可用。它是一次分析的“环境与版本凭证”。 | 目录结构、文件名、Git 元数据；跳过 `.git`、`node_modules`、`target` 等目录；不读取密钥值，不运行代码。 | `repo-inventory.json`。 |
+| `scripts/run_static_scan.sh` | Bash 可执行脚本；你唯一需要手工执行的扫描入口 | 校验 Python 版本和参数，把多个 `--repo`、可选 `--automation`、`--out` 传给三个下游脚本，按固定顺序执行。 | 只读命令行路径和参数。 | 自身不保存分析数据；编排生成全部扫描产物，并最后提示 `report.html` 路径。 |
+| `scripts/static_index.py` | Python 可执行脚本；默认核心分析器 | 零安装、跨语言的启发式源码索引：收集文件、声明、import、HTTP 路由、UI 测试名；识别 UI 风险模式；比较后端 route 与 UI route 字面量，产生待人工确认的 GAP。使用正则/文本规则，不是编译器。 | 支持的源码文件文本；不执行代码，不读取 `.env`/构建输出/依赖缓存。 | `knowledge-base.json`、`knowledge-base.md`、`graphs/overview.dot`、可选 SVG/PNG、`static-ui-analysis.json`、`ui-static-risk-and-gaps.csv`。 |
+
+三个 `references/*.md` 都是给 Agent 的**决策和质量护栏**，所以不需要你在 Terminal 执行。三个 `scripts/*` 才是可执行代码；日常只运行 `run_static_scan.sh`，不要分别运行 `preflight.py` 和 `static_index.py`，除非你在调试本 Skill。
+
+### 3.2 一次静态扫描的真实调用顺序
+
+例如执行：
+
+```bash
+bash scripts/run_static_scan.sh \
+  --repo /work/order-service \
+  --automation /work/order-ui-e2e \
+  --out /tmp/order-analysis
+```
+
+实际发生的顺序是：
+
+1. `run_static_scan.sh` 检查 Python 3.10+ 和参数完整性。
+2. `preflight.py` 记录两个仓库的 Git SHA、语言、构建标记、测试文件清单和工具可用性，写入 `repo-inventory.json`。
+3. `static_index.py` 读取源码文本并建立 `Repository → File → Symbol/Endpoint/TestCase/Risk` 图；Graphviz 可用时把 DOT 渲染为 SVG/PNG。
+4. `render_html_report.py` 读取上述 JSON 和图，生成便于评审的 `report.html`。
+
+因此：HTML/CSV 中每条静态风险都能回溯到文件和行号；但“后端端点没有字面量 UI route”只代表 `inferred` GAP 候选，不能表述成“该功能未测试”。
+
 ## 4. 环境安装：三种选择
 
 ### 4.1 只检查，不改变电脑
@@ -144,6 +196,89 @@ codeql version          # 仅完整安装后
 ```bash
 export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 ```
+
+### 4.6 深度图谱工具：作用、官网、何时使用与最小 Demo
+
+默认扫描只依赖 `static_index.py` + Graphviz，适合任何语言、无需 build。下面三个工具是**可选增强**：它们不会被 `run_static_scan.sh` 自动执行，因为可能下载依赖、需要 build、占用较多磁盘/内存，且深度分析范围必须由你授权。
+
+| 工具 | 它究竟做什么 | 何时最适合本 Skill | 不应拿它做什么 |
+|---|---|---|---|
+| [jQAssistant](https://jqassistant.github.io/jqassistant/current/) | 将 Java/JVM、Maven、文件等结构扫描进本地嵌入式 Neo4j；用 Cypher 查询架构、模块、依赖和规则违反。 | 多个 Java Maven/Gradle 服务的持久架构知识图、模块依赖评审、架构规则。 | 不把它当作 UI 真实覆盖证明；源码/字节码信息仍不证明测试已执行。 |
+| [Joern](https://docs.joern.io/) | 把代码解析为 CPG（Code Property Graph）：融合 AST、CFG、PDG 和调用/数据流信息；通过 Scala 风格 CPGQL 查询。 | 需要沿“入口 → 调用 → 敏感 sink”追踪、检查权限/错误/数据流、分析局部复杂分支。 | 不建议直接渲染全仓库 CPG；图会不可读且内存消耗很大。 |
+| [CodeQL](https://codeql.github.com/docs/codeql-overview/about-codeql/) | 先为代码建语义数据库，再运行 QL 查询；支持可解释的调用/数据流和 SARIF 结果。 | 需要用特定问题验证 GAP 假设、做跨语言安全/质量查询、在可正常 build 的项目中获得较高语义精度。 | 不要在没有正常构建条件的 Java/C# 等编译型仓库上承诺完整结果；不要上传含私有源码的数据库 bundle。 |
+
+#### jQAssistant：Java 架构图与本地 Neo4j
+
+官网：[User Manual](https://jqassistant.github.io/jqassistant/current/) · [命令行任务](https://jqassistant.github.io/jqassistant/current/#_command_line)。官方要求 JDK 11+；本 Skill 安装 JDK 17 并通过 SDKMAN 安装 jQAssistant。它采用插件扫描器和 Cypher 规则，常用任务包括 `scan`、`server`、`effective-configuration`、`available-rules`、`analyze`。
+
+最小 Demo（在**可公开的示例目录**或已获授权的项目副本中执行）：
+
+```bash
+# 先确认命令和当前配置；首次运行会下载所需插件
+jqassistant effective-configuration
+
+# 扫描编译后的 classes；jQAssistant 对 classpath/构建产物的语义最完整
+jqassistant scan -f java:classpath::target/classes
+
+# 启动本机 Neo4j 浏览器服务，然后访问 http://localhost:7474
+jqassistant server
+```
+
+Neo4j Browser 中可运行的 Cypher 例子：
+
+```cypher
+MATCH (a:Artifact)-[:CONTAINS]->(t:Type)-[:DECLARES]->(m:Method)
+RETURN a.fileName AS artifact, t.fqn AS type, count(m) AS methods
+ORDER BY methods DESC LIMIT 20;
+```
+
+对 Maven 工程，更可复现的做法是将 jQAssistant Maven 插件加入父 `pom.xml`，再运行 `mvn jqassistant:scan jqassistant:analyze`。这会改动项目配置、可能运行 Maven，因此必须先得到项目 owner 批准。进一步规则和配置参见 [官方扫描器/规则说明](https://jqassistant.github.io/jqassistant/current/#_scanner)。
+
+#### Joern：CPG、控制流与数据流
+
+官网：[安装](https://docs.joern.io/installation/) · [Quickstart](https://docs.joern.io/quickstart/) · [CPGQL](https://docs.joern.io/cpgql/) · [Java frontend](https://docs.joern.io/frontends/java/)。Joern 的 CPG 将语法树（AST）、控制流（CFG）和程序依赖（PDG）等结构合到可查询图中，适合从一个明确入口点做深挖。
+
+最小 Demo（建议先用很小的 Java 模块；`joern` 会创建本地 workspace）：
+
+```bash
+joern
+```
+
+在 `joern>` 提示符中输入：
+
+```scala
+importCode(inputPath="/absolute/path/small-java-module", projectName="small-java")
+cpg.method.name.l
+cpg.method.name("processOrder").callIn.code.l
+exit
+```
+
+含义：第一行创建 CPG 项目；第二行列方法；第三行查谁调用 `processOrder`。大仓库请限制到一个模块/入口点，并按官方文档设置 JVM 内存，例如 `joern -J-Xmx8G`。也可用 [官方脚本模式](https://docs.joern.io/interpreter/) 使查询可复现：`joern --script query.sc --param cpgFile=/path/to/cpg.bin.zip`。
+
+#### CodeQL：构建感知的语义查询
+
+官网：[CodeQL 概述](https://codeql.github.com/docs/codeql-overview/about-codeql/) · [CLI 设置](https://docs.github.com/en/code-security/how-tos/scan-code-for-vulnerabilities/scan-from-the-command-line/setting-up-the-codeql-cli) · [`database create`](https://docs.github.com/en/code-security/codeql-cli/manual/database-create) · [`database analyze`](https://docs.github.com/en/code-security/codeql-cli/manual/database-analyze)。CodeQL 先用 extractor 建数据库，再运行 query/suite，结果通常输出 SARIF，便于 GitHub code scanning 或人工审阅。
+
+最小 Demo（对 Java 等编译型语言，`--command` 必须是项目本来就能成功执行的构建命令；这会执行 build，先获批准）：
+
+```bash
+# 查看本机可用语言与 query packs
+codeql resolve languages
+codeql resolve packs
+
+# 在授权的 Java 项目中创建数据库；命令按项目实际 Maven/Gradle 构建调整
+codeql database create /tmp/order-codeql-db \
+  --language=java-kotlin \
+  --command="./mvnw -DskipTests package"
+
+# 使用已安装或显式指定的查询套件，输出 SARIF
+codeql database analyze /tmp/order-codeql-db \
+  --format=sarif-latest \
+  --output=/tmp/order-codeql.sarif \
+  <query-suite-or-pack>
+```
+
+`<query-suite-or-pack>` 不是固定字符串：先运行 `codeql resolve packs`，再选你本机可见的 suite/pack。数据库和 SARIF 可能包含源码路径、诊断和结果；仅在获授权的环境保存、共享或上传。对只想做本 Skill 的快速静态报告的人，不需要运行 CodeQL。
 
 ## 5. 调用方式
 

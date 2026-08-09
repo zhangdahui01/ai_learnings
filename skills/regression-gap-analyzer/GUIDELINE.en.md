@@ -41,6 +41,54 @@ A missing literal mapping is never proof that a test is absent. Review all P0/P1
 | `scripts/publish_to_pages.sh` | Copy a reviewed report into GitHub Pages source. |
 | `references/` | Toolchain, UI static analysis, and report-contract details. |
 
+### Highlighted files: detailed responsibilities
+
+The highlighted files are the Skill's own quality rules and executable pipeline, not product code from the repositories being scanned. They work together without modifying, building, or executing the target repositories.
+
+```text
+Repositories + UI automation
+           │
+           ▼
+run_static_scan.sh (beginner command facade)
+           │
+   ┌───────┴────────┐
+   ▼                ▼
+preflight.py   static_index.py
+inventory      graph + knowledge base + UI risks/gaps
+   │                │
+repo-inventory  DOT/SVG/PNG + JSON/CSV/Markdown
+           │
+           ▼
+render_html_report.py → report.html
+```
+
+| File | Type / user | Specific role | Reads | Produces |
+|---|---|---|---|---|
+| `references/report-contract.md` | Rule document; read by an Agent before report drafting/review | Requires source evidence, confidence, and priority for every risk/gap; prevents a static inference being described as real coverage. | Nothing. | No direct artifact; governs JSON, CSV, and HTML report content. |
+| `references/static-ui-analysis.md` | Rule document; design basis for the Agent and indexer | Defines source-only UI risks: fixed waits, brittle selectors, skip/retry, missing assertions, shared state, and possible secrets. Defines how code entry points become investigation-only test gaps. | Nothing. | No direct artifact; governs risk class, evidence level, and wording. |
+| `references/toolchain.md` | Tool-selection document; read before deep analysis | Explains when to use the baseline indexer, Graphviz, jQAssistant, Joern, CodeQL, or Tree-sitter. | Nothing. | No direct artifact; guides semantic-tool selection. |
+| `scripts/preflight.py` | Executable Python; invoked by the facade | Records Git SHA, languages, build markers, likely test files, and locally available tools: the reproducibility receipt for a run. | Directory structure, filenames, Git metadata; skips generated/dependency folders and never runs source. | `repo-inventory.json`. |
+| `scripts/run_static_scan.sh` | Executable Bash; normal user entry point | Validates Python/arguments and calls the three downstream steps with repeated `--repo`, optional `--automation`, and `--out`. | Command-line paths and arguments. | No direct data; orchestrates every scan artifact and prints the HTML path. |
+| `scripts/static_index.py` | Executable Python; default analysis engine | Zero-install cross-language text/regex index for files, declarations, imports, HTTP routes, UI test names, and UI risks. Compares backend/UI literal routes to create reviewable gaps; it is not a compiler. | Supported source-code text only; never `.env`, build outputs, dependency cache, or executed code. | `knowledge-base.json/md`, `graphs/overview.dot`, optional SVG/PNG, `static-ui-analysis.json`, and `ui-static-risk-and-gaps.csv`. |
+
+The `references/*.md` files are Agent decision/quality guardrails: do not execute them. The scripts are executable. In normal use, execute only `run_static_scan.sh`; run `preflight.py` or `static_index.py` separately only when debugging the Skill.
+
+### Actual scan sequence
+
+```bash
+bash scripts/run_static_scan.sh \
+  --repo /work/order-service \
+  --automation /work/order-ui-e2e \
+  --out /tmp/order-analysis
+```
+
+1. `run_static_scan.sh` validates Python 3.10+ and complete arguments.
+2. `preflight.py` writes repository revision, language/build/test markers, and tool availability to `repo-inventory.json`.
+3. `static_index.py` builds the `Repository → File → Symbol/Endpoint/TestCase/Risk` graph and uses Graphviz when installed.
+4. `render_html_report.py` reads the graph and JSON results, then creates `report.html`.
+
+Each static finding is traceable to a source file and line. A backend endpoint without a literal UI route is only an `inferred` investigation candidate, never proof that the feature is untested.
+
 ## Installation
 
 ### Check only
@@ -108,6 +156,79 @@ If advanced commands are not found:
 ```bash
 export PATH="$HOME/.local/bin:$HOME/bin:$PATH"
 ```
+
+### Deep graph tools: purpose, official docs, usage, and minimal demos
+
+The normal scan uses `static_index.py` plus Graphviz. It is zero-install and does not need a build. jQAssistant, Joern, and CodeQL are optional enrichments; `run_static_scan.sh` does not launch them automatically because they may require a build, download dependencies, use substantial disk/RAM, and need explicit scope approval.
+
+| Tool | What it does | Best use in this Skill | Do not claim |
+|---|---|---|---|
+| [jQAssistant](https://jqassistant.github.io/jqassistant/current/) | Imports Java/JVM, Maven, and file structures into a local embedded Neo4j; query with Cypher. | Durable Java multi-repository architecture graph, module/dependency review, architecture rules. | Source/bytecode structure is not proof of UI test execution or coverage. |
+| [Joern](https://docs.joern.io/) | Generates a Code Property Graph (AST + CFG + PDG + calls/data flow) and queries it with CPGQL. | Bounded tracing from an entry point through calls to a sensitive sink; authorization/error/data-flow review. | A whole-repository CPG image is not a useful human report. |
+| [CodeQL](https://codeql.github.com/docs/codeql-overview/about-codeql/) | Builds a semantic database and runs QL queries with explainable data-flow findings and SARIF output. | Verify a specific gap hypothesis or run cross-language security/quality queries when the normal project build works. | Complete compiled-language results without a successful regular build. |
+
+#### jQAssistant — Java architecture graph and local Neo4j
+
+Official links: [User Manual](https://jqassistant.github.io/jqassistant/current/) · [command-line tasks](https://jqassistant.github.io/jqassistant/current/#_command_line) · [scanner and rules](https://jqassistant.github.io/jqassistant/current/#_scanner). It requires JDK 11+; this Skill installs JDK 17 and SDKMAN jQAssistant. Main tasks include `scan`, `server`, `effective-configuration`, `available-rules`, and `analyze`.
+
+Minimal demo, only in an authorized project/example:
+
+```bash
+jqassistant effective-configuration
+jqassistant scan -f java:classpath::target/classes
+jqassistant server  # then open http://localhost:7474
+```
+
+Example Cypher in Neo4j Browser:
+
+```cypher
+MATCH (a:Artifact)-[:CONTAINS]->(t:Type)-[:DECLARES]->(m:Method)
+RETURN a.fileName AS artifact, t.fqn AS type, count(m) AS methods
+ORDER BY methods DESC LIMIT 20;
+```
+
+For a Maven project, the reproducible integration is the jQAssistant Maven plugin plus `mvn jqassistant:scan jqassistant:analyze`. It modifies project configuration and can run Maven, so obtain owner approval first.
+
+#### Joern — CPG, control flow, and data flow
+
+Official links: [installation](https://docs.joern.io/installation/) · [quickstart](https://docs.joern.io/quickstart/) · [CPGQL](https://docs.joern.io/cpgql/) · [Java frontend](https://docs.joern.io/frontends/java/). Joern combines AST, CFG, and PDG into a queryable CPG; use it for bounded entry-point-led investigation.
+
+Minimal demo on a small Java module:
+
+```bash
+joern
+```
+
+At `joern>`:
+
+```scala
+importCode(inputPath="/absolute/path/small-java-module", projectName="small-java")
+cpg.method.name.l
+cpg.method.name("processOrder").callIn.code.l
+exit
+```
+
+This creates a local CPG project, lists methods, and finds callers of `processOrder`. Limit large repositories to a module/entry point; allocate memory if needed, for example `joern -J-Xmx8G`. For repeatable jobs use [script mode](https://docs.joern.io/interpreter/): `joern --script query.sc --param cpgFile=/path/to/cpg.bin.zip`.
+
+#### CodeQL — build-aware semantic queries
+
+Official links: [overview](https://codeql.github.com/docs/codeql-overview/about-codeql/) · [CLI setup](https://docs.github.com/en/code-security/how-tos/scan-code-for-vulnerabilities/scan-from-the-command-line/setting-up-the-codeql-cli) · [`database create`](https://docs.github.com/en/code-security/codeql-cli/manual/database-create) · [`database analyze`](https://docs.github.com/en/code-security/codeql-cli/manual/database-analyze). CodeQL extracts a database first, then runs a query/suite; output is commonly SARIF.
+
+Minimal demo. For Java and other compiled languages, the build command must be the project's normal successful build, so obtain approval before executing it:
+
+```bash
+codeql resolve languages
+codeql resolve packs
+codeql database create /tmp/order-codeql-db \
+  --language=java-kotlin \
+  --command="./mvnw -DskipTests package"
+codeql database analyze /tmp/order-codeql-db \
+  --format=sarif-latest \
+  --output=/tmp/order-codeql.sarif \
+  <query-suite-or-pack>
+```
+
+`<query-suite-or-pack>` is deliberately variable: use `codeql resolve packs` and choose a locally visible suite/pack. Databases and SARIF can contain source paths, diagnostics, and findings, so retain, share, or upload them only in an approved environment. CodeQL is not required for the Skill's fast static report.
 
 ## Agent usage
 
