@@ -27,6 +27,8 @@ Evidence levels are `static-candidate` (direct source fact), `inferred` (semanti
 | `SKILL.md` | Codex execution contract and safety/evidence rules. |
 | `scripts/preflight.py` | Read-only inventory of repositories, languages, tests, and tools. |
 | `scripts/static_index.py` | Zero-install graph, local KB, and static UI risk/gap generator. |
+| `scripts/render_html_report.py` | Renders a readable, offline `report.html` from structured artifacts. |
+| `scripts/publish_to_pages.sh` | Copies a reviewed report into the AI Hub's GitHub Pages source. |
 | `references/toolchain.md` | Tool-selection rules. |
 | `references/static-ui-analysis.md` | UI source-risk and gap rules. |
 | `references/report-contract.md` | Required report fields and confidence definitions. |
@@ -102,6 +104,8 @@ bash scripts/run_static_scan.sh \
 
 Review `knowledge-base.md` and `ui-static-risk-and-gaps.csv` first. Ask Codex to draft the final report only from source evidence. QE and service owners must review P0/P1 candidates; never copy possible secret values into a report.
 
+Open `report.html` after the scan for summary cards, graph links, endpoints, and a prioritized risk/gap table. Keep CSV for Excel, Jira, or test-management import.
+
 ## 8. Outputs
 
 - `repo-inventory.json`: scan scope and environment inventory.
@@ -111,6 +115,19 @@ Review `knowledge-base.md` and `ui-static-risk-and-gaps.csv` first. Ask Codex to
 - `knowledge-base.md`: human-readable summary.
 - `static-ui-analysis.json`: UI static risks and route-mapping candidates.
 - `ui-static-risk-and-gaps.csv`: review backlog before import to a test-management tool.
+- `report.html`: shareable, human-readable HTML summary for QE, owners, and management.
+
+## 8.1 Optional GitHub Pages publishing
+
+Review the report first. Do not publish source code, credentials, customer data, or unreviewed sensitive findings. Then run:
+
+```bash
+bash scripts/publish_to_pages.sh \
+  --report-dir /absolute/path/payment-analysis \
+  --name payment-analysis-2026-08
+```
+
+This copies the report, graph, CSV, and JSON into `docs/reports/payment-analysis-2026-08/` in the AI Hub. Commit and push, then enable **Settings → Pages → Source → GitHub Actions**. The included workflow publishes `docs/`; the report path is `/ai_learnings/reports/payment-analysis-2026-08/`.
 
 ## 9. Innovations and limitations
 

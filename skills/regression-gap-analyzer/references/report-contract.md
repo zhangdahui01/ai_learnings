@@ -2,6 +2,8 @@
 
 Use this heading order: **Scope and evidence**, **Graph summary**, **Traceability**, **Ranked gaps**, **Exclusions and confidence**, **Review decisions**.
 
+Render a companion `report.html` from the structured artifacts. It must show analysis mode, evidence-level disclaimer, counts, graph artifact link, static risk/gap table, endpoint table, and links to CSV/JSON. Keep the HTML self-contained with no external JavaScript, analytics, or source-code body text so it can be safely reviewed or hosted on GitHub Pages after approval.
+
 For every backlog row emit these fields:
 
 `gap_id, priority, classification, confidence, feature_scope, entry_point, uncovered_behavior, invariant_or_risk, affected_modules, downstream_boundary, proposed_test_level, proposed_scenario, evidence_refs, owner, review_status`

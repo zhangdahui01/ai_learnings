@@ -33,6 +33,8 @@ UI 自动化仓库 ─┘          │
 | `SKILL.md` | Codex 的执行契约：输入、边界、证据标准、产物和风险规则。 |
 | `scripts/preflight.py` | 只读盘点仓库、语言、构建标记、测试文件和工具是否已安装。 |
 | `scripts/static_index.py` | 零安装静态索引器；输出 code graph、知识库、UI 风险与 Gap CSV/JSON。 |
+| `scripts/render_html_report.py` | 从结构化扫描产物生成可读、可离线打开的 `report.html`。 |
+| `scripts/publish_to_pages.sh` | 将已审核报告复制到 AI Hub 的 GitHub Pages 目录。 |
 | `references/toolchain.md` | 多语言工具选择：jQAssistant、Joern、CodeQL、Tree-sitter、Graphviz。 |
 | `references/static-ui-analysis.md` | UI 源码风险与测试 Gap 的判定规则。 |
 | `references/report-contract.md` | QE/开发评审报告需要的字段和证据等级。 |
@@ -112,6 +114,8 @@ bash scripts/run_static_scan.sh \
 
 它会自动依次执行预检和静态索引。随后评审：
 
+扫描完成后直接打开 `report.html`，它提供摘要卡片、代码图链接、端点表和按优先级排列的风险/Gap 表；CSV 仍保留用于 Excel、Jira 或测试管理系统。
+
 先打开 `knowledge-base.md` 和 `ui-static-risk-and-gaps.csv`；再把输出目录交给 Codex，请它按证据逐条生成 `gap-report.md`。P0/P1 必须由 QE 和服务 owner 复核，尤其是“硬编码密钥”类发现：只报告文件/行号，绝不在报告中复制值。
 
 ## 8. 会产生什么
@@ -123,6 +127,19 @@ bash scripts/run_static_scan.sh \
 - `knowledge-base.md`：人类可读摘要。
 - `static-ui-analysis.json`：静态 UI 风险与端点映射候选。
 - `ui-static-risk-and-gaps.csv`：可导入 Jira/测试管理工具前的评审清单。
+- `report.html`：适合直接发给 QE、开发 owner 和管理者阅读的 HTML 报告。
+
+## 8.1 发布到 GitHub Pages（可选）
+
+先人工检查 `report.html` 中没有业务源码、token、客户信息或未复核的敏感结论，再运行：
+
+```bash
+bash scripts/publish_to_pages.sh \
+  --report-dir /absolute/path/payment-analysis \
+  --name payment-analysis-2026-08
+```
+
+这会复制报告及其图谱/CSV/JSON 到 AI Hub 的 `docs/reports/payment-analysis-2026-08/`。提交并推送后，在 GitHub 仓库的 **Settings → Pages → Source → GitHub Actions** 启用 Pages。工作流会发布 `docs/`；报告链接形式为 `/ai_learnings/reports/payment-analysis-2026-08/`。
 
 ## 9. 创新点与边界
 

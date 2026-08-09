@@ -1,12 +1,12 @@
-# Generated analysis artifacts
+# Generated analysis artifacts (keep published Pages artifacts only under docs/reports/)
 analysis-output/
 output/
 reports/
 graphs/
 *.dot
-*.svg
-*.png
 *.jsonl
+!docs/reports/
+!docs/reports/**
 
 # Local environment and editor state
 .DS_Store

@@ -66,6 +66,7 @@ Use `scripts/static_index.py` as the zero-install baseline for all languages. Fo
 - `graphs/overview.dot` and, if Graphviz exists, `overview.svg` and `overview.png`
 - `knowledge-base.md` and `knowledge-base.json`
 - `static-ui-analysis.json` and `ui-static-risk-and-gaps.csv` when an automation repository is provided
+- `report.html`: a self-contained, readable summary with evidence tables and graph links
 - `test-map.json`, `traceability.csv`, `gap-report.md`, and `gap-backlog.csv`
 
 Use evidence references in every claim: source path/line span, test ID, graph node/edge ID, and tool/query version. Classify certainty as `proven-runtime`, `static-candidate`, or `inferred`.
@@ -75,3 +76,7 @@ Use evidence references in every claim: source path/line span, test ID, graph no
 Rank by `business criticality × change likelihood × blast radius × observability deficit`, while separately showing confidence. Each gap must name the behavior/invariant, reason, evidence, affected code, suggested test level, scenario, and review owner. Do not create UI tests for private implementation details; recommend the lowest layer that validates the risk. Treat reflection, generated code, dynamic routing, configuration, remote services, feature flags, and unavailable test data as explicit exclusions.
 
 Read `references/report-contract.md` before writing the final report.
+
+## HTML report and GitHub Pages
+
+Run `scripts/render_html_report.py --out <out_dir>` after the static index; `scripts/run_static_scan.sh` does this automatically. Review `report.html` locally before sharing. To publish only reviewed, non-sensitive output to this repository's GitHub Pages source, run `scripts/publish_to_pages.sh --report-dir <out_dir> --name <safe-name>`, then commit the generated `docs/reports/<safe-name>/` directory. Do not publish source code, tokens, customer data, or unreviewed P0/P1 findings.

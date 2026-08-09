@@ -1,5 +1,5 @@
-# Claude Code entry point
+# AI Learnings Hub
 
 @AGENTS.md
 
-This repository is an Agent Skills-compatible analysis pack. Treat `SKILL.md` as the canonical detailed workflow. Ask before running any installer or analyzing a target repository.
+Read the relevant module instructions under `skills/`, `experiments/`, `notes/`, or `templates/` before acting. The regression analyzer's instructions are in `skills/regression-gap-analyzer/CLAUDE.md`.

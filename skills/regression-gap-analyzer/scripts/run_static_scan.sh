@@ -13,4 +13,5 @@ while [ "$#" -gt 0 ]; do case "$1" in --repo) repos+=("$2"); shift 2;; --automat
 args=(); for repo in "${repos[@]}"; do args+=(--repo "$repo"); done; [ -n "$automation" ] && args+=(--automation "$automation")
 python3 "$root_dir/scripts/preflight.py" "${args[@]}" --out "$out"
 python3 "$root_dir/scripts/static_index.py" "${args[@]}" --out "$out"
-echo "Done. Open: $out/knowledge-base.md"
+python3 "$root_dir/scripts/render_html_report.py" --out "$out"
+echo "Done. Open: $out/report.html"
