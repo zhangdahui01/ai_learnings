@@ -17,7 +17,7 @@ async function api(path, options = {}) {
 async function refresh(keepContent = false) { state = await api('/api/state'); updateShell(); if (!keepContent) render(); }
 function updateShell() { $('#planCount').textContent = state.plans.length; $('#caseCount').textContent = state.cases.length; $('#runCount').textContent = state.runs.length; const completed = state.runs.filter(x => ['passed', 'failed'].includes(x.status)); const pass = completed.filter(x => x.status === 'passed').length; $('#navHealth').textContent = completed.length ? `${Math.round(pass / completed.length * 100)}%` : '—'; $$('.nav-link').forEach(x => x.classList.toggle('active', x.dataset.view === view)); }
 function go(next, id) { view = next; if (next === 'plans') { selectedPlanId = id; selectedCaseId = undefined; } if (next === 'cases') { selectedCaseId = id; selectedPlanId = undefined; } updateShell(); render(); }
-function pageHeading(title, breadcrumb = '本地测试工作台') { $('#pageTitle').textContent = title; $('#breadcrumb').textContent = breadcrumb; }
+function pageHeading(title, breadcrumb = 'coupayWeb testing') { $('#pageTitle').textContent = title; $('#breadcrumb').textContent = breadcrumb; }
 function statusBadge(status) { const labels = { passed: '通过', failed: '失败', running: '执行中' }; return `<span class="status ${esc(status)}">${labels[status] || esc(status || '未知')}</span>`; }
 
 function render() {
