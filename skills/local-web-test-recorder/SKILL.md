@@ -22,26 +22,113 @@ Use this Skill to create and operate a local-first browser test recorder. Keep t
 
 如果用户没有显式写 Skill 名称，但请求涉及本地浏览器录制、回放、测试计划或 Playwright 用例管理，也使用本 Skill。
 
-### 安装并启动内置应用
+### 零基础环境清单
 
-要求 Node.js 20 或更高版本。先执行：
+先区分两个安装层次：Codex Skill 让 Codex 知道如何帮助用户；内置 Web 应用才是实际录制、保存和回放测试的服务器与界面。
+
+| 工具或软件 | 是否必需 | 用途与要求 |
+| --- | --- | --- |
+| Codex Desktop、CLI 或 IDE 扩展 | 使用 Skill 时必需 | 发现并调用 `$local-web-test-recorder`；单独运行 Web 应用时不需要 Codex 常驻。 |
+| Node.js | 必需 | 安装 Node.js 20 或更高版本；优先使用 [Node.js 官方安装包](https://nodejs.org/)。 |
+| npm、npx | 必需但无需单独安装 | 随 Node.js 一起安装；npm 安装依赖，npx 安装和运行 Playwright。 |
+| Playwright 浏览器 | 必需 | 使用命令下载 Chromium、Firefox 和 WebKit；不是操作系统里已有的普通浏览器。 |
+| Git | 可选 | 仅在从 GitHub 手工克隆 Skill 时需要；使用 `$skill-installer` 时不需要用户手工运行 Git。 |
+| Python 3 | 可选 | 仅运行 `scripts/validate_case.py` 时需要；录制器服务器不依赖 Python。 |
+| Google Chrome、Firefox、Safari | 可选 | 当前“Chrome”选项实际使用 Playwright Chromium；WebKit 用于 Safari 兼容性测试，但不等于真实 Apple Safari。 |
+
+准备至少约 2 GB 可用磁盘空间存放 Node 依赖、三个 Playwright 浏览器和运行产物。Linux 安装浏览器系统库可能需要 `sudo` 权限。本应用不需要 Java、Docker、数据库、Selenium Server 或浏览器扩展。
+
+### 第一步：安装 Codex Skill
+
+优先在 Codex 中输入：
+
+```text
+使用 $skill-installer 从 https://github.com/zhangdahui01/ai_learnings/tree/main/skills/local-web-test-recorder 安装这个 Skill。
+```
+
+也可以安装 Git 后手工复制。macOS/Linux：
+
+```bash
+git clone https://github.com/zhangdahui01/ai_learnings.git
+mkdir -p "$HOME/.agents/skills"
+cp -R ai_learnings/skills/local-web-test-recorder "$HOME/.agents/skills/"
+```
+
+Windows PowerShell：
+
+```powershell
+git clone https://github.com/zhangdahui01/ai_learnings.git
+New-Item -ItemType Directory -Force "$HOME\.agents\skills" | Out-Null
+Copy-Item -Recurse -Force "ai_learnings\skills\local-web-test-recorder" "$HOME\.agents\skills\"
+```
+
+Codex 通常会自动发现变更；Skill 没有出现时重启 Codex，然后输入 `$local-web-test-recorder` 验证。官方发现目录和调用方式见 [OpenAI Build skills](https://developers.openai.com/codex/skills)。
+
+### 第二步：检查 Node.js 环境
+
+在 Terminal、PowerShell 或 Codex 终端执行：
 
 ```bash
 node --version
 npm --version
+npx --version
 ```
 
-从 Skill 创建一个独立项目：
+`node --version` 必须为 `v20` 或更高。如果任何命令显示“找不到命令”，安装 Node.js 后关闭并重新打开终端。不要只安装 npm；npm 和 npx 应由同一套 Node.js 安装提供。
+
+### 第三步：创建并安装录制器应用
+
+先进入已安装 Skill 的目录。macOS/Linux：
 
 ```bash
-node scripts/create_mvp.js /absolute/path/to/web-test-recorder
-cd /absolute/path/to/web-test-recorder
-npm install
+cd "$HOME/.agents/skills/local-web-test-recorder"
+node scripts/create_mvp.js "$HOME/web-test-recorder"
+cd "$HOME/web-test-recorder"
+npm ci
 npx playwright install chromium firefox webkit
+```
+
+Windows PowerShell：
+
+```powershell
+Set-Location "$HOME\.agents\skills\local-web-test-recorder"
+node .\scripts\create_mvp.js "$HOME\web-test-recorder"
+Set-Location "$HOME\web-test-recorder"
+npm ci
+npx playwright install chromium firefox webkit
+```
+
+Linux 首次安装时用下面的命令同时安装浏览器及操作系统依赖：
+
+```bash
+npx playwright install --with-deps chromium firefox webkit
+```
+
+如果目标目录已经存在，`create_mvp.js` 会停止以避免覆盖文件；换一个空目录，或先确认并备份已有数据。`npm ci` 使用锁文件安装可复现版本；只有修改依赖时才使用 `npm install`。
+
+### 第四步：验证并启动
+
+```bash
+npm run test:e2e
 npm start
 ```
 
-打开 <http://localhost:4173>。详细的新手安装、配置、录制、断言、回放和排错说明见 [中文指南](references/guideline.zh-CN.md)。
+看到服务器地址后打开 <http://localhost:4173>。保持启动终端不关闭；用 `Ctrl+C` 停止服务器。若 4173 被占用，macOS/Linux 使用 `PORT=4174 npm start`，PowerShell 使用 `$env:PORT=4174; npm start`。
+
+### 环境变量与代理
+
+应用支持以下可选环境变量；相对路径容易混淆，优先使用绝对路径：
+
+| 环境变量 | 默认值 | 用途 |
+| --- | --- | --- |
+| `PORT` | `4173` | 本地服务器端口。 |
+| `DATA_DIR` | `<项目>/data` | `store.json` 的目录。 |
+| `RECORDINGS_DIR` | `<项目>/recordings` | Inspector 录制脚本目录。 |
+| `ARTIFACTS_DIR` | `<项目>/artifacts` | Trace、视频和失败截图目录。 |
+
+企业网络下载依赖失败时，只给当前终端临时设置 `HTTPS_PROXY`，例如 macOS/Linux 使用 `HTTPS_PROXY=http://proxy.example:8080 npm ci`，PowerShell 使用 `$env:HTTPS_PROXY='http://proxy.example:8080'` 后再运行安装命令。测试用例自己的浏览器代理应在页面“代理”字段配置，不要修改全局系统代理，也不要把代理密码提交到 Git。
+
+详细的配置、录制、断言、回放和排错说明见 [中文指南](references/guideline.zh-CN.md)。
 
 ### 基本使用流程
 
@@ -79,26 +166,109 @@ Use $local-web-test-recorder to add a new browser action to the recorder.
 
 Also trigger this Skill implicitly for local browser recording/replay, test-plan management, structured Playwright cases, or recorder troubleshooting.
 
-### Install and start the bundled application
+### Beginner environment checklist
 
-Require Node.js 20 or newer. Verify the environment:
+Treat installation as two layers: the Codex Skill teaches Codex the workflow; the bundled Web application is the server and UI that actually record, persist, and replay tests.
+
+| Tool or software | Required | Purpose |
+| --- | --- | --- |
+| Codex Desktop, CLI, or IDE extension | For Skill invocation | Discovers `$local-web-test-recorder`; the Web application can keep running without Codex. |
+| Node.js | Yes | Install Node.js 20 or newer from [nodejs.org](https://nodejs.org/). |
+| npm and npx | Yes, bundled | Installed with Node.js; do not install them separately. |
+| Playwright browsers | Yes | Download Chromium, Firefox, and WebKit with the commands below. |
+| Git | Optional | Needed only for manual cloning; `$skill-installer` can install from GitHub without manual Git commands. |
+| Python 3 | Optional | Needed only for `scripts/validate_case.py`, not for the recorder server. |
+| System Chrome, Firefox, or Safari | Optional | The current Chrome choice uses Playwright Chromium. WebKit approximates Safari compatibility but is not real Apple Safari. |
+
+Allow roughly 2 GB of free disk space for dependencies, browser binaries, and artifacts. Linux system dependencies may require `sudo`. Java, Docker, a database, Selenium Server, and browser extensions are not required.
+
+### Step 1: install the Codex Skill
+
+Preferred Codex prompt:
+
+```text
+Use $skill-installer to install https://github.com/zhangdahui01/ai_learnings/tree/main/skills/local-web-test-recorder.
+```
+
+For a manual macOS/Linux installation after installing Git:
+
+```bash
+git clone https://github.com/zhangdahui01/ai_learnings.git
+mkdir -p "$HOME/.agents/skills"
+cp -R ai_learnings/skills/local-web-test-recorder "$HOME/.agents/skills/"
+```
+
+For Windows PowerShell:
+
+```powershell
+git clone https://github.com/zhangdahui01/ai_learnings.git
+New-Item -ItemType Directory -Force "$HOME\.agents\skills" | Out-Null
+Copy-Item -Recurse -Force "ai_learnings\skills\local-web-test-recorder" "$HOME\.agents\skills\"
+```
+
+Codex normally detects changes automatically. Restart Codex if the Skill is not listed, then type `$local-web-test-recorder` to verify discovery. See the official [OpenAI Build skills documentation](https://developers.openai.com/codex/skills) for discovery locations and invocation.
+
+### Step 2: verify Node.js
 
 ```bash
 node --version
 npm --version
+npx --version
 ```
 
-Create an independent project from the bundled template:
+Node must report `v20` or newer. If a command is not found, install Node.js and reopen the terminal. npm and npx must come from the same Node.js installation.
+
+### Step 3: create and install the recorder application
+
+On macOS/Linux:
 
 ```bash
-node scripts/create_mvp.js /absolute/path/to/web-test-recorder
-cd /absolute/path/to/web-test-recorder
-npm install
+cd "$HOME/.agents/skills/local-web-test-recorder"
+node scripts/create_mvp.js "$HOME/web-test-recorder"
+cd "$HOME/web-test-recorder"
+npm ci
 npx playwright install chromium firefox webkit
+```
+
+On Windows PowerShell:
+
+```powershell
+Set-Location "$HOME\.agents\skills\local-web-test-recorder"
+node .\scripts\create_mvp.js "$HOME\web-test-recorder"
+Set-Location "$HOME\web-test-recorder"
+npm ci
+npx playwright install chromium firefox webkit
+```
+
+On Linux, install browser binaries and operating-system dependencies together:
+
+```bash
+npx playwright install --with-deps chromium firefox webkit
+```
+
+`create_mvp.js` refuses to overwrite an existing target; use an empty directory or back up existing data first. Use `npm ci` for the locked reproducible install and `npm install` only when intentionally changing dependencies.
+
+### Step 4: validate and start
+
+```bash
+npm run test:e2e
 npm start
 ```
 
-Open <http://localhost:4173>. Read the [English guide](references/guideline.en.md) for beginner installation, configuration, recording, assertion, replay, and troubleshooting instructions.
+Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to stop. If port 4173 is busy, use `PORT=4174 npm start` on macOS/Linux or `$env:PORT=4174; npm start` in PowerShell.
+
+### Environment variables and proxies
+
+| Variable | Default | Purpose |
+| --- | --- | --- |
+| `PORT` | `4173` | Local server port. |
+| `DATA_DIR` | `<project>/data` | Directory containing `store.json`. |
+| `RECORDINGS_DIR` | `<project>/recordings` | Inspector-generated scripts. |
+| `ARTIFACTS_DIR` | `<project>/artifacts` | Traces, videos, and failure screenshots. |
+
+On a corporate network, temporarily set `HTTPS_PROXY` only in the installation shell if package or browser downloads fail. For example, use `HTTPS_PROXY=http://proxy.example:8080 npm ci` on macOS/Linux or `$env:HTTPS_PROXY='http://proxy.example:8080'` in PowerShell. Configure the test browser proxy in the application's Proxy field; do not alter the global OS proxy or commit proxy credentials.
+
+Read the [English guide](references/guideline.en.md) for configuration, recording, assertions, replay, and troubleshooting.
 
 ### Basic workflow
 
