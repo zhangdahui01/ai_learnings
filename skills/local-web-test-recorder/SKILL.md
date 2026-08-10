@@ -1,72 +1,69 @@
 ---
 name: local-web-test-recorder
-description: Install, configure, use, troubleshoot, build, or extend a self-hosted local web-test recording and replay product. Use when Codex needs to help beginners set up Node.js and Playwright, manage test plans/cases, record browser interactions, add assertions/waits/retries, replay tests, diagnose artifacts, configure browser/locale/proxy/test data, or integrate Playwright, Selenium/WebDriver, or Selenium IDE components.
+description: Install, configure, use, troubleshoot, build, or extend a self-hosted local web-test recording and replay product across Codex, Claude Code, and Devin. Use when an AI coding agent needs to set up Node.js and Playwright, manage test plans/cases, record browser interactions, add assertions/waits/retries, replay tests, diagnose artifacts, configure browser/locale/proxy/test data, or integrate Playwright, Selenium/WebDriver, or Selenium IDE components.
 ---
 
 # Local Web Test Recorder
 
-Use this Skill to create and operate a local-first browser test recorder. Keep test plans, cases, data, recordings, and run artifacts on the user's machine. Use Playwright for Chromium/Chrome, Firefox, and WebKit. Treat real Apple Safari as a separate Selenium/SafariDriver adapter.
+Use this Agent Skill in Codex, Claude Code, or Devin to create and operate a local-first browser test recorder. Keep test plans, cases, data, recordings, and run artifacts in the machine or cloud session that runs the application. Use Playwright for Chromium/Chrome, Firefox, and WebKit. Treat real Apple Safari as a separate Selenium/SafariDriver adapter.
 
 ## 中文快速开始
 
 ### 用户如何调用这个 Skill
 
-在 Codex 中直接输入以下任一请求：
+根据平台显式调用，然后描述任务：
 
 ```text
-使用 $local-web-test-recorder 帮我安装并启动本地 Web 录制器。
-使用 $local-web-test-recorder 帮我录制登录测试并添加断言。
-使用 $local-web-test-recorder 分析这次回放失败的 Trace。
-使用 $local-web-test-recorder 给录制器增加新的操作类型。
+Codex: 使用 $local-web-test-recorder 帮我安装并启动本地 Web 录制器。
+Claude Code: /local-web-test-recorder 帮我录制登录测试并添加断言。
+Devin: @skills:local-web-test-recorder 分析这次回放失败的 Trace。
 ```
 
-如果用户没有显式写 Skill 名称，但请求涉及本地浏览器录制、回放、测试计划或 Playwright 用例管理，也使用本 Skill。
+三个平台都可以根据 `description` 自动匹配。显式调用最稳定，尤其是 Devin 同一时间只能激活一个 Skill。详细差异见 [平台兼容说明](references/platform-compatibility.md)。
 
 ### 零基础环境清单
 
-先区分两个安装层次：Codex Skill 让 Codex 知道如何帮助用户；内置 Web 应用才是实际录制、保存和回放测试的服务器与界面。
+先区分两个安装层次：Agent Skill 让所选 AI 编程 Agent 知道如何帮助用户；内置 Web 应用才是实际录制、保存和回放测试的服务器与界面。
 
 | 工具或软件 | 是否必需 | 用途与要求 |
 | --- | --- | --- |
-| Codex Desktop、CLI 或 IDE 扩展 | 使用 Skill 时必需 | 发现并调用 `$local-web-test-recorder`；单独运行 Web 应用时不需要 Codex 常驻。 |
+| Codex、Claude Code 或 Devin | 使用 Skill 时三选一 | 发现并调用 Skill；单独运行 Web 应用时不需要 AI Agent 常驻。 |
 | Node.js | 必需 | 安装 Node.js 20 或更高版本；优先使用 [Node.js 官方安装包](https://nodejs.org/)。 |
 | npm、npx | 必需但无需单独安装 | 随 Node.js 一起安装；npm 安装依赖，npx 安装和运行 Playwright。 |
 | Playwright 浏览器 | 必需 | 使用命令下载 Chromium、Firefox 和 WebKit；不是操作系统里已有的普通浏览器。 |
-| Git | 可选 | 仅在从 GitHub 手工克隆 Skill 时需要；使用 `$skill-installer` 时不需要用户手工运行 Git。 |
+| Git | 按安装方式 | Claude Code/Devin 仓库安装和手工克隆时需要；Codex 使用 `$skill-installer` 时无需用户手工运行 Git。 |
 | Python 3 | 可选 | 仅运行 `scripts/validate_case.py` 时需要；录制器服务器不依赖 Python。 |
 | Google Chrome、Firefox、Safari | 可选 | 当前“Chrome”选项实际使用 Playwright Chromium；WebKit 用于 Safari 兼容性测试，但不等于真实 Apple Safari。 |
 
 准备至少约 2 GB 可用磁盘空间存放 Node 依赖、三个 Playwright 浏览器和运行产物。Linux 安装浏览器系统库可能需要 `sudo` 权限。本应用不需要 Java、Docker、数据库、Selenium Server 或浏览器扩展。
 
-### 第一步：安装 Codex Skill
+### 第一步：为目标 Agent 安装 Skill
 
-优先在 Codex 中输入：
-
-```text
-使用 $skill-installer 从 https://github.com/zhangdahui01/ai_learnings/tree/main/skills/local-web-test-recorder 安装这个 Skill。
-```
-
-也可以安装 Git 后手工复制。macOS/Linux：
+克隆仓库并进入 Skill 目录：
 
 ```bash
 git clone https://github.com/zhangdahui01/ai_learnings.git
-mkdir -p "$HOME/.agents/skills"
-cp -R ai_learnings/skills/local-web-test-recorder "$HOME/.agents/skills/"
+cd ai_learnings/skills/local-web-test-recorder
 ```
 
-Windows PowerShell：
+按使用平台选择一条命令：
 
-```powershell
-git clone https://github.com/zhangdahui01/ai_learnings.git
-New-Item -ItemType Directory -Force "$HOME\.agents\skills" | Out-Null
-Copy-Item -Recurse -Force "ai_learnings\skills\local-web-test-recorder" "$HOME\.agents\skills\"
+```bash
+# Codex 个人 Skill：$HOME/.agents/skills
+node scripts/install_agent_skill.js codex --scope user
+
+# Claude Code 个人 Skill：$HOME/.claude/skills
+node scripts/install_agent_skill.js claude --scope user
+
+# Devin：安装到目标仓库并提交 .agents/skills 目录
+node scripts/install_agent_skill.js devin --scope project --project /absolute/path/to/target-repo
 ```
 
-Codex 通常会自动发现变更；Skill 没有出现时重启 Codex，然后输入 `$local-web-test-recorder` 验证。官方发现目录和调用方式见 [OpenAI Build skills](https://developers.openai.com/codex/skills)。
+Codex 也可以用 `$skill-installer` 直接从 GitHub 安装。项目级 Codex/Claude Code 安装、Windows 路径、`--dry-run` 和安全更新方式见 [平台兼容说明](references/platform-compatibility.md)。Skill 没有出现时重启或要求 Agent 重新加载 Skills；Devin 安装后必须提交并推送目标仓库中的 `.agents/skills`。
 
 ### 第二步：检查 Node.js 环境
 
-在 Terminal、PowerShell 或 Codex 终端执行：
+在 Terminal、PowerShell 或 Agent 终端执行：
 
 ```bash
 node --version
@@ -78,10 +75,10 @@ npx --version
 
 ### 第三步：创建并安装录制器应用
 
-先进入已安装 Skill 的目录。macOS/Linux：
+先进入安装后的 Skill 目录。Codex 通常在 `$HOME/.agents/skills`，Claude Code 通常在 `$HOME/.claude/skills`，Devin 位于目标仓库 `.agents/skills`。macOS/Linux：
 
 ```bash
-cd "$HOME/.agents/skills/local-web-test-recorder"
+cd /absolute/path/to/installed/local-web-test-recorder
 node scripts/create_mvp.js "$HOME/web-test-recorder"
 cd "$HOME/web-test-recorder"
 npm ci
@@ -91,7 +88,7 @@ npx playwright install chromium firefox webkit
 Windows PowerShell：
 
 ```powershell
-Set-Location "$HOME\.agents\skills\local-web-test-recorder"
+Set-Location "C:\absolute\path\to\installed\local-web-test-recorder"
 node .\scripts\create_mvp.js "$HOME\web-test-recorder"
 Set-Location "$HOME\web-test-recorder"
 npm ci
@@ -155,58 +152,55 @@ npm start
 
 ### How to invoke this Skill
 
-Use prompts such as:
+Use the host-specific invocation followed by the task:
 
 ```text
-Use $local-web-test-recorder to install and start the local recorder.
-Use $local-web-test-recorder to record a login test and add assertions.
-Use $local-web-test-recorder to diagnose this failed replay trace.
-Use $local-web-test-recorder to add a new browser action to the recorder.
+Codex: Use $local-web-test-recorder to install and start the local recorder.
+Claude Code: /local-web-test-recorder record a login test and add assertions.
+Devin: @skills:local-web-test-recorder diagnose this failed replay trace.
 ```
 
-Also trigger this Skill implicitly for local browser recording/replay, test-plan management, structured Playwright cases, or recorder troubleshooting.
+All three hosts can match the description automatically. Explicit invocation is most predictable, especially because Devin currently activates one Skill at a time. Read [platform compatibility](references/platform-compatibility.md) for details.
 
 ### Beginner environment checklist
 
-Treat installation as two layers: the Codex Skill teaches Codex the workflow; the bundled Web application is the server and UI that actually record, persist, and replay tests.
+Treat installation as two layers: the Agent Skill teaches the selected coding agent the workflow; the bundled Web application is the server and UI that actually record, persist, and replay tests.
 
 | Tool or software | Required | Purpose |
 | --- | --- | --- |
-| Codex Desktop, CLI, or IDE extension | For Skill invocation | Discovers `$local-web-test-recorder`; the Web application can keep running without Codex. |
+| Codex, Claude Code, or Devin | Choose one for Skill invocation | Discovers the Skill; the Web application can keep running without an AI agent. |
 | Node.js | Yes | Install Node.js 20 or newer from [nodejs.org](https://nodejs.org/). |
 | npm and npx | Yes, bundled | Installed with Node.js; do not install them separately. |
 | Playwright browsers | Yes | Download Chromium, Firefox, and WebKit with the commands below. |
-| Git | Optional | Needed only for manual cloning; `$skill-installer` can install from GitHub without manual Git commands. |
+| Git | Depends on installation | Needed for Claude Code/Devin repository installation and manual cloning; Codex `$skill-installer` does not require manual Git commands. |
 | Python 3 | Optional | Needed only for `scripts/validate_case.py`, not for the recorder server. |
 | System Chrome, Firefox, or Safari | Optional | The current Chrome choice uses Playwright Chromium. WebKit approximates Safari compatibility but is not real Apple Safari. |
 
 Allow roughly 2 GB of free disk space for dependencies, browser binaries, and artifacts. Linux system dependencies may require `sudo`. Java, Docker, a database, Selenium Server, and browser extensions are not required.
 
-### Step 1: install the Codex Skill
+### Step 1: install the Skill for the target agent
 
-Preferred Codex prompt:
-
-```text
-Use $skill-installer to install https://github.com/zhangdahui01/ai_learnings/tree/main/skills/local-web-test-recorder.
-```
-
-For a manual macOS/Linux installation after installing Git:
+Clone the repository and enter the canonical Skill directory:
 
 ```bash
 git clone https://github.com/zhangdahui01/ai_learnings.git
-mkdir -p "$HOME/.agents/skills"
-cp -R ai_learnings/skills/local-web-test-recorder "$HOME/.agents/skills/"
+cd ai_learnings/skills/local-web-test-recorder
 ```
 
-For Windows PowerShell:
+Choose one host command:
 
-```powershell
-git clone https://github.com/zhangdahui01/ai_learnings.git
-New-Item -ItemType Directory -Force "$HOME\.agents\skills" | Out-Null
-Copy-Item -Recurse -Force "ai_learnings\skills\local-web-test-recorder" "$HOME\.agents\skills\"
+```bash
+# Personal Codex Skill: $HOME/.agents/skills
+node scripts/install_agent_skill.js codex --scope user
+
+# Personal Claude Code Skill: $HOME/.claude/skills
+node scripts/install_agent_skill.js claude --scope user
+
+# Devin: install into a target repository and commit .agents/skills
+node scripts/install_agent_skill.js devin --scope project --project /absolute/path/to/target-repo
 ```
 
-Codex normally detects changes automatically. Restart Codex if the Skill is not listed, then type `$local-web-test-recorder` to verify discovery. See the official [OpenAI Build skills documentation](https://developers.openai.com/codex/skills) for discovery locations and invocation.
+Codex can alternatively use `$skill-installer` with the GitHub URL. Read [platform compatibility](references/platform-compatibility.md) for project-scoped Codex/Claude installations, Windows paths, `--dry-run`, and safe updates. Restart or reload Skills if discovery is stale. For Devin, commit and push the installed `.agents/skills` directory.
 
 ### Step 2: verify Node.js
 
@@ -220,10 +214,10 @@ Node must report `v20` or newer. If a command is not found, install Node.js and 
 
 ### Step 3: create and install the recorder application
 
-On macOS/Linux:
+Enter the installed Skill directory first. Codex normally uses `$HOME/.agents/skills`, Claude Code uses `$HOME/.claude/skills`, and Devin uses the target repository's `.agents/skills`. On macOS/Linux:
 
 ```bash
-cd "$HOME/.agents/skills/local-web-test-recorder"
+cd /absolute/path/to/installed/local-web-test-recorder
 node scripts/create_mvp.js "$HOME/web-test-recorder"
 cd "$HOME/web-test-recorder"
 npm ci
@@ -233,7 +227,7 @@ npx playwright install chromium firefox webkit
 On Windows PowerShell:
 
 ```powershell
-Set-Location "$HOME\.agents\skills\local-web-test-recorder"
+Set-Location "C:\absolute\path\to\installed\local-web-test-recorder"
 node .\scripts\create_mvp.js "$HOME\web-test-recorder"
 Set-Location "$HOME\web-test-recorder"
 npm ci
@@ -291,18 +285,19 @@ All application data stays under the generated project directory by default and 
 
 Deleting a plan or case does not automatically delete historical recordings or run artifacts. Stop the server before backup or cleanup. Read “Data storage, backup, and deletion” in the English guide.
 
-## Implementation workflow for Codex
+## Implementation workflow for coding agents
 
-1. Read [the open-source landscape](references/open-source-landscape.md) before changing framework boundaries or copying third-party code.
-2. Read [the execution contract](references/execution-contract.md) before adding actions, assertions, locators, browsers, proxies, or persistence fields.
-3. Modify the generated application during normal product work. Modify `assets/web-test-recorder/` only when intentionally releasing a reusable template update.
-4. Preserve structured steps as the editable source of truth. Treat generated Playwright code as import/export material.
-5. Preserve case versions. Reject stale browser saves with HTTP 409 so an old page cannot overwrite a newer import.
-6. Preserve recording and replay locale. For role locators with localized names, retain the exact locator and a role-only fallback.
-7. Resolve `${data.key}` at execution time and redact secrets, proxy passwords, traces, screenshots, and logs.
-8. Never attach automation to the user's normal Chrome profile. Use an isolated or dedicated test profile.
-9. Do not bypass CAPTCHA, anti-bot, access-control, DRM, or third-party site protections.
-10. Treat `data/`, `recordings/`, and `artifacts/` as sensitive local data. Keep them excluded from Git and explain retention before delivery.
+1. Detect whether the host is Codex, Claude Code, or Devin and follow [platform compatibility](references/platform-compatibility.md); do not assume local paths or invocation syntax.
+2. Read [the open-source landscape](references/open-source-landscape.md) before changing framework boundaries or copying third-party code.
+3. Read [the execution contract](references/execution-contract.md) before adding actions, assertions, locators, browsers, proxies, or persistence fields.
+4. Modify the generated application during normal product work. Modify `assets/web-test-recorder/` only when intentionally releasing a reusable template update.
+5. Preserve structured steps as the editable source of truth. Treat generated Playwright code as import/export material.
+6. Preserve case versions. Reject stale browser saves with HTTP 409 so an old page cannot overwrite a newer import.
+7. Preserve recording and replay locale. For role locators with localized names, retain the exact locator and a role-only fallback.
+8. Resolve `${data.key}` at execution time and redact secrets, proxy passwords, traces, screenshots, and logs.
+9. Never attach automation to the user's normal Chrome profile. Use an isolated or dedicated test profile.
+10. Do not bypass CAPTCHA, anti-bot, access-control, DRM, or third-party site protections.
+11. Treat `data/`, `recordings/`, and `artifacts/` as sensitive data on the executing machine or cloud session. Keep them excluded from Git and explain retention before delivery.
 
 ## Browser and capability contract
 
@@ -338,7 +333,9 @@ Require tests for plan/case CRUD, codegen import, locator preservation, stale-ve
 
 - `assets/web-test-recorder/`: runnable Playwright/Express application template.
 - `scripts/create_mvp.js`: copy the bundled template into a new empty directory.
+- `scripts/install_agent_skill.js`: install the canonical Skill for Codex, Claude Code, or a Devin repository.
 - `scripts/validate_case.py`: validate structured test-case JSON.
+- [Platform compatibility](references/platform-compatibility.md): discovery paths, invocation syntax, installer commands, and local/cloud runtime boundaries.
 - [中文指南](references/guideline.zh-CN.md): beginner installation, configuration, usage, and troubleshooting.
 - [English guide](references/guideline.en.md): beginner installation, configuration, usage, and troubleshooting.
 - [Open-source landscape](references/open-source-landscape.md): repository and license decisions.

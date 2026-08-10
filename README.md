@@ -19,7 +19,7 @@ ai_learnings/
 ## Current modules
 
 - `skills/regression-gap-analyzer` analyzes local source and UI-automation repositories, producing code graphs, a knowledge base, CSV backlog, and an accessible HTML report. Read that module's `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for installation and use.
-- `skills/local-web-test-recorder` provides a self-hosted Playwright recorder and replay application with test-plan management, assertions, waits, retries, proxy/browser configuration, artifacts, and bilingual beginner documentation. Start with its `references/guideline.zh-CN.md` or `references/guideline.en.md`.
+- `skills/local-web-test-recorder` provides a Codex, Claude Code, and Devin-compatible Agent Skill plus a self-hosted Playwright recorder and replay application with test-plan management, assertions, waits, retries, proxy/browser configuration, artifacts, and bilingual beginner documentation. Start with its `SKILL.md`, `references/guideline.zh-CN.md`, or `references/guideline.en.md`.
 
 ## Add a new AI module
 
