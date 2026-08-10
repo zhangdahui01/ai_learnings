@@ -14,10 +14,13 @@ const dataDir = resolve(process.env.DATA_DIR || join(root, 'data'));
 const recordingsDir = resolve(process.env.RECORDINGS_DIR || join(root, 'recordings'));
 const artifactsDir = resolve(process.env.ARTIFACTS_DIR || join(root, 'artifacts'));
 const suitesDir = resolve(process.env.TEST_SUITES_DIR || join(root, 'test-suites'));
+const profilesDir = resolve(process.env.PROFILES_DIR || join(dataDir, 'profiles'));
+const authDir = resolve(process.env.AUTH_STATE_DIR || join(dataDir, 'auth'));
 const storePath = join(dataDir, 'store.json');
 const browserEngines = { chromium, chrome: chromium, firefox, webkit };
+const recordingSessions = new Map();
 
-await Promise.all([dataDir, recordingsDir, artifactsDir, suitesDir].map(dir => mkdir(dir, { recursive: true })));
+await Promise.all([dataDir, recordingsDir, artifactsDir, suitesDir, profilesDir, authDir].map(dir => mkdir(dir, { recursive: true })));
 if (!existsSync(storePath)) await writeFile(storePath, JSON.stringify({ schemaVersion: 2, plans: [], cases: [], runs: [] }, null, 2));
 
 app.use(express.json({ limit: '10mb' }));
@@ -31,10 +34,12 @@ function safeSegment(value, fallback = 'untitled') {
 }
 function safeFile(value, fallback = 'test-case') { return safeSegment(value, fallback).replace(/\s+/g, '-').replace(/[^\p{L}\p{N}._-]/gu, '-').slice(0, 80) || fallback; }
 function httpError(status, message, code = 'REQUEST_FAILED', details) { const error = new Error(message); error.status = status; error.code = code; error.details = details; return error; }
+function defaultCompliance() { return { enabled: false, environmentName: '', approvedHosts: '', approvedAccountRefs: '', allowlistStatus: 'not-configured', allowlistNotes: '', humanVerification: true, policyConfirmed: false }; }
+function compliancePaths(testCase) { return { profileDir: join(profilesDir, safeFile(testCase.id)), storagePath: join(authDir, `${safeFile(testCase.id)}.json`) }; }
 async function store() {
   const db = JSON.parse(await readFile(storePath, 'utf8'));
   db.schemaVersion ||= 2; db.plans ||= []; db.cases ||= []; db.runs ||= [];
-  db.cases.forEach(item => { item.steps ||= []; item.editorMode ||= 'visual'; item.codeLanguage ||= 'javascript'; item.sources ||= {}; });
+  db.cases.forEach(item => { item.steps ||= []; item.editorMode ||= 'visual'; item.codeLanguage ||= 'javascript'; item.sources ||= {}; item.compliance = { ...defaultCompliance(), ...(item.compliance || {}) }; });
   const normalizeRun = run => {
     if (run.status !== 'failed' || run.diagnostic) return;
     const failedIndex = Math.max(0, (run.steps || []).findIndex(step => step.status === 'failed')); const failed = run.steps?.[failedIndex]; const raw = failed?.error || run.error || '未知错误';
@@ -49,6 +54,7 @@ function caseSummary(testCase) { return { ...testCase, steps: testCase.steps || 
 
 const defaultCase = (name = '新测试用例') => ({
   id: randomUUID(), name, version: 1, editorMode: 'visual', codeLanguage: 'javascript', accountRef: '', tags: [], data: {}, sources: {},
+  compliance: defaultCompliance(),
   defaults: { browser: 'chromium', baseUrl: '', locale: 'zh-CN', proxy: { mode: 'direct', server: '', username: '', password: '', bypass: '' }, timeoutMs: 10000 },
   steps: [], createdAt: now(), updatedAt: now()
 });
@@ -163,13 +169,22 @@ function redact(text, secrets) { let value = String(text || ''); for (const secr
 function stepTitle(step, index) { const label = step.action || step.assertion || '未知操作'; const p = step.locator?.primary; const target = p ? `${p.strategy}=${p.value}${p.name ? ` (${p.name})` : ''}` : (step.url || step.value || '当前页面'); return `步骤 ${index + 1} · ${label} · ${target}`; }
 function diagnose(raw, step, index, url) {
   const text = String(raw || '未知错误'); let category = '执行失败'; let cause = '页面状态或元素与录制时不一致。'; let suggestion = '先打开失败截图确认页面状态，再检查该步骤的定位和值。';
-  if (/ERR_ABORTED/i.test(text)) { category = '页面导航被中断'; cause = '目标页面取消了导航，常见于登录跳转、站点安全策略或连续 goto 互相打断。'; suggestion = '删除重复导航步骤；登录跳转后改用 waitForURL；确认代理、Cookie 和站点权限。'; }
+  if (/Access Denied|\b403\b|CAPTCHA|unusual traffic|异常流量|sorry\/index|拒绝自动化/i.test(text)) { category = '目标网站拒绝自动化'; cause = '目标网站的风控、CDN 或 CAPTCHA 拒绝了当前自动化会话或网络出口。'; suggestion = '不要绕过安全控制。使用已授权测试环境、白名单 IP/账号，或在合规录制模式中手工完成验证后继续。'; }
+  else if (/ERR_ABORTED/i.test(text)) { category = '页面导航被中断'; cause = '目标页面取消了导航，常见于登录跳转、站点安全策略或连续 goto 互相打断。'; suggestion = '删除重复导航步骤；登录跳转后改用 waitForURL；确认代理、Cookie 和站点权限。'; }
   else if (/Timeout/i.test(text)) { category = '等待元素超时'; cause = '在超时时间内没有找到可操作的目标元素，或元素尚不可见。'; suggestion = '核对失败截图中的页面语言和登录状态；优先使用 role+名称、label 或 testId，并在前一步增加 waitForVisible。'; }
-  else if (/Access Denied|403/i.test(text)) { category = '站点拒绝访问'; cause = '站点风控/CDN 拒绝了自动化浏览器或当前网络出口。'; suggestion = '使用合法测试环境或已授权账号；检查代理与地区，不要尝试绕过站点安全策略。'; }
   else if (/net::ERR_(NAME_NOT_RESOLVED|CONNECTION_REFUSED|PROXY_CONNECTION_FAILED)/i.test(text)) { category = '网络或代理连接失败'; cause = '浏览器无法解析域名、连接服务器或连接代理。'; suggestion = '检查 URL、网络和代理地址；先关闭代理重试，再确认代理用户名和密码。'; }
   else if (/strict mode violation/i.test(text)) { category = '元素定位不唯一'; cause = '该定位匹配了多个元素，Playwright 无法确定要操作哪一个。'; suggestion = '增加 role 名称、label 或 testId，让定位只匹配一个元素。'; }
   else if (/断言失败/i.test(text)) { category = '断言未满足'; cause = '页面实际结果与期望值不同。'; suggestion = '对照实际值和失败截图，确认期望值、测试数据以及异步加载是否完成。'; }
   return { title: `${stepTitle(step, index)} 失败`, category, cause, suggestion, pageUrl: url, stepIndex: index, operation: step.action || step.assertion, locator: step.locator?.primary || null, technical: text };
+}
+
+async function detectSiteBlock(page) {
+  const text = await page.locator('body').innerText({ timeout: 1000 }).catch(() => '');
+  if (/Access Denied|CAPTCHA|unusual traffic|异常流量|检测到.*自动|拒绝.*访问|sorry\/index/i.test(`${page.url()} ${text.slice(0, 6000)}`)) return true;
+  return false;
+}
+function blockedDiagnostic(step, index, url, technical) {
+  return { title: `${stepTitle(step, index)} 失败`, category: '目标网站拒绝自动化', cause: '页面已进入 Access Denied、CAPTCHA 或异常流量拦截页；这不是普通元素定位失败。', suggestion: '停止自动重试。确认系统已授权测试，配置企业白名单，或在合规录制模式中由用户手工完成验证。应用不会破解验证码或伪造浏览器指纹。', pageUrl: url, stepIndex: index, operation: step.action || step.assertion, locator: step.locator?.primary || null, technical };
 }
 
 async function executeStep(page, step, data) {
@@ -179,16 +194,17 @@ async function executeStep(page, step, data) {
 }
 
 async function executeVisualCase(db, testCase, input = {}) {
-  const runId = randomUUID(); const runDir = join(artifactsDir, runId); await mkdir(runDir, { recursive: true }); const settings = { ...testCase.defaults, ...input }; const engine = browserEngines[settings.browser];
+  const runId = randomUUID(); const runDir = join(artifactsDir, runId); await mkdir(runDir, { recursive: true }); const settings = { ...testCase.defaults, ...input }; const complianceEnabled = Boolean(testCase.compliance?.enabled); const engine = complianceEnabled ? chromium : browserEngines[settings.browser];
   if (!engine) throw httpError(400, '真实 Safari 需要 Selenium SafariDriver；当前支持 Chromium、Firefox 和 WebKit。', 'UNSUPPORTED_BROWSER');
   const proxy = settings.proxy?.mode === 'proxy' && settings.proxy.server ? { server: settings.proxy.server, username: settings.proxy.username || undefined, password: settings.proxy.password || undefined, bypass: settings.proxy.bypass || undefined } : undefined;
   const started = Date.now(); const result = { id: runId, scope: 'case', caseId: testCase.id, caseName: testCase.name, planId: input.planId || null, startedAt: now(), status: 'running', steps: [], artifactPath: `/artifacts/${runId}` };
   let browser; let context; let page;
   try {
-    browser = await engine.launch({ headless: input.headless !== false, proxy }); context = await browser.newContext({ locale: settings.locale || 'zh-CN', recordVideo: { dir: runDir } }); await context.tracing.start({ screenshots: true, snapshots: true }); page = await context.newPage();
+    const auth = compliancePaths(testCase); const launchOptions = { headless: input.headless !== false, proxy, ...(complianceEnabled ? { channel: 'chrome' } : {}) }; const contextOptions = { locale: settings.locale || 'zh-CN', recordVideo: { dir: runDir }, ...(complianceEnabled && existsSync(auth.storagePath) ? { storageState: auth.storagePath } : {}) };
+    browser = await engine.launch(launchOptions); context = await browser.newContext(contextOptions); await context.tracing.start({ screenshots: true, snapshots: true }); page = await context.newPage();
     for (let index = 0; index < testCase.steps.length; index += 1) {
       const step = testCase.steps[index]; const record = { id: step.id, index, title: stepTitle(step, index), operation: step.action || step.assertion, locator: step.locator?.primary || null, status: 'passed', attempts: 0, startedAt: now() }; const attempts = Math.max(0, Number(step.retryCount || 0)) + 1;
-      for (let attempt = 1; attempt <= attempts; attempt += 1) { record.attempts = attempt; try { await executeStep(page, step, { ...testCase.data, ...(input.data || {}) }); break; } catch (error) { record.error = redact(error.message, [settings.proxy?.password]); if (attempt < attempts) continue; const shot = 'failure.png'; await page.screenshot({ path: join(runDir, shot), fullPage: true }).catch(() => {}); record.diagnostic = diagnose(record.error, step, index, page.url()); record.artifacts = { screenshot: `${result.artifactPath}/${shot}`, trace: `${result.artifactPath}/trace.zip` }; if (step.continueOnError) { record.status = 'warning'; break; } record.status = 'failed'; result.status = 'failed'; result.error = record.error; result.diagnostic = record.diagnostic; result.failedStepIndex = index; result.steps.push(record); throw error; } }
+      for (let attempt = 1; attempt <= attempts; attempt += 1) { record.attempts = attempt; try { await executeStep(page, step, { ...testCase.data, ...(input.data || {}) }); break; } catch (error) { record.error = redact(error.message, [settings.proxy?.password]); const siteBlocked = await detectSiteBlock(page); if (attempt < attempts && !siteBlocked) continue; const shot = 'failure.png'; await page.screenshot({ path: join(runDir, shot), fullPage: true }).catch(() => {}); record.diagnostic = siteBlocked ? blockedDiagnostic(step, index, page.url(), record.error) : diagnose(record.error, step, index, page.url()); record.artifacts = { screenshot: `${result.artifactPath}/${shot}`, trace: `${result.artifactPath}/trace.zip` }; if (step.continueOnError) { record.status = 'warning'; break; } record.status = 'failed'; result.status = 'failed'; result.error = record.error; result.diagnostic = record.diagnostic; result.failedStepIndex = index; result.steps.push(record); throw error; } }
       record.finishedAt = now(); result.steps.push(record);
     }
     result.status = 'passed';
@@ -215,10 +231,10 @@ async function findArtifacts(dir, prefix = '') {
 async function executeCodeCase(db, testCase, input = {}) {
   await persistSources(db, testCase); const runId = randomUUID(); const runDir = join(artifactsDir, runId); await mkdir(runDir, { recursive: true });
   const sourceEntry = testCase.sourceFiles?.[0]; if (!sourceEntry?.javascript) throw httpError(400, '尚未生成 JavaScript 测试文件，请先保存代码。', 'SOURCE_NOT_SAVED');
-  const sourcePath = resolve(root, sourceEntry.javascript); const browserName = input.browser || testCase.defaults.browser || 'chromium'; if (!['chromium', 'firefox', 'webkit'].includes(browserName)) throw httpError(400, '代码回放支持 Chromium、Firefox 和 WebKit。', 'UNSUPPORTED_BROWSER');
+  const complianceEnabled = Boolean(testCase.compliance?.enabled); const sourcePath = resolve(root, sourceEntry.javascript); const browserName = complianceEnabled ? 'chromium' : (input.browser || testCase.defaults.browser || 'chromium'); if (!['chromium', 'firefox', 'webkit'].includes(browserName)) throw httpError(400, '代码回放支持 Chromium、Firefox 和 WebKit。', 'UNSUPPORTED_BROWSER');
   const proxy = input.proxy?.mode === 'proxy' && input.proxy.server ? { server: input.proxy.server, username: input.proxy.username || undefined, password: input.proxy.password || undefined, bypass: input.proxy.bypass || undefined } : undefined;
   const playwrightTestUrl = pathToFileURL(join(root, 'node_modules', 'playwright', 'test.mjs')).href; const runnablePath = join(runDir, 'runnable.spec.mjs'); const runnableSource = testCase.sources.javascript.replace(/(['"])playwright\/test\1/g, JSON.stringify(playwrightTestUrl)).replace(/(['"])@playwright\/test\1/g, JSON.stringify(playwrightTestUrl)); await writeFile(runnablePath, runnableSource);
-  const configPath = join(runDir, 'playwright.config.mjs'); const config = `import { defineConfig } from ${JSON.stringify(playwrightTestUrl)};\nexport default defineConfig({ testDir: ${JSON.stringify(runDir)}, testMatch: ${JSON.stringify(basename(runnablePath))}, timeout: ${Number(testCase.defaults.timeoutMs || 30000)}, outputDir: ${JSON.stringify(join(runDir, 'results'))}, reporter: 'line', use: { browserName: ${JSON.stringify(browserName)}, headless: ${input.headless !== false}, locale: ${JSON.stringify(testCase.defaults.locale || 'zh-CN')}, trace: 'on', video: 'on', screenshot: 'only-on-failure'${proxy ? `, proxy: ${JSON.stringify(proxy)}` : ''} } });\n`;
+  const auth = compliancePaths(testCase); const configPath = join(runDir, 'playwright.config.mjs'); const config = `import { defineConfig } from ${JSON.stringify(playwrightTestUrl)};\nexport default defineConfig({ testDir: ${JSON.stringify(runDir)}, testMatch: ${JSON.stringify(basename(runnablePath))}, timeout: ${Number(testCase.defaults.timeoutMs || 30000)}, outputDir: ${JSON.stringify(join(runDir, 'results'))}, reporter: 'line', use: { browserName: ${JSON.stringify(browserName)}, headless: ${input.headless !== false}, locale: ${JSON.stringify(testCase.defaults.locale || 'zh-CN')}, trace: 'on', video: 'on', screenshot: 'only-on-failure'${complianceEnabled ? `, channel: 'chrome'` : ''}${complianceEnabled && existsSync(auth.storagePath) ? `, storageState: ${JSON.stringify(auth.storagePath)}` : ''}${proxy ? `, proxy: ${JSON.stringify(proxy)}` : ''} } });\n`;
   await writeFile(configPath, config); const started = Date.now(); const result = { id: runId, scope: 'case', mode: 'code', caseId: testCase.id, caseName: testCase.name, planId: input.planId || null, startedAt: now(), status: 'running', steps: [], artifactPath: `/artifacts/${runId}` };
   const processResult = await runProcess('npx', ['playwright', 'test', '--config', configPath], { cwd: root, env: { ...process.env, CI: '1' } }); const output = redact(`${processResult.stdout}\n${processResult.stderr}`.trim(), [proxy?.password]); const files = await findArtifacts(runDir); const screenshot = files.find(x => /test-failed.*\.png$|failure\.png$/i.test(x)); const video = files.find(x => /video\.(webm|mp4)$/i.test(x)); const trace = files.find(x => /trace\.zip$/i.test(x));
   result.status = processResult.code === 0 ? 'passed' : 'failed'; result.finishedAt = now(); result.durationMs = Date.now() - started; result.artifacts = { screenshot: screenshot ? `${result.artifactPath}/${screenshot}` : null, video: video ? `${result.artifactPath}/${video}` : null, trace: trace ? `${result.artifactPath}/${trace}` : null };
@@ -241,7 +257,26 @@ app.get('/api/runs/:id', async (req, res) => { const db = await store(); const r
 app.delete('/api/runs/:id', async (req, res) => { const db = await store(); db.runs = db.runs.filter(x => x.id !== req.params.id); await save(db); res.status(204).end(); });
 app.delete('/api/runs', async (_req, res) => { const db = await store(); db.runs = []; await save(db); res.status(204).end(); });
 
-app.post('/api/cases/:id/record', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const browser = req.body.browser || testCase.defaults.browser || 'chromium'; if (!['chromium', 'chrome', 'firefox', 'webkit'].includes(browser)) throw httpError(400, '录制支持 Chromium、Firefox、WebKit；真实 Safari 请使用 Selenium 适配器。', 'UNSUPPORTED_BROWSER'); const out = join(recordingsDir, `${safeFile(testCase.name)}-${Date.now()}.spec.js`); const args = ['playwright', 'codegen', '--target', 'playwright-test', '--output', out, '--lang', req.body.locale || testCase.defaults.locale || 'zh-CN']; if (browser !== 'chromium') args.push('--browser', browser); if (req.body.url) args.push(req.body.url); const child = spawn('npx', args, { cwd: root, detached: true, stdio: 'ignore' }); child.unref(); res.status(202).json({ message: '录制窗口已打开。操作完成后关闭 Inspector，然后回到用例中导入最近录制。', outputFile: relative(root, out) }); });
+app.get('/api/cases/:id/compliance-status', async (req, res) => {
+  const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const paths = compliancePaths(testCase); const saved = existsSync(paths.storagePath); const details = saved ? await stat(paths.storagePath) : null;
+  res.json({ enabled: Boolean(testCase.compliance?.enabled), browserChannel: 'chrome', profileKey: safeFile(testCase.id), hasSavedLoginState: saved, loginStateUpdatedAt: details?.mtime?.toISOString() || null, profileCreated: existsSync(paths.profileDir), allowlistStatus: testCase.compliance?.allowlistStatus || 'not-configured' });
+});
+app.get('/api/recording-sessions/:id', (req, res) => { const session = recordingSessions.get(req.params.id); if (!session) throw httpError(404, '未找到录制会话', 'RECORDING_SESSION_NOT_FOUND'); res.json(session); });
+app.post('/api/cases/:id/record', async (req, res) => {
+  const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const complianceMode = Boolean(req.body.complianceMode); const browser = complianceMode ? 'chromium' : (req.body.browser || testCase.defaults.browser || 'chromium');
+  if (!['chromium', 'chrome', 'firefox', 'webkit'].includes(browser)) throw httpError(400, '录制支持 Chromium、Firefox、WebKit；真实 Safari 请使用 Selenium 适配器。', 'UNSUPPORTED_BROWSER');
+  if (complianceMode && !(req.body.policyConfirmed || testCase.compliance?.policyConfirmed)) throw httpError(400, '请先确认该目标环境已授权自动化测试。', 'COMPLIANCE_CONFIRMATION_REQUIRED');
+  const out = join(recordingsDir, `${safeFile(testCase.name)}-${Date.now()}.spec.js`); const args = ['playwright', 'codegen', '--target', 'playwright-test', '--output', out, '--lang', req.body.locale || testCase.defaults.locale || 'zh-CN']; const paths = compliancePaths(testCase);
+  if (complianceMode) { await mkdir(paths.profileDir, { recursive: true }); args.push('--channel', 'chrome', '--user-data-dir', paths.profileDir, '--save-storage', paths.storagePath); if (existsSync(paths.storagePath)) args.push('--load-storage', paths.storagePath); }
+  else if (browser !== 'chromium') args.push('--browser', browser);
+  const proxy = req.body.proxy || testCase.defaults.proxy; if (proxy?.mode === 'proxy' && proxy.server) { args.push('--proxy-server', proxy.server); if (proxy.bypass) args.push('--proxy-bypass', proxy.bypass); }
+  if (req.body.url) args.push(req.body.url); const sessionId = randomUUID(); const publicSession = { id: sessionId, caseId: testCase.id, status: process.env.RECORD_DRY_RUN === '1' ? 'dry-run' : 'waiting-for-user', complianceMode, startedAt: now(), manualVerification: complianceMode, message: complianceMode ? '正式 Chrome 已打开。遇到登录或 CAPTCHA 时请手工完成，录制器会等待，不会尝试绕过验证。' : '录制窗口已打开。' };
+  recordingSessions.set(sessionId, publicSession);
+  if (process.env.RECORD_DRY_RUN !== '1') {
+    const child = spawn('npx', args, { cwd: root, detached: true, stdio: 'ignore' }); publicSession.pid = child.pid; child.on('exit', async code => { publicSession.status = code === 0 ? 'completed' : 'closed'; publicSession.finishedAt = now(); publicSession.loginStateSaved = existsSync(paths.storagePath); const latest = await store().catch(() => null); const item = latest?.cases.find(x => x.id === testCase.id); if (item && complianceMode) { item.compliance = { ...defaultCompliance(), ...item.compliance, lastRecordedAt: publicSession.finishedAt, storageStateSaved: publicSession.loginStateSaved }; item.updatedAt = now(); await save(latest).catch(() => {}); } }); child.unref();
+  }
+  res.status(202).json({ ...publicSession, outputFile: relative(root, out), profile: complianceMode ? `data/profiles/${safeFile(testCase.id)}` : null, loginState: complianceMode ? `data/auth/${safeFile(testCase.id)}.json` : null, ...(process.env.RECORD_DRY_RUN === '1' ? { debugArgs: args } : {}) });
+});
 app.get('/api/recordings', async (_req, res) => { const files = await Promise.all((await readdir(recordingsDir)).filter(x => x.endsWith('.spec.js')).map(async name => { const details = await stat(join(recordingsDir, name)); return { name, modifiedAt: details.mtime.toISOString(), size: details.size }; })); res.json(files.sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt))); });
 app.post('/api/cases/:id/import-codegen', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const filename = String(req.body.filename || ''); if (!/^[a-zA-Z0-9_.-]+\.spec\.js$/.test(filename)) throw httpError(400, '无效录制文件名', 'INVALID_RECORDING'); const code = await readFile(join(recordingsDir, filename), 'utf8'); const steps = parseCodegen(code); if (!steps.length) throw httpError(400, '没有识别到可导入步骤。请确认 Inspector 已保存完整脚本。', 'NO_STEPS_PARSED'); testCase.steps = req.body.mode === 'append' ? [...testCase.steps, ...steps] : steps; testCase.sources = { javascript: code.replaceAll("'@playwright/test'", "'playwright/test'"), python: generatePython({ ...testCase, steps }) }; testCase.version += 1; testCase.updatedAt = now(); await persistSources(db, testCase); await save(db); res.json(caseSummary(testCase)); });
 

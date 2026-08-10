@@ -93,6 +93,8 @@ npm start
 | 路径 | 保存内容 | 注意事项 |
 |---|---|---|
 | `data/store.json` | 测试计划、用例、步骤、断言、测试数据、账号引用、浏览器/语言/代理配置和执行记录元数据 | 当前版本使用本地 JSON，不是远程数据库。测试数据可能敏感。 |
+| `data/profiles/<用例 ID>/` | 合规录制使用的本机正式 Chrome 专用 Profile | 可能包含 Cookie、缓存和登录会话；不要提交、分享或改为日常 Chrome Profile。 |
+| `data/auth/<用例 ID>.json` | 关闭合规录制时保存、下次加载的 Cookie/登录状态 | 相当于登录凭据；离职、账号撤销或授权到期时应删除。 |
 | `recordings/*.spec.js` | Playwright Inspector 生成的原始录制代码 | 录制时输入的账号、搜索词或其他值可能以明文出现。 |
 | `test-suites/<计划名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个用例一个文件；适合纳入版本控制。 |
 | `test-suites/<计划名>/test_*.py` | 从无代码步骤同步生成的 Python/Playwright 测试 | 当前应用回放 JS；Python 文件可在安装 Python Playwright 后独立运行。 |
@@ -106,7 +108,8 @@ npm start
 
 - `node_modules/`：项目依赖，可以通过 `npm install` 重建。
 - Playwright 浏览器缓存：macOS 通常在 `~/Library/Caches/ms-playwright`，Linux 通常在 `~/.cache/ms-playwright`，Windows 通常在 `%USERPROFILE%\AppData\Local\ms-playwright`。
-- 临时浏览器 Profile：通常由 Playwright 放在操作系统临时目录并在浏览器关闭后清理。
+- 标准模式临时 Profile：通常由 Playwright 放在操作系统临时目录并在浏览器关闭后清理。
+- 合规模式专用 Profile 和登录状态：分别位于 `data/profiles/` 与 `data/auth/`，不会在关闭浏览器时自动删除。
 - Skill 本身：通常在 `~/.codex/skills/local-web-test-recorder/`。
 
 ### Git 和共享
@@ -115,6 +118,8 @@ npm start
 
 ```text
 data/store.json
+data/profiles/
+data/auth/
 recordings/
 artifacts/
 node_modules/
@@ -189,7 +194,7 @@ socks5://127.0.0.1:1080
 2. 在计划中点击“新建用例并加入”。
 3. 填写用例名称、浏览器、页面语言和起始 URL。
 4. 点击“保存用例”。
-5. 点击“录制”。
+5. 点击“开始录制”，选择“标准录制”或“合规录制”。
 6. 在新打开的 Playwright 浏览器中执行点击、填写、选择和键盘操作。
 7. 需要断言时，可在 Inspector 中使用断言工具，也可以导入后手工增加。
 8. 完成后关闭 Inspector 和录制浏览器。
@@ -198,6 +203,18 @@ socks5://127.0.0.1:1080
 11. 确认覆盖并检查所有步骤。
 
 不要重复导入同一个文件。覆盖导入可以避免新旧步骤混杂。
+
+### 合规录制模式
+
+1. 在“配置与数据”中启用合规录制。
+2. 填写企业测试环境、已授权域名、测试账号引用、白名单状态和审批说明。不要填写密码。
+3. 勾选“目标环境和账号已获授权”，保存配置。
+4. 点击“开始录制”并选择“合规录制”。必须先安装本机 Google Chrome。
+5. 应用为当前用例创建独立 Profile，并加载之前保存的 Cookie/登录状态。
+6. 遇到 CAPTCHA 或登录验证时，在 Chrome 中手工完成后继续操作；录制器会等待。
+7. 完成后关闭 Inspector。登录状态保存到 `data/auth/<用例 ID>.json`，下次自动加载。
+
+平台不会破解 CAPTCHA、伪造指纹或规避站点安全控制。界面中的白名单信息只用于记录审批范围；实际 IP/账号白名单必须由目标系统管理员配置。
 
 ## 7. 编辑步骤和定位器
 
@@ -302,7 +319,7 @@ Trace 可查看步骤、页面快照、网络请求和控制台信息。
 
 ### `Access Denied` 或 CAPTCHA
 
-目标网站可能阻止自动化浏览器。不要绕过第三方安全控制。使用你有权测试的测试环境、Sandbox、API 或申请自动化测试授权。
+回放会把 Access Denied、CAPTCHA 和异常流量页面标记为“目标网站拒绝自动化”，而不是普通元素超时，并停止无意义重试。不要绕过安全控制；使用已授权测试环境，申请 IP/测试账号白名单，或在合规录制模式中手工完成验证。
 
 ### 端口被占用
 

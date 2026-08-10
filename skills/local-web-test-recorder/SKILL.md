@@ -33,7 +33,8 @@ Devin: @skills:local-web-test-recorder 分析这次回放失败的 Trace。
 | Playwright 浏览器 | 必需 | 使用命令下载 Chromium、Firefox 和 WebKit；不是操作系统里已有的普通浏览器。 |
 | Git | 按安装方式 | Claude Code/Devin 仓库安装和手工克隆时需要；Codex 使用 `$skill-installer` 时无需用户手工运行 Git。 |
 | Python 3 | 可选 | 仅运行 `scripts/validate_case.py` 时需要；录制器服务器不依赖 Python。 |
-| Google Chrome、Firefox、Safari | 可选 | 当前“Chrome”选项实际使用 Playwright Chromium；WebKit 用于 Safari 兼容性测试，但不等于真实 Apple Safari。 |
+| Google Chrome | 合规录制模式必需 | 标准模式使用 Playwright Chromium；合规模式使用本机正式 Chrome 和专用测试 Profile。不要连接日常 Chrome Profile。 |
+| Firefox、Safari | 可选 | Firefox 可由 Playwright 安装；WebKit 用于 Safari 兼容性测试，但不等于真实 Apple Safari。 |
 
 准备至少约 2 GB 可用磁盘空间存放 Node 依赖、三个 Playwright 浏览器和运行产物。Linux 安装浏览器系统库可能需要 `sudo` 权限。本应用不需要 Java、Docker、数据库、Selenium Server 或浏览器扩展。
 
@@ -120,6 +121,8 @@ npm start
 | --- | --- | --- |
 | `PORT` | `4173` | 本地服务器端口。 |
 | `DATA_DIR` | `<项目>/data` | `store.json` 的目录。 |
+| `PROFILES_DIR` | `<DATA_DIR>/profiles` | 合规录制专用 Chrome Profile；包含敏感会话数据。 |
+| `AUTH_STATE_DIR` | `<DATA_DIR>/auth` | 合规录制保存的 Cookie/登录状态；必须按凭据保护。 |
 | `RECORDINGS_DIR` | `<项目>/recordings` | Inspector 录制脚本目录。 |
 | `ARTIFACTS_DIR` | `<项目>/artifacts` | Trace、视频和失败截图目录。 |
 | `TEST_SUITES_DIR` | `<项目>/test-suites` | 以计划名称分目录保存 JS/Python 测试文件。 |
@@ -140,11 +143,19 @@ npm start
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
 
+### 合规录制模式
+
+在用例“配置与数据”中启用合规录制，填写已授权域名、测试账号引用、审批/白名单状态，并勾选授权确认。点击“开始录制”后选择“合规录制”：应用使用本机正式 Chrome，为该用例创建独立 Profile，并在关闭录制窗口时保存 Cookie/登录状态。下次录制会加载该状态。
+
+遇到 CAPTCHA 或登录验证时，在打开的 Chrome 中手工完成后继续。录制器本身处于交互等待状态，不会破解 CAPTCHA、隐藏自动化特征或规避目标网站控制。白名单字段只是审批记录；真正的 IP/账号白名单必须由目标系统管理员配置。回放检测到 Access Denied、CAPTCHA 或异常流量页面时，会标记为“目标网站拒绝自动化”，停止无意义重试并给出合规建议。
+
 ### 数据存储位置
 
 所有业务数据默认保存在生成项目目录中，不由本应用主动上传：
 
 - `data/store.json`：测试计划、用例、步骤、断言、测试数据、配置和执行记录元数据。
+- `data/profiles/<case-id>/`：合规模式的专用 Chrome Profile，可能包含 Cookie、缓存和会话信息。
+- `data/auth/<case-id>.json`：可供后续录制/回放加载的 Cookie 和登录状态，按登录凭据保护。
 - `recordings/`：Playwright Inspector 生成的脚本；可能包含录制时输入的明文。
 - `test-suites/<计划名>/`：每个用例一个 `.spec.js` 文件和一个同步生成的 Python 文件；未归档用例位于 `_未归档/`。
 - `artifacts/<run-id>/`：失败截图、视频和 Trace；可能包含页面内容、账号信息和网络证据。
@@ -177,7 +188,8 @@ Treat installation as two layers: the Agent Skill teaches the selected coding ag
 | Playwright browsers | Yes | Download Chromium, Firefox, and WebKit with the commands below. |
 | Git | Depends on installation | Needed for Claude Code/Devin repository installation and manual cloning; Codex `$skill-installer` does not require manual Git commands. |
 | Python 3 | Optional | Needed only for `scripts/validate_case.py`, not for the recorder server. |
-| System Chrome, Firefox, or Safari | Optional | The current Chrome choice uses Playwright Chromium. WebKit approximates Safari compatibility but is not real Apple Safari. |
+| Google Chrome | Required for compliant recording | Standard mode uses Playwright Chromium. Compliant mode uses the locally installed stable Chrome with a dedicated test profile. Never attach the normal daily profile. |
+| Firefox or Safari | Optional | Firefox can be installed by Playwright. WebKit approximates Safari compatibility but is not the Apple Safari application. |
 
 Allow roughly 2 GB of free disk space for dependencies, browser binaries, and artifacts. Linux system dependencies may require `sudo`. Java, Docker, a database, Selenium Server, and browser extensions are not required.
 
@@ -260,6 +272,8 @@ Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to st
 | --- | --- | --- |
 | `PORT` | `4173` | Local server port. |
 | `DATA_DIR` | `<project>/data` | Directory containing `store.json`. |
+| `PROFILES_DIR` | `<DATA_DIR>/profiles` | Dedicated Chrome profiles for compliant recording; contains sensitive session data. |
+| `AUTH_STATE_DIR` | `<DATA_DIR>/auth` | Saved cookies/login state for compliant recording; protect as credentials. |
 | `RECORDINGS_DIR` | `<project>/recordings` | Inspector-generated scripts. |
 | `ARTIFACTS_DIR` | `<project>/artifacts` | Traces, videos, and failure screenshots. |
 | `TEST_SUITES_DIR` | `<project>/test-suites` | Plan folders containing per-case JavaScript and Python files. |
@@ -280,11 +294,19 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
 
+### Compliant recording mode
+
+Enable compliant recording under the case's Configuration and Data tab. Record authorized hosts, test-account references, approval/allowlist status, and confirm authorization. Choose Compliant recording from the Record dialog. The app launches locally installed stable Chrome, creates a dedicated per-case test profile, saves cookies/login state when the recorder closes, and loads that state on the next recording.
+
+For CAPTCHA or login challenges, complete the verification manually in the opened Chrome window and then continue. The recorder waits for user interaction; it does not solve CAPTCHA, spoof fingerprints, or evade target controls. Allowlist fields document approval only—the target-system administrator must configure the real IP/account allowlist. Access Denied, CAPTCHA, and unusual-traffic pages are reported as “Target site rejected automation,” with pointless retries stopped and compliant next steps shown.
+
 ### Data storage
 
 All application data stays under the generated project directory by default and is not proactively uploaded by this application:
 
 - `data/store.json`: plans, cases, steps, assertions, test data, configuration, and run-record metadata.
+- `data/profiles/<case-id>/`: dedicated compliant-mode Chrome profile; may contain cookies, caches, and session data.
+- `data/auth/<case-id>.json`: cookies/login state loaded by later recordings and replays; protect it like a login credential.
 - `recordings/`: scripts generated by Playwright Inspector; these can contain literal values entered while recording.
 - `test-suites/<plan-name>/`: one `.spec.js` and one synchronized Python file per case; unattached cases use `_未归档/`.
 - `artifacts/<run-id>/`: screenshots, videos, and traces; these can contain page content, account information, and network evidence.
