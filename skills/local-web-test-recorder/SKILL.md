@@ -125,7 +125,7 @@ npm start
 
 企业网络下载依赖失败时，只给当前终端临时设置 `HTTPS_PROXY`，例如 macOS/Linux 使用 `HTTPS_PROXY=http://proxy.example:8080 npm ci`，PowerShell 使用 `$env:HTTPS_PROXY='http://proxy.example:8080'` 后再运行安装命令。测试用例自己的浏览器代理应在页面“代理”字段配置，不要修改全局系统代理，也不要把代理密码提交到 Git。
 
-详细的配置、录制、断言、回放和排错说明见 [中文指南](references/guideline.zh-CN.md)。
+详细的配置、录制、断言、回放和排错说明见 [中文指南](guideline.zh-CN.md)。
 
 ### 基本使用流程
 
@@ -262,7 +262,7 @@ Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to st
 
 On a corporate network, temporarily set `HTTPS_PROXY` only in the installation shell if package or browser downloads fail. For example, use `HTTPS_PROXY=http://proxy.example:8080 npm ci` on macOS/Linux or `$env:HTTPS_PROXY='http://proxy.example:8080'` in PowerShell. Configure the test browser proxy in the application's Proxy field; do not alter the global OS proxy or commit proxy credentials.
 
-Read the [English guide](references/guideline.en.md) for configuration, recording, assertions, replay, and troubleshooting.
+Read the [English guide](guideline.en.md) for configuration, recording, assertions, replay, and troubleshooting.
 
 ### Basic workflow
 
@@ -336,7 +336,7 @@ Require tests for plan/case CRUD, codegen import, locator preservation, stale-ve
 - `scripts/install_agent_skill.js`: install the canonical Skill for Codex, Claude Code, or a Devin repository.
 - `scripts/validate_case.py`: validate structured test-case JSON.
 - [Platform compatibility](references/platform-compatibility.md): discovery paths, invocation syntax, installer commands, and local/cloud runtime boundaries.
-- [中文指南](references/guideline.zh-CN.md): beginner installation, configuration, usage, and troubleshooting.
-- [English guide](references/guideline.en.md): beginner installation, configuration, usage, and troubleshooting.
+- [中文指南](guideline.zh-CN.md): beginner installation, configuration, usage, and troubleshooting.
+- [English guide](guideline.en.md): beginner installation, configuration, usage, and troubleshooting.
 - [Open-source landscape](references/open-source-landscape.md): repository and license decisions.
 - [Execution contract](references/execution-contract.md): schema, actions, assertions, locators, and adapters.
