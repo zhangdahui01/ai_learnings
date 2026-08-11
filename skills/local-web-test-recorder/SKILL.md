@@ -135,6 +135,7 @@ npm start
 
 1. 创建测试计划，在计划中创建或加入测试套件，再把测试用例加入套件。
 2. 把登录/退出登录放在 Suite Setup/Teardown，把单用例前置/清理放在 Case Setup/Teardown；把加购物车、进入商品页等复用动作建成有版本的公共流程。
+   Suite Setup、Suite Teardown 和公共流程都可单独录制及回放。录制结束同时保存完整 JavaScript、生成 Python 并导入无代码步骤；目标已有步骤时必须由用户确认后才覆盖，取消不修改原数据。
 3. 配置浏览器、页面语言、起始 URL、代理和测试数据。
 4. 用户点击“开始录制”，完成操作后关闭 Playwright Inspector；不需要点 Save，也不要只关闭被录制的 Chrome 标签页。
 5. 应用自动导入完整 JavaScript、同步生成 Python 和可识别的无代码步骤，并打开代码编辑器；“手工导入”只作为异常恢复入口。
@@ -292,6 +293,7 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 
 1. Create a test plan, add test suites to the plan, and add test cases to suites.
 2. Put login/logout in Suite Setup/Teardown, case-local preparation/cleanup in Case Setup/Teardown, and reusable business actions in versioned shared flows.
+   Suite Setup, Suite Teardown, and shared flows can each be recorded and replayed independently. Recording imports full JavaScript, generated Python, and no-code steps together. Existing steps require explicit overwrite confirmation; canceling preserves the target.
 3. Configure browser, page locale, start URL, proxy, and test data.
 4. Click Record, interact with the browser, then close Playwright Inspector. There is no Save action; closing only the recorded Chrome tab is not a reliable completion signal.
 5. The app automatically imports the complete JavaScript, generates Python and recognized no-code steps, and opens the Code editor. Manual import is only a recovery path.

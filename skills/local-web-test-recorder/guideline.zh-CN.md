@@ -224,6 +224,7 @@ socks5://127.0.0.1:1080
 - 测试套件（Suite）组织同一业务域的用例。Suite Setup 每次套件运行一次，适合登录；它产生的 Cookie/Storage 只作为内存快照传给本次套件中的用例，不写入持久文件。Suite Teardown 无论 Setup 或 Case 是否失败都会运行，适合退出登录或测试数据清理。
 - 测试用例（Case）包含 Case Setup、主体步骤/断言和 Case Teardown。Case 默认使用全新 Browser Context；Case Teardown 放入 `finally`，主体失败后仍执行。
 - 公共流程适合“进入商品详情页”“加购物车”等复用场景。调用时填写参数 JSON，保存时固定流程版本；以后修改流程会生成新版本，不会静默改变旧用例。支付、下单和绑卡设为“敏感操作”，平台禁止自动重试。
+- Suite Setup、Suite Teardown 和公共流程编辑页均提供独立“录制”和“回放”。关闭 Inspector 后，平台同时导入完整 JavaScript、生成 Python 和可编辑无代码步骤。若目标已有步骤，导入暂停并显示覆盖确认；选择取消时原代码与步骤完全不变。
 
 推荐结构：Plan「支付回归」→ Suite「信用卡支付」→ Suite Setup「测试账号登录」→ Case Setup「打开指定商品」→ Steps「下单与断言」→ Case Teardown「清理购物车」→ Suite Teardown「退出登录」。
 

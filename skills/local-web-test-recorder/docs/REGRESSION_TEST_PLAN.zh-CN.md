@@ -1,7 +1,7 @@
 # coupayWeb testing 回归测试计划
 
-版本：0.4.x
-维护日期：2026-08-11
+版本：0.4.1
+维护日期：2026-08-12
 适用范围：`skills/local-web-test-recorder/assets/web-test-recorder`
 
 ## 1. 测试目标
@@ -69,6 +69,10 @@
 | FLOW-003 | P0 | 引用保护 | 被 Suite/Case 引用的流程禁止删除 | API E2E |
 | SESSION-001 | P0 | 默认全新会话 | 第二次回放不继承首次 Cookie/LocalStorage | 浏览器 E2E |
 | SESSION-002 | P0 | 显式持久化 | 只有高级开关启用时生成 save/load-storage | API E2E |
+| SUITE-REC-001 | P0 | 录制 Suite Setup/Teardown | Inspector 代码、Python、无代码步骤导入对应阶段 | API/UI E2E |
+| SUITE-REC-002 | P0 | 单独回放 Suite 阶段 | 生成独立执行记录、截图、录像和 Trace | API/UI E2E |
+| FLOW-REC-001 | P0 | 录制并回放公共流程 | 生成新版本，代码和无代码步骤一致，独立回放通过 | API/UI E2E |
+| REC-OVERWRITE-001 | P0 | 目标已有步骤 | 导入暂停；确认后覆盖，取消则原数据不变 | API/UI E2E |
 | CASE-001 | P0 | 创建无代码用例 | 默认配置、版本和空步骤正确 | API E2E |
 | CASE-002 | P0 | 编辑用例名称/配置 | 版本递增并持久化 | API E2E |
 | CASE-003 | P0 | 旧版本覆盖 | HTTP 409，最新数据不被覆盖 | API E2E |
