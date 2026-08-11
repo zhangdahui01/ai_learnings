@@ -20,7 +20,8 @@
 本工具在你的电脑上运行，用来：
 
 - 创建、编辑和删除测试计划。
-- 创建、编辑和删除测试用例，并把用例加入或移出计划。
+- 创建 Plan → Suite → Case；Suite 和 Case 都支持 Setup/Teardown。
+- 创建带参数和固定版本的公共流程，并插入 Suite/Case 任意阶段。
 - 使用 Playwright Inspector 录制网页操作。
 - 把录制代码转换成可以编辑的结构化步骤。
 - 在线编辑并执行 Playwright JavaScript；从步骤同步生成 Python。
@@ -33,9 +34,9 @@
 
 数据默认保存在项目目录：
 
-- `data/store.json`：计划、用例和最近运行记录。
+- `data/store.json`：计划、套件、用例、公共流程、配置和最近运行记录。
 - `recordings/`：Playwright Inspector 生成的代码。
-- `test-suites/<计划名>/`：每个用例的 JavaScript 和 Python 文件。
+- `test-suites/<计划名>/<套件名>/`：每个用例的 JavaScript 和 Python 文件。
 - `artifacts/`：截图、视频和 Trace。
 
 ## 2. 环境安装
@@ -92,12 +93,12 @@ npm start
 
 | 路径 | 保存内容 | 注意事项 |
 |---|---|---|
-| `data/store.json` | 测试计划、用例、步骤、断言、测试数据、账号引用、浏览器/语言/代理配置和执行记录元数据 | 当前版本使用本地 JSON，不是远程数据库。测试数据可能敏感。 |
+| `data/store.json` | 测试计划、套件、用例、公共流程版本、生命周期、步骤、断言、测试数据、配置和执行记录元数据 | 当前版本使用本地 JSON，不是远程数据库。测试数据可能敏感。 |
 | `data/profiles/<用例 ID>/` | 合规录制使用的本机正式 Chrome 专用 Profile | 可能包含 Cookie、缓存和登录会话；不要提交、分享或改为日常 Chrome Profile。 |
 | `data/auth/<用例 ID>.json` | 关闭合规录制时保存、下次加载的 Cookie/登录状态 | 相当于登录凭据；离职、账号撤销或授权到期时应删除。 |
 | `recordings/*.spec.js` | Playwright Inspector 生成的原始录制代码 | 录制时输入的账号、搜索词或其他值可能以明文出现。 |
-| `test-suites/<计划名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个用例一个文件；适合纳入版本控制。 |
-| `test-suites/<计划名>/test_*.py` | 从无代码步骤同步生成的 Python/Playwright 测试 | 当前应用回放 JS；Python 文件可在安装 Python Playwright 后独立运行。 |
+| `test-suites/<计划名>/<套件名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个用例一个文件；包含 Case Setup/Steps/Teardown。 |
+| `test-suites/<计划名>/<套件名>/test_*.py` | 从无代码步骤同步生成的 Python/Playwright 测试 | Teardown 使用 `finally`；当前应用回放 JS，Python 可独立运行。 |
 | `artifacts/<run-id>/failure.png` | 失败页面截图 | 可能显示用户资料、订单、账号或其他页面内容。 |
 | `artifacts/<run-id>/trace.zip` | Playwright Trace、页面快照和网络证据 | 可能包含 URL、DOM、请求信息和输入值。 |
 | `artifacts/<run-id>/*.webm` | 回放视频 | 可能包含操作过程和页面中的敏感内容。 |
@@ -109,7 +110,8 @@ npm start
 - `node_modules/`：项目依赖，可以通过 `npm install` 重建。
 - Playwright 浏览器缓存：macOS 通常在 `~/Library/Caches/ms-playwright`，Linux 通常在 `~/.cache/ms-playwright`，Windows 通常在 `%USERPROFILE%\AppData\Local\ms-playwright`。
 - 标准模式临时 Profile：通常由 Playwright 放在操作系统临时目录并在浏览器关闭后清理。
-- 合规模式专用 Profile 和登录状态：分别位于 `data/profiles/` 与 `data/auth/`，不会在关闭浏览器时自动删除。
+- 默认会话：录制/回放均全新创建；临时 Profile 在结束后删除，不继承 Cookie 或缓存。
+- 显式持久化会话：专用 Profile 和登录状态位于 `data/profiles/<用例 ID>/` 与 `data/auth/<用例 ID>.json`，必须当作凭据保护。
 - Skill 本身：通常在 `~/.codex/skills/local-web-test-recorder/`。
 
 ### Git 和共享
@@ -216,6 +218,15 @@ socks5://127.0.0.1:1080
 
 第一条会把 `https://www.coupang.com/np/campaigns/82` 回放到 `https://qa-coupang.example/np/campaigns/82`。本应用的原生映射用于**回放**且要求来源、目标协议相同。录制阶段也需要映射，或要做 HTTP↔HTTPS、改 Header/Query/Body 时，请把上游代理设为 Charles，并在 Charles 中使用 Map Remote/Rewrite；只想把域名指到另一个 IP 并保留 Host 时使用 Charles DNS Spoofing。仅在你拥有授权的 QA/Staging 环境使用这些能力。
 
+### Plan、Suite、Case 与公共流程怎么组织
+
+- 测试计划（Plan）是发布/回归目标；按顺序包含多个测试套件。
+- 测试套件（Suite）组织同一业务域的用例。Suite Setup 每次套件运行一次，适合登录；它产生的 Cookie/Storage 只作为内存快照传给本次套件中的用例，不写入持久文件。Suite Teardown 无论 Setup 或 Case 是否失败都会运行，适合退出登录或测试数据清理。
+- 测试用例（Case）包含 Case Setup、主体步骤/断言和 Case Teardown。Case 默认使用全新 Browser Context；Case Teardown 放入 `finally`，主体失败后仍执行。
+- 公共流程适合“进入商品详情页”“加购物车”等复用场景。调用时填写参数 JSON，保存时固定流程版本；以后修改流程会生成新版本，不会静默改变旧用例。支付、下单和绑卡设为“敏感操作”，平台禁止自动重试。
+
+推荐结构：Plan「支付回归」→ Suite「信用卡支付」→ Suite Setup「测试账号登录」→ Case Setup「打开指定商品」→ Steps「下单与断言」→ Case Teardown「清理购物车」→ Suite Teardown「退出登录」。
+
 ## 6. 录制测试用例
 
 1. 创建测试计划。
@@ -235,9 +246,9 @@ socks5://127.0.0.1:1080
 
 1. 点击“开始录制”并选择“合规录制”。必须先安装本机 Google Chrome。
 2. 勾选“目标环境和账号已获授权”。不要在产品中填写密码或复杂审批信息。
-3. 应用为当前用例创建独立 Profile，并加载之前保存的 Cookie/登录状态。
+3. 应用默认创建独立临时 Profile，结束后删除。只有在“配置与数据”显式选择持久化登录态时，才加载/保存以前的 Cookie。
 4. 遇到 CAPTCHA 或登录验证时，在 Chrome 中手工完成后继续操作；录制器会等待。
-5. 完成后关闭 Inspector。登录状态保存到 `data/auth/<用例 ID>.json`，脚本自动导入代码编辑器，下次录制自动加载状态。
+5. 完成后关闭 Inspector，脚本自动导入代码编辑器。默认不保留登录态；显式持久化时才写入 `data/auth/<用例 ID>.json`。
 
 平台不会破解 CAPTCHA、伪造指纹或规避站点安全控制。实际 IP/账号白名单及详细审批信息必须由目标系统管理员或企业测试管理系统维护。
 

@@ -133,8 +133,8 @@ npm start
 
 ### 基本使用流程
 
-1. 创建测试计划。
-2. 在计划中创建或加入测试用例。
+1. 创建测试计划，在计划中创建或加入测试套件，再把测试用例加入套件。
+2. 把登录/退出登录放在 Suite Setup/Teardown，把单用例前置/清理放在 Case Setup/Teardown；把加购物车、进入商品页等复用动作建成有版本的公共流程。
 3. 配置浏览器、页面语言、起始 URL、代理和测试数据。
 4. 用户点击“开始录制”，完成操作后关闭 Playwright Inspector；不需要点 Save，也不要只关闭被录制的 Chrome 标签页。
 5. 应用自动导入完整 JavaScript、同步生成 Python 和可识别的无代码步骤，并打开代码编辑器；“手工导入”只作为异常恢复入口。
@@ -149,9 +149,9 @@ npm start
 
 同步约定：保存无代码步骤会重建 JS/Python；保存 JavaScript 会把可识别语句同步为无代码步骤并重建 Python；无法识别的复杂 JS 原样保留并提示部分可视化；Python 是派生导出，不做反向同步。测试账号字段只存引用名称。数据用 `${data.key}`/`${data.nested.key}`，机密用 `${env.SECRET_NAME}`。多条 URL 映射按顺序匹配第一条；原生映射仅用于同协议回放，录制阶段或跨协议映射使用上游 Charles Map Remote。
 
-### 合规录制模式
+### 会话隔离与合规录制模式
 
-点击“开始录制”后选择“合规录制”并确认目标环境和账号已获授权：应用使用本机正式 Chrome，为该用例创建独立 Profile，并在关闭录制窗口时保存 Cookie/登录状态。下次合规录制会加载该状态。复杂审批信息应由企业测试管理系统维护，不再占用用例配置页。
+每次标准录制和回放默认创建全新浏览器会话，不继承上次 Cookie、缓存、Local/Session Storage 或 IndexedDB。合规录制使用本机正式 Chrome 和独立的临时 Profile，结束后删除。只有用户在“配置与数据”显式选择“持久化登录态（高级）”时，才写入 `data/profiles/<case-id>/` 和 `data/auth/<case-id>.json` 并供以后加载；可用“删除历史登录态和缓存”清理。
 
 遇到 CAPTCHA 或登录验证时，在打开的 Chrome 中手工完成后继续。录制器本身处于交互等待状态，不会破解 CAPTCHA、隐藏自动化特征或规避目标网站控制。白名单字段只是审批记录；真正的 IP/账号白名单必须由目标系统管理员配置。回放检测到 Access Denied、CAPTCHA 或异常流量页面时，会标记为“目标网站拒绝自动化”，停止无意义重试并给出合规建议。
 
@@ -159,11 +159,11 @@ npm start
 
 所有业务数据默认保存在生成项目目录中，不由本应用主动上传：
 
-- `data/store.json`：测试计划、用例、步骤、断言、测试数据、配置和执行记录元数据。
-- `data/profiles/<case-id>/`：合规模式的专用 Chrome Profile，可能包含 Cookie、缓存和会话信息。
-- `data/auth/<case-id>.json`：可供后续录制/回放加载的 Cookie 和登录状态，按登录凭据保护。
+- `data/store.json`：测试计划、测试套件、测试用例、公共流程及版本、生命周期步骤、测试数据、配置和执行记录元数据。
+- `data/profiles/_sessions/<session-id>/`：默认合规录制的临时 Profile；正常结束后自动删除。
+- `data/profiles/<case-id>/` 与 `data/auth/<case-id>.json`：仅显式持久化模式使用，按登录凭据保护。
 - `recordings/`：Playwright Inspector 生成的脚本；可能包含录制时输入的明文。
-- `test-suites/<计划名>/`：每个用例一个 `.spec.js` 文件和一个同步生成的 Python 文件；未归档用例位于 `_未归档/`。
+- `test-suites/<计划名>/<套件名>/`：每个用例一个 `.spec.js` 和一个同步生成的 Python 文件；未归档用例位于 `_未归档/`。
 - `artifacts/<run-id>/`：失败截图、视频和 Trace；可能包含页面内容、账号信息和网络证据。
 
 删除计划或用例不会自动删除历史录制与运行产物。备份或清理前先停止服务器。详细说明见中文指南的“数据存储、备份和删除”。
@@ -290,8 +290,8 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 
 ### Basic workflow
 
-1. Create a test plan.
-2. Create or attach a test case.
+1. Create a test plan, add test suites to the plan, and add test cases to suites.
+2. Put login/logout in Suite Setup/Teardown, case-local preparation/cleanup in Case Setup/Teardown, and reusable business actions in versioned shared flows.
 3. Configure browser, page locale, start URL, proxy, and test data.
 4. Click Record, interact with the browser, then close Playwright Inspector. There is no Save action; closing only the recorded Chrome tab is not a reliable completion signal.
 5. The app automatically imports the complete JavaScript, generates Python and recognized no-code steps, and opens the Code editor. Manual import is only a recovery path.
@@ -306,9 +306,9 @@ For slow pages, use Stability presets and per-step Advanced readiness: wait for 
 
 Synchronization contract: saving no-code steps regenerates JS/Python; saving JavaScript extracts recognized statements into steps and regenerates Python; unsupported custom JS remains intact with a partial-visualization warning; Python is derived and does not reverse-sync. The account field stores an alias only. Use `${data.key}`/`${data.nested.key}` for test data and `${env.SECRET_NAME}` for secrets. Ordered URL mappings use first match; native mapping is same-protocol replay only, while recording-time or cross-protocol mapping requires upstream Charles Map Remote.
 
-### Compliant recording mode
+### Session isolation and compliant recording
 
-Choose Compliant recording from the Record dialog and confirm that the target environment and account are authorized. The app launches locally installed stable Chrome, creates a dedicated per-case test profile, saves cookies/login state when the recorder closes, and loads that state on the next compliant recording. Keep detailed approval metadata in the enterprise test-management system rather than the case configuration page.
+Standard recording and replay use a fresh browser context by default, with no cookies, cache, Local/Session Storage, or IndexedDB inherited from the previous run. Compliant recording launches locally installed stable Chrome with a temporary isolated profile that is removed when recording completes. Only the explicit advanced persistent-session setting writes `data/profiles/<case-id>/` and `data/auth/<case-id>.json` for later reuse. Use the UI action to delete saved state.
 
 For CAPTCHA or login challenges, complete the verification manually in the opened Chrome window and then continue. The recorder waits for user interaction; it does not solve CAPTCHA, spoof fingerprints, or evade target controls. Allowlist fields document approval only—the target-system administrator must configure the real IP/account allowlist. Access Denied, CAPTCHA, and unusual-traffic pages are reported as “Target site rejected automation,” with pointless retries stopped and compliant next steps shown.
 
@@ -316,11 +316,11 @@ For CAPTCHA or login challenges, complete the verification manually in the opene
 
 All application data stays under the generated project directory by default and is not proactively uploaded by this application:
 
-- `data/store.json`: plans, cases, steps, assertions, test data, configuration, and run-record metadata.
-- `data/profiles/<case-id>/`: dedicated compliant-mode Chrome profile; may contain cookies, caches, and session data.
-- `data/auth/<case-id>.json`: cookies/login state loaded by later recordings and replays; protect it like a login credential.
+- `data/store.json`: plans, suites, cases, versioned shared flows, lifecycle steps, test data, configuration, and run metadata.
+- `data/profiles/_sessions/<session-id>/`: temporary compliant-recording profiles, normally removed at completion.
+- `data/profiles/<case-id>/` and `data/auth/<case-id>.json`: used only by explicitly enabled persistent sessions; protect them like credentials.
 - `recordings/`: scripts generated by Playwright Inspector; these can contain literal values entered while recording.
-- `test-suites/<plan-name>/`: one `.spec.js` and one synchronized Python file per case; unattached cases use `_未归档/`.
+- `test-suites/<plan-name>/<suite-name>/`: one `.spec.js` and one synchronized Python file per case; unattached cases use `_未归档/`.
 - `artifacts/<run-id>/`: screenshots, videos, and traces; these can contain page content, account information, and network evidence.
 
 Deleting a plan or case does not automatically delete historical recordings or run artifacts. Stop the server before backup or cleanup. Read “Data storage, backup, and deletion” in the English guide.

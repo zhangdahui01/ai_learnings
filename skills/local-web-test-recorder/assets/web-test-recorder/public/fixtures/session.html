@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><title>Session isolation fixture</title></head>
+<body>
+  <h1>会话隔离测试</h1><p role="status"></p>
+  <script>
+    const status = document.querySelector('[role=status]');
+    if (new URLSearchParams(location.search).has('seed')) {
+      localStorage.setItem('wtr-session', 'seeded'); document.cookie = 'wtr_session=seeded; path=/'; status.textContent = 'seeded';
+    } else status.textContent = localStorage.getItem('wtr-session') || document.cookie.includes('wtr_session=') ? 'dirty' : 'clean';
+  </script>
+</body></html>

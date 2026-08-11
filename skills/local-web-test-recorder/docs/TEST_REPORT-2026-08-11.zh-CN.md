@@ -1,8 +1,8 @@
 # coupayWeb testing 测试报告
 
 测试日期：2026-08-11  
-被测版本：0.3.x（录制自动导入、双向同步、数据引用与 Map Remote）
-结论：**有条件通过，可用于已授权测试环境的推广试用。**
+被测版本：0.4.0（Plan/Suite/Case 生命周期、公共流程、默认会话隔离、稳定性诊断）
+结论：**通过，可在已授权测试环境推广试用；真实企业代理链路仍需现场验收。**
 
 ## 1. 执行摘要
 
@@ -39,12 +39,22 @@
 | 动态内容国际化 | 韩文测试用例页和新建用例弹窗正确翻译 | 通过 |
 | UI/被测页面 locale 隔离 | UI 切换不改写用例页面语言、代码、定位器或数据 | 通过 |
 | 自动导入失败可理解 | 空脚本/异常退出显示明确原因且不覆盖用例 | 通过 |
+| Plan → Suite → Case | Suite CRUD、计划关联、套件/计划执行汇总正确 | 通过 |
+| Suite 生命周期 | Setup 通过、Case 失败、Teardown 仍执行通过 | 通过 |
+| Case 生命周期 | 公共流程 Setup 展开；主体失败后 Case Teardown 仍通过 | 通过 |
+| 公共流程 | 参数替换、固定版本 revision、引用中禁止删除 | 通过 |
+| 默认会话隔离 | 首次写入 Cookie/LocalStorage，第二次全新回放验证为 clean | 通过 |
+| JS/Python 生命周期 | 生成 setup/steps/teardown marker；Python `py_compile` 通过 | 通过 |
+| Dashboard 新指标 | 计划、套件、用例、公共流程、执行、通过率六卡片 | 通过 |
 
 ## 3. 自动化覆盖结果
 
 通过项目包括：
 
-- 测试计划创建、编辑、加入/移出用例、删除、整计划执行。
+- 测试计划、测试套件和测试用例 CRUD、关联、Suite/Plan 执行。
+- Suite/Case Setup 与 Teardown；主体失败后 Teardown 始终执行。
+- 参数化公共流程、固定版本 revision、引用保护和敏感流程禁重试。
+- 每次录制/回放默认全新会话；显式高级模式才保存/加载登录态。
 - 测试用例创建、编辑、删除、409 版本冲突保护。
 - JS/Python 计划文件夹生成与源码保存。
 - codegen 的 goto、click、fill、press、check、selectOption、页面断言和元素断言解析。

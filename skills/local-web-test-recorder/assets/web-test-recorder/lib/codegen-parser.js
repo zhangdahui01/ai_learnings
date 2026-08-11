@@ -20,8 +20,8 @@ export function parseLocator(method, args) {
 }
 
 export function parseCodegen(code) {
-  const embedded = [...String(code).matchAll(/^\s*\/\/\s*wtr-step:([A-Za-z0-9_-]+)\s*$/gm)].map(match => {
-    try { return JSON.parse(Buffer.from(match[1], 'base64url').toString('utf8')); } catch { return null; }
+  const embedded = [...String(code).matchAll(/^\s*\/\/\s*(?:wtr-phase:(setup|steps|teardown)\s+)?wtr-step:([A-Za-z0-9_-]+)\s*$/gm)].map(match => {
+    try { return JSON.parse(Buffer.from(match[2], 'base64url').toString('utf8')); } catch { return null; }
   }).filter(Boolean);
   if (embedded.length) return embedded;
   const steps = [];
@@ -46,4 +46,14 @@ export function parseCodegen(code) {
     }
   }
   return steps;
+}
+
+export function parseCodegenPhases(code) {
+  const matches = [...String(code).matchAll(/^\s*\/\/\s*(?:wtr-phase:(setup|steps|teardown)\s+)?wtr-step:([A-Za-z0-9_-]+)\s*$/gm)];
+  if (!matches.length) return { setup: [], steps: parseCodegen(code), teardown: [], embedded: false };
+  const phases = { setup: [], steps: [], teardown: [], embedded: true };
+  for (const match of matches) {
+    try { phases[match[1] || 'steps'].push(JSON.parse(Buffer.from(match[2], 'base64url').toString('utf8'))); } catch { /* ignore invalid metadata and preserve remaining steps */ }
+  }
+  return phases;
 }

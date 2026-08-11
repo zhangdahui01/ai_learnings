@@ -1,7 +1,7 @@
 # coupayWeb testing 回归测试计划
 
-版本：0.3.x  
-维护日期：2026-08-11  
+版本：0.4.x
+维护日期：2026-08-11
 适用范围：`skills/local-web-test-recorder/assets/web-test-recorder`
 
 ## 1. 测试目标
@@ -10,7 +10,7 @@
 
 ## 2. 测试范围
 
-- Dashboard、测试计划、测试用例、执行记录四个主流程。
+- Dashboard、测试计划、测试套件、测试用例、公共流程、执行记录六个主流程。
 - 测试计划和测试用例 CRUD、加入/移出计划、版本冲突保护。
 - 标准录制、合规录制、录制状态轮询、自动导入、备用手工导入。
 - Playwright codegen 解析、完整 JavaScript 保存、Python 同步生成、在线代码编辑。
@@ -61,6 +61,14 @@
 | PLAN-004 | P1 | 用例移出计划 | 仅解除关系，不误删用例 | API E2E |
 | PLAN-005 | P0 | 删除计划 | 计划删除，用例保留 | API E2E |
 | PLAN-006 | P0 | 执行整个计划 | 汇总 total/passed/failed 正确 | API E2E |
+| SUITE-001 | P0 | Suite CRUD 与加入计划 | Plan → Suite → Case 关系正确 | API/UI E2E |
+| SUITE-002 | P0 | Suite Setup/Teardown | Setup 产生本次内存登录态；失败后 Teardown 仍执行 | API E2E |
+| CASE-005 | P0 | Case Setup/Teardown | 主体失败后 Teardown 仍通过并标记失败阶段 | API E2E |
+| FLOW-001 | P0 | 参数化公共流程 | 调用时展开真实步骤并替换参数 | API E2E |
+| FLOW-002 | P0 | 固定版本 | 流程更新生成 revision，旧调用继续引用旧版本 | API E2E |
+| FLOW-003 | P0 | 引用保护 | 被 Suite/Case 引用的流程禁止删除 | API E2E |
+| SESSION-001 | P0 | 默认全新会话 | 第二次回放不继承首次 Cookie/LocalStorage | 浏览器 E2E |
+| SESSION-002 | P0 | 显式持久化 | 只有高级开关启用时生成 save/load-storage | API E2E |
 | CASE-001 | P0 | 创建无代码用例 | 默认配置、版本和空步骤正确 | API E2E |
 | CASE-002 | P0 | 编辑用例名称/配置 | 版本递增并持久化 | API E2E |
 | CASE-003 | P0 | 旧版本覆盖 | HTTP 409，最新数据不被覆盖 | API E2E |
@@ -87,7 +95,7 @@
 | REC-008 | P1 | 录制进程异常退出 | 标记 failed，保留原用例 | API/代码审查 |
 | REC-009 | P1 | 手工导入备用入口 | 可选择历史文件并打开代码编辑 | API E2E |
 | COMP-001 | P0 | 未确认授权启动合规录制 | HTTP 400，拒绝启动 | API E2E |
-| COMP-002 | P0 | 合规录制参数 | 正式 Chrome、独立 Profile、save-storage | API E2E |
+| COMP-002 | P0 | 默认合规录制参数 | 正式 Chrome、独立临时 Profile，不含 save/load-storage | API E2E |
 | COMP-003 | P0 | 已有登录状态 | 下次包含 load-storage | API E2E |
 | COMP-004 | P1 | 配置页简化 | 不再显示截图中的整块合规配置 | UI E2E |
 | REPLAY-001 | P0 | Chromium 无代码回放 | 操作和断言通过，Trace 生成 | E2E |
