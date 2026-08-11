@@ -6,6 +6,7 @@ import { existsSync } from 'node:fs';
 import { basename, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
+import { parseCodegen } from './lib/codegen-parser.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4173);
@@ -261,7 +262,30 @@ app.get('/api/cases/:id/compliance-status', async (req, res) => {
   const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const paths = compliancePaths(testCase); const saved = existsSync(paths.storagePath); const details = saved ? await stat(paths.storagePath) : null;
   res.json({ enabled: Boolean(testCase.compliance?.enabled), browserChannel: 'chrome', profileKey: safeFile(testCase.id), hasSavedLoginState: saved, loginStateUpdatedAt: details?.mtime?.toISOString() || null, profileCreated: existsSync(paths.profileDir), allowlistStatus: testCase.compliance?.allowlistStatus || 'not-configured' });
 });
-app.get('/api/recording-sessions/:id', (req, res) => { const session = recordingSessions.get(req.params.id); if (!session) throw httpError(404, '未找到录制会话', 'RECORDING_SESSION_NOT_FOUND'); res.json(session); });
+function publicRecordingSession(session) {
+  const { outputPath: _outputPath, authPaths: _authPaths, debugArgs, ...safe } = session;
+  return { ...safe, ...(process.env.RECORD_DRY_RUN === '1' ? { debugArgs } : {}) };
+}
+async function autoImportRecording(session) {
+  const code = await readFile(session.outputPath, 'utf8');
+  if (!code.trim()) throw new Error('录制脚本为空。请确认关闭 Inspector 前至少完成一个页面操作。');
+  const db = await store(); const testCase = db.cases.find(x => x.id === session.caseId);
+  if (!testCase) throw new Error('录制完成，但对应测试用例已被删除，无法自动导入。');
+  const steps = parseCodegen(code); const javascript = code.replaceAll("'@playwright/test'", "'playwright/test'").replaceAll('"@playwright/test"', '"playwright/test"');
+  if (steps.length) testCase.steps = steps;
+  testCase.sources = { ...(testCase.sources || {}), javascript, python: generatePython({ ...testCase, steps }) };
+  testCase.editorMode = 'code'; testCase.codeLanguage = 'javascript'; testCase.compliance = { ...defaultCompliance(), ...testCase.compliance, enabled: session.complianceMode, policyConfirmed: session.complianceMode ? true : testCase.compliance?.policyConfirmed, lastRecordedAt: now(), storageStateSaved: existsSync(session.authPaths.storagePath) };
+  testCase.version += 1; testCase.updatedAt = now(); await persistSources(db, testCase); await save(db);
+  return { autoImported: true, stepCount: steps.length, caseVersion: testCase.version, sourceFiles: testCase.sourceFiles || [] };
+}
+async function completeRecordingSession(session, exitCode, launchError) {
+  if (['completed', 'failed'].includes(session.status)) return;
+  session.finishedAt = now(); session.loginStateSaved = existsSync(session.authPaths.storagePath);
+  if (launchError || exitCode !== 0) { session.status = 'failed'; session.message = launchError ? `录制浏览器启动失败：${launchError.message}` : `录制窗口异常关闭（退出码 ${exitCode}），没有修改测试用例。`; session.error = launchError?.message || `codegen exited with ${exitCode}`; return; }
+  try { Object.assign(session, await autoImportRecording(session)); session.status = 'completed'; session.message = `录制脚本已自动导入代码编辑器，并同步生成 Python；识别到 ${session.stepCount} 个可视化步骤。`; }
+  catch (error) { session.status = 'failed'; session.message = `录制已结束，但自动导入失败：${error.message}`; session.error = error.message; }
+}
+app.get('/api/recording-sessions/:id', (req, res) => { const session = recordingSessions.get(req.params.id); if (!session) throw httpError(404, '未找到录制会话', 'RECORDING_SESSION_NOT_FOUND'); res.json(publicRecordingSession(session)); });
 app.post('/api/cases/:id/record', async (req, res) => {
   const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const complianceMode = Boolean(req.body.complianceMode); const browser = complianceMode ? 'chromium' : (req.body.browser || testCase.defaults.browser || 'chromium');
   if (!['chromium', 'chrome', 'firefox', 'webkit'].includes(browser)) throw httpError(400, '录制支持 Chromium、Firefox、WebKit；真实 Safari 请使用 Selenium 适配器。', 'UNSUPPORTED_BROWSER');
@@ -270,19 +294,18 @@ app.post('/api/cases/:id/record', async (req, res) => {
   if (complianceMode) { await mkdir(paths.profileDir, { recursive: true }); args.push('--channel', 'chrome', '--user-data-dir', paths.profileDir, '--save-storage', paths.storagePath); if (existsSync(paths.storagePath)) args.push('--load-storage', paths.storagePath); }
   else if (browser !== 'chromium') args.push('--browser', browser);
   const proxy = req.body.proxy || testCase.defaults.proxy; if (proxy?.mode === 'proxy' && proxy.server) { args.push('--proxy-server', proxy.server); if (proxy.bypass) args.push('--proxy-bypass', proxy.bypass); }
-  if (req.body.url) args.push(req.body.url); const sessionId = randomUUID(); const publicSession = { id: sessionId, caseId: testCase.id, status: process.env.RECORD_DRY_RUN === '1' ? 'dry-run' : 'waiting-for-user', complianceMode, startedAt: now(), manualVerification: complianceMode, message: complianceMode ? '正式 Chrome 已打开。遇到登录或 CAPTCHA 时请手工完成，录制器会等待，不会尝试绕过验证。' : '录制窗口已打开。' };
-  recordingSessions.set(sessionId, publicSession);
+  if (req.body.url) args.push(req.body.url); const sessionId = randomUUID(); const session = { id: sessionId, caseId: testCase.id, status: 'waiting-for-user', dryRun: process.env.RECORD_DRY_RUN === '1', complianceMode, startedAt: now(), manualVerification: complianceMode, outputPath: out, authPaths: paths, debugArgs: args, outputFile: relative(root, out), profile: complianceMode ? `data/profiles/${safeFile(testCase.id)}` : null, loginState: complianceMode ? `data/auth/${safeFile(testCase.id)}.json` : null, message: complianceMode ? '正式 Chrome 已打开。手工完成登录或 CAPTCHA 后继续；关闭 Inspector 时脚本会自动导入代码编辑器。' : '录制窗口已打开。关闭 Inspector 后，脚本会自动导入代码编辑器。' };
+  recordingSessions.set(sessionId, session);
   if (process.env.RECORD_DRY_RUN !== '1') {
-    const child = spawn('npx', args, { cwd: root, detached: true, stdio: 'ignore' }); publicSession.pid = child.pid; child.on('exit', async code => { publicSession.status = code === 0 ? 'completed' : 'closed'; publicSession.finishedAt = now(); publicSession.loginStateSaved = existsSync(paths.storagePath); const latest = await store().catch(() => null); const item = latest?.cases.find(x => x.id === testCase.id); if (item && complianceMode) { item.compliance = { ...defaultCompliance(), ...item.compliance, lastRecordedAt: publicSession.finishedAt, storageStateSaved: publicSession.loginStateSaved }; item.updatedAt = now(); await save(latest).catch(() => {}); } }); child.unref();
+    const child = spawn('npx', args, { cwd: root, detached: true, stdio: 'ignore' }); session.pid = child.pid; child.once('error', error => { completeRecordingSession(session, null, error); }); child.once('exit', code => { completeRecordingSession(session, code); }); child.unref();
   }
-  res.status(202).json({ ...publicSession, outputFile: relative(root, out), profile: complianceMode ? `data/profiles/${safeFile(testCase.id)}` : null, loginState: complianceMode ? `data/auth/${safeFile(testCase.id)}.json` : null, ...(process.env.RECORD_DRY_RUN === '1' ? { debugArgs: args } : {}) });
+  res.status(202).json(publicRecordingSession(session));
+});
+app.post('/api/recording-sessions/:id/test-complete', async (req, res) => {
+  if (process.env.RECORD_DRY_RUN !== '1') throw httpError(404, '未找到接口', 'NOT_FOUND'); const session = recordingSessions.get(req.params.id); if (!session) throw httpError(404, '未找到录制会话', 'RECORDING_SESSION_NOT_FOUND'); await writeFile(session.outputPath, String(req.body.code || '')); await completeRecordingSession(session, Number(req.body.exitCode || 0)); res.json(publicRecordingSession(session));
 });
 app.get('/api/recordings', async (_req, res) => { const files = await Promise.all((await readdir(recordingsDir)).filter(x => x.endsWith('.spec.js')).map(async name => { const details = await stat(join(recordingsDir, name)); return { name, modifiedAt: details.mtime.toISOString(), size: details.size }; })); res.json(files.sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt))); });
-app.post('/api/cases/:id/import-codegen', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const filename = String(req.body.filename || ''); if (!/^[a-zA-Z0-9_.-]+\.spec\.js$/.test(filename)) throw httpError(400, '无效录制文件名', 'INVALID_RECORDING'); const code = await readFile(join(recordingsDir, filename), 'utf8'); const steps = parseCodegen(code); if (!steps.length) throw httpError(400, '没有识别到可导入步骤。请确认 Inspector 已保存完整脚本。', 'NO_STEPS_PARSED'); testCase.steps = req.body.mode === 'append' ? [...testCase.steps, ...steps] : steps; testCase.sources = { javascript: code.replaceAll("'@playwright/test'", "'playwright/test'"), python: generatePython({ ...testCase, steps }) }; testCase.version += 1; testCase.updatedAt = now(); await persistSources(db, testCase); await save(db); res.json(caseSummary(testCase)); });
-
-function readString(source) { const match = String(source).trim().match(/^(['"])((?:\\.|(?!\1).)*)\1/s); return match ? match[2].replace(/\\(['"\\])/g, '$1') : ''; }
-function parseLocator(method, args) { const value = readString(args); const names = String(args).match(/name:\s*(['"])((?:\\.|(?!\1).)*)\1/s); const strategy = { getByRole: 'role', getByLabel: 'label', getByText: 'text', getByTestId: 'testId', getByPlaceholder: 'placeholder', getByAltText: 'altText', getByTitle: 'title', locator: 'css' }[method]; return { primary: { strategy, value, ...(names ? { name: names[2].replace(/\\(['"\\])/g, '$1') } : {}) } }; }
-function parseCodegen(code) { const steps = []; for (const raw of code.split('\n')) { const line = raw.trim(); let match; if ((match = line.match(/page\.goto\((.+?)\);?$/))) { steps.push({ id: randomUUID(), kind: 'action', action: 'goto', url: readString(match[1]), timeoutMs: 10000 }); continue; } if ((match = line.match(/page\.(getByRole|getByLabel|getByText|getByTestId|getByPlaceholder|getByAltText|getByTitle|locator)\((.+)\)\.(click|dblclick|hover|fill|press|check|uncheck|selectOption|clear)\((.*)\);?$/))) { const action = match[3]; const step = { id: randomUUID(), kind: 'action', action, locator: parseLocator(match[1], match[2]), timeoutMs: 10000 }; if (!['click', 'dblclick', 'hover', 'check', 'uncheck', 'clear'].includes(action)) step.value = readString(match[4]); steps.push(step); continue; } if ((match = line.match(/expect\(page\)\.toHave(URL|Title)\((.+?)\);?$/))) { steps.push({ id: randomUUID(), kind: 'assertion', assertion: `toHave${match[1]}`, expected: readString(match[2]) || match[2].trim(), timeoutMs: 10000 }); continue; } if ((match = line.match(/expect\(page\.(getByRole|getByLabel|getByText|getByTestId|getByPlaceholder|getByAltText|getByTitle|locator)\((.+)\)\)\.(toBeVisible|toBeHidden|toBeEnabled|toBeDisabled|toBeChecked|toHaveText|toContainText|toHaveValue|toHaveCount)\((.*)\);?$/))) { steps.push({ id: randomUUID(), kind: 'assertion', assertion: match[3], locator: parseLocator(match[1], match[2]), expected: readString(match[4]) || match[4].trim(), timeoutMs: 10000 }); } } return steps; }
+app.post('/api/cases/:id/import-codegen', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const filename = String(req.body.filename || ''); if (!/^[a-zA-Z0-9_.-]+\.spec\.js$/.test(filename)) throw httpError(400, '无效录制文件名', 'INVALID_RECORDING'); const code = await readFile(join(recordingsDir, filename), 'utf8'); const steps = parseCodegen(code); if (!steps.length) throw httpError(400, '没有识别到可导入步骤。请确认 Inspector 已保存完整脚本。', 'NO_STEPS_PARSED'); testCase.steps = req.body.mode === 'append' ? [...testCase.steps, ...steps] : steps; testCase.sources = { javascript: code.replaceAll("'@playwright/test'", "'playwright/test'").replaceAll('"@playwright/test"', '"playwright/test"'), python: generatePython({ ...testCase, steps }) }; testCase.editorMode = 'code'; testCase.codeLanguage = 'javascript'; testCase.version += 1; testCase.updatedAt = now(); await persistSources(db, testCase); await save(db); res.json(caseSummary(testCase)); });
 
 app.use((error, _req, res, _next) => { console.error(error); res.status(error.status || 500).json({ error: error.message || '服务器错误', code: error.code || 'SERVER_ERROR', details: error.details }); });
 app.listen(port, () => console.log(`Web Test Recorder: http://localhost:${port}`));

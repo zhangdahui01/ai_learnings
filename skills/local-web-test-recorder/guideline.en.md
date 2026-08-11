@@ -197,24 +197,21 @@ The current UI does not persist proxy credentials. Do not change the global oper
 5. Click Record and choose Standard recording or Compliant recording.
 6. Perform clicks, fills, selections, and keyboard actions in the Playwright browser.
 7. Add assertions in Inspector when convenient, or add them after import.
-8. Close Inspector and the recording browser.
-9. Click the replace-import button.
-10. Select the recording you just created from the time-sorted list.
-11. Confirm replacement and review every imported step.
+8. Close Inspector and the recording browser normally.
+9. The page waits for the recorder to exit, then automatically saves complete JavaScript, generates Python, and extracts recognized no-code steps.
+10. The app opens the Code editor automatically; review the script before save or replay.
 
-Do not repeatedly append the same recording. Replace-import prevents old and new actions from becoming mixed.
+The normal workflow requires neither manual import nor handwritten code. “Manual import (fallback)” is only for abnormal browser exits, old recordings, or a lost session status.
 
 ### Compliant recording mode
 
-1. Enable compliant recording under Configuration and Data.
-2. Enter the enterprise test environment, authorized hosts, test-account references, allowlist status, and approval notes. Do not enter passwords.
-3. Confirm that the target and accounts are authorized, then save.
-4. Click Record and choose Compliant recording. Locally installed Google Chrome is required.
-5. The app creates a dedicated profile for this case and loads previously saved cookies/login state.
-6. If CAPTCHA or login verification appears, complete it manually in Chrome and continue; the recorder waits.
-7. Close Inspector when finished. Login state is saved to `data/auth/<case-id>.json` and loaded next time.
+1. Click Record and choose Compliant recording. Locally installed Google Chrome is required.
+2. Confirm that the target environment and account are authorized. Do not enter passwords or detailed approval metadata in the product.
+3. The app creates a dedicated profile for this case and loads previously saved cookies/login state.
+4. If CAPTCHA or login verification appears, complete it manually in Chrome and continue; the recorder waits.
+5. Close Inspector when finished. Login state is saved to `data/auth/<case-id>.json`, the script is automatically imported into the Code editor, and state is loaded next time.
 
-The product does not solve CAPTCHA, spoof fingerprints, or evade site controls. UI allowlist fields document approval scope only; the target-system administrator must configure the real IP/account allowlist.
+The product does not solve CAPTCHA, spoof fingerprints, or evade site controls. The target-system administrator or enterprise test-management system must maintain the real IP/account allowlist and detailed approvals.
 
 ## 7. Edit steps and locators
 

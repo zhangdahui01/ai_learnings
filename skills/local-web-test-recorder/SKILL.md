@@ -136,16 +136,16 @@ npm start
 1. 创建测试计划。
 2. 在计划中创建或加入测试用例。
 3. 配置浏览器、页面语言、起始 URL、代理和测试数据。
-4. 无代码用户点击“开始录制”，在 Playwright Inspector 浏览器中完成操作并关闭录制窗口。
-5. 点击“导入最近录制”，明确选择本次录制文件；开发者也可以切换到“代码编辑”。
-6. 核对每个步骤的定位方式、定位值、角色名称和输入值。
+4. 用户点击“开始录制”，在 Playwright Inspector 浏览器中完成操作并正常关闭录制窗口。
+5. 应用自动导入完整 JavaScript、同步生成 Python 和可识别的无代码步骤，并打开代码编辑器；“手工导入”只作为异常恢复入口。
+6. 核对完整代码以及每个可视化步骤的定位方式、角色名称和输入值。
 7. 增加断言、等待、超时、重试或失败后继续策略。
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
 
 ### 合规录制模式
 
-在用例“配置与数据”中启用合规录制，填写已授权域名、测试账号引用、审批/白名单状态，并勾选授权确认。点击“开始录制”后选择“合规录制”：应用使用本机正式 Chrome，为该用例创建独立 Profile，并在关闭录制窗口时保存 Cookie/登录状态。下次录制会加载该状态。
+点击“开始录制”后选择“合规录制”并确认目标环境和账号已获授权：应用使用本机正式 Chrome，为该用例创建独立 Profile，并在关闭录制窗口时保存 Cookie/登录状态。下次合规录制会加载该状态。复杂审批信息应由企业测试管理系统维护，不再占用用例配置页。
 
 遇到 CAPTCHA 或登录验证时，在打开的 Chrome 中手工完成后继续。录制器本身处于交互等待状态，不会破解 CAPTCHA、隐藏自动化特征或规避目标网站控制。白名单字段只是审批记录；真正的 IP/账号白名单必须由目标系统管理员配置。回放检测到 Access Denied、CAPTCHA 或异常流量页面时，会标记为“目标网站拒绝自动化”，停止无意义重试并给出合规建议。
 
@@ -287,16 +287,16 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 1. Create a test plan.
 2. Create or attach a test case.
 3. Configure browser, page locale, start URL, proxy, and test data.
-4. No-code users click Record, interact with the Playwright Inspector browser, and close the recorder.
-5. Import the newest recording and select it explicitly; developers may instead use the Code editor.
-6. Review every locator strategy, locator value, accessible name, and input value.
+4. Click Record, interact with the Playwright Inspector browser, and close the recorder normally.
+5. The app automatically imports the complete JavaScript, generates Python and recognized no-code steps, and opens the Code editor. Manual import is only a recovery path.
+6. Review the complete source plus each recognized locator, accessible name, and input value.
 7. Add assertions, waits, timeouts, retries, and continue-on-error behavior.
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
 
 ### Compliant recording mode
 
-Enable compliant recording under the case's Configuration and Data tab. Record authorized hosts, test-account references, approval/allowlist status, and confirm authorization. Choose Compliant recording from the Record dialog. The app launches locally installed stable Chrome, creates a dedicated per-case test profile, saves cookies/login state when the recorder closes, and loads that state on the next recording.
+Choose Compliant recording from the Record dialog and confirm that the target environment and account are authorized. The app launches locally installed stable Chrome, creates a dedicated per-case test profile, saves cookies/login state when the recorder closes, and loads that state on the next compliant recording. Keep detailed approval metadata in the enterprise test-management system rather than the case configuration page.
 
 For CAPTCHA or login challenges, complete the verification manually in the opened Chrome window and then continue. The recorder waits for user interaction; it does not solve CAPTCHA, spoof fingerprints, or evade target controls. Allowlist fields document approval only—the target-system administrator must configure the real IP/account allowlist. Access Denied, CAPTCHA, and unusual-traffic pages are reported as “Target site rejected automation,” with pointless retries stopped and compliant next steps shown.
 
