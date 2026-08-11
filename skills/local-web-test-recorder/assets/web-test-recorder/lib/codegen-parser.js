@@ -5,6 +5,13 @@ export function readString(source) {
   return match ? match[2].replace(/\\(['"\\])/g, '$1') : '';
 }
 
+export function readValue(source) {
+  let value = String(source).trim();
+  const number = value.match(/^Number\((.*)\)$/s); if (number) value = number[1].trim();
+  const resolved = value.match(/^resolveValue\((.*)\)$/s); if (resolved) value = resolved[1].trim();
+  return readString(value) || value;
+}
+
 export function parseLocator(method, args) {
   const value = readString(args);
   const names = String(args).match(/name:\s*(['"])((?:\\.|(?!\1).)*)\1/s);
@@ -17,18 +24,21 @@ export function parseCodegen(code) {
   for (const raw of String(code).split('\n')) {
     const line = raw.trim(); let match;
     if ((match = line.match(/page\.goto\((.+?)\);?$/))) {
-      steps.push({ id: randomUUID(), kind: 'action', action: 'goto', url: readString(match[1]), timeoutMs: 10000 }); continue;
+      steps.push({ id: randomUUID(), kind: 'action', action: 'goto', url: readValue(match[1]), timeoutMs: 10000 }); continue;
     }
-    if ((match = line.match(/page\.(getByRole|getByLabel|getByText|getByTestId|getByPlaceholder|getByAltText|getByTitle|locator)\((.+)\)\.(click|dblclick|hover|fill|press|check|uncheck|selectOption|clear)\((.*)\);?$/))) {
-      const action = match[3]; const step = { id: randomUUID(), kind: 'action', action, locator: parseLocator(match[1], match[2]), timeoutMs: 10000 };
-      if (!['click', 'dblclick', 'hover', 'check', 'uncheck', 'clear'].includes(action)) step.value = readString(match[4]);
+    if ((match = line.match(/page\.(reload|back|forward)\(\);?$/))) { steps.push({ id: randomUUID(), kind: 'action', action: match[1], timeoutMs: 10000 }); continue; }
+    if ((match = line.match(/page\.(waitForTimeout|waitForURL|waitForLoadState)\((.*)\);?$/))) { steps.push({ id: randomUUID(), kind: 'action', action: match[1], value: readValue(match[2]), timeoutMs: 10000 }); continue; }
+    if ((match = line.match(/page\.(getByRole|getByLabel|getByText|getByTestId|getByPlaceholder|getByAltText|getByTitle|locator)\((.+)\)\.(click|dblclick|hover|focus|fill|press|check|uncheck|selectOption|clear|pressSequentially)\((.*)\);?$/))) {
+      const method = match[3]; const action = method === 'pressSequentially' ? 'type' : method; const step = { id: randomUUID(), kind: 'action', action, locator: parseLocator(match[1], match[2]), timeoutMs: 10000 };
+      if (!['click', 'dblclick', 'hover', 'focus', 'check', 'uncheck', 'clear'].includes(action)) step.value = readValue(match[4]);
       steps.push(step); continue;
     }
+    if ((match = line.match(/page\.(getByRole|getByLabel|getByText|getByTestId|getByPlaceholder|getByAltText|getByTitle|locator)\((.+)\)\.waitFor\(\{\s*state:\s*['"](visible|hidden)['"]\s*\}\);?$/))) { steps.push({ id: randomUUID(), kind: 'action', action: match[3] === 'visible' ? 'waitForVisible' : 'waitForHidden', locator: parseLocator(match[1], match[2]), timeoutMs: 10000 }); continue; }
     if ((match = line.match(/expect\(page\)\.toHave(URL|Title)\((.+?)\);?$/))) {
-      steps.push({ id: randomUUID(), kind: 'assertion', assertion: `toHave${match[1]}`, expected: readString(match[2]) || match[2].trim(), timeoutMs: 10000 }); continue;
+      steps.push({ id: randomUUID(), kind: 'assertion', assertion: `toHave${match[1]}`, expected: readValue(match[2]), timeoutMs: 10000 }); continue;
     }
     if ((match = line.match(/expect\(page\.(getByRole|getByLabel|getByText|getByTestId|getByPlaceholder|getByAltText|getByTitle|locator)\((.+)\)\)\.(toBeVisible|toBeHidden|toBeEnabled|toBeDisabled|toBeChecked|toHaveText|toContainText|toHaveValue|toHaveCount)\((.*)\);?$/))) {
-      steps.push({ id: randomUUID(), kind: 'assertion', assertion: match[3], locator: parseLocator(match[1], match[2]), expected: readString(match[4]) || match[4].trim(), timeoutMs: 10000 });
+      steps.push({ id: randomUUID(), kind: 'assertion', assertion: match[3], locator: parseLocator(match[1], match[2]), expected: readValue(match[4]), timeoutMs: 10000 });
     }
   }
   return steps;

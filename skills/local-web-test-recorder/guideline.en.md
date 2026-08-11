@@ -166,16 +166,25 @@ Use a complete URL such as `https://example.com/login`, including `https://`.
 
 ### Test data
 
-Enter JSON:
+“Test account (name/reference)” is an auditable alias such as `accounts.qa-buyer`; it neither reads a password nor fills a form. Put variable values in Test data JSON:
 
 ```json
 {
-  "email": "qa-user@example.com",
+  "account": { "username": "qa-user@example.com" },
   "searchText": "playwright tutorial"
 }
 ```
 
-Use `${data.email}` or `${data.searchText}` in step values. Never store production passwords, tokens, or one-time codes.
+Use `${data.searchText}` or nested `${data.account.username}` in no-code URLs, values, and expectations. Generated JS/Python keeps the same references and resolves them from `WTR_TEST_DATA` at replay. Use `${env.COUPAY_PASSWORD}` for secrets and set that environment variable before starting the server. Never put production passwords, tokens, or one-time codes in JSON, source, or recordings.
+
+### No-code/source synchronization
+
+- Saving no-code steps regenerates JavaScript and Python. If handwritten code exists, the UI confirms before overwriting it.
+- Saving JavaScript extracts recognized Playwright navigation, actions, waits, and assertions back into no-code steps, then regenerates Python.
+- Unsupported helpers, loops, conditions, and frame logic remain intact in JavaScript and produce a partial-visualization warning.
+- Python is an exported/derived version. Saving Python does not reverse-sync because arbitrary JS↔Python↔steps conversion cannot be lossless.
+
+No-code users should treat steps as authoritative; developers should treat JavaScript as authoritative. Do not edit both views concurrently.
 
 ### Proxy
 
@@ -186,7 +195,9 @@ http://127.0.0.1:7890
 socks5://127.0.0.1:1080
 ```
 
-The current UI does not persist proxy credentials. Do not change the global operating-system proxy for a single test case.
+The upstream proxy sends browser traffic through Charles or a corporate proxy. For Charles, enter `http://127.0.0.1:8888`; bypass values may be `localhost,127.0.0.1,.corp.internal`. The UI does not persist proxy credentials. Do not change the global operating-system proxy for one case.
+
+Remote mappings provide ordered key-value Map Remote rules. For example, source `https://www.coupang.com/`, target `https://qa-coupang.example/`, and Preserve path enabled maps `/np/campaigns/82` to the same path on QA. Native mappings apply during **replay** and require the same protocol. For recording-time mapping, HTTP↔HTTPS, or header/query/body changes, use Charles as the upstream proxy and configure Charles Map Remote/Rewrite. Use Charles DNS Spoofing when only an IP override is needed while retaining the Host header. Use these features only against authorized QA/staging systems.
 
 ## 6. Record a test case
 
@@ -197,9 +208,9 @@ The current UI does not persist proxy credentials. Do not change the global oper
 5. Click Record and choose Standard recording or Compliant recording.
 6. Perform clicks, fills, selections, and keyboard actions in the Playwright browser.
 7. Add assertions in Inspector when convenient, or add them after import.
-8. Close Inspector and the recording browser normally.
+8. Close the **Playwright Inspector** window (the window with recorder tools/code). There is no Save button to press. Do not merely close the recorded Chrome tab because the recorder process may still be waiting.
 9. The page waits for the recorder to exit, then automatically saves complete JavaScript, generates Python, and extracts recognized no-code steps.
-10. The app opens the Code editor automatically; review the script before save or replay.
+10. The app opens the Code editor automatically. The script is already on disk; “Save code locally” is for later manual edits.
 
 The normal workflow requires neither manual import nor handwritten code. “Manual import (fallback)” is only for abnormal browser exits, old recordings, or a lost session status.
 

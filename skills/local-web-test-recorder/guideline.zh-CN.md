@@ -166,16 +166,27 @@ node_modules/
 
 ### 测试数据
 
-使用 JSON：
+“测试账号（名称/引用）”只是可审计的账号别名，例如 `accounts.qa-buyer`，不会读取密码，也不会自动填表。实际可变数据放在“测试数据 JSON”：
 
 ```json
 {
-  "email": "qa-user@example.com",
+  "account": {
+    "username": "qa-user@example.com"
+  },
   "searchText": "playwright tutorial"
 }
 ```
 
-步骤值可以写成 `${data.email}` 或 `${data.searchText}`。不要保存生产密码、Token 或一次性验证码。
+无代码步骤的 URL、输入值和期望值都可写 `${data.searchText}` 或嵌套的 `${data.account.username}`。JS/Python 由系统生成相同引用，回放时通过 `WTR_TEST_DATA` 注入并解析。密码、Token 等机密值使用 `${env.COUPAY_PASSWORD}`，启动服务器前设置对应环境变量；不要把生产密码、Token 或一次性验证码写进 JSON、代码或录制文件。
+
+### 无代码与代码如何同步
+
+- 保存无代码步骤：结构化步骤为权威版本，自动重建 JavaScript 和 Python；如果当前用例含手写代码，界面会先确认，避免静默覆盖。
+- 保存 JavaScript：系统识别常见 Playwright `goto/fill/click/press/wait/assertion` 等语句，反向更新无代码步骤，再生成 Python。
+- JavaScript 中无法识别的 helper、循环、条件、frame 等代码会原样保存，并给出“部分步骤无法可视化”的提示，不会假装已完整同步。
+- Python 是导出/派生版本。保存 Python 不反向修改 JS 或无代码步骤，因为任意 JS↔Python↔步骤无法可靠无损转换。
+
+因此，普通用户以无代码步骤为主；开发者以 JavaScript 为主。不要同时在两个页面并发修改同一用例。
 
 ### 代理
 
@@ -186,7 +197,16 @@ http://127.0.0.1:7890
 socks5://127.0.0.1:1080
 ```
 
-当前界面不持久化代理用户名和密码。不要通过修改全局系统代理来实现单个用例代理。
+“上游代理服务器”用于让浏览器流量经过 Charles 或企业代理。例如 Charles 默认可填 `http://127.0.0.1:8888`；“代理绕过域名”可填 `localhost,127.0.0.1,.corp.internal`。当前界面不持久化代理用户名和密码。不要通过修改全局系统代理来实现单个用例代理。
+
+“远程映射（Map Remote）”支持多条 key-value 规则，按界面顺序匹配第一条启用规则：
+
+| 来源（key） | 目标（value） | 保留后续路径 |
+| --- | --- | --- |
+| `https://www.coupang.com/` | `https://qa-coupang.example/` | 是 |
+| `https://api.example.com/v1/` | `https://mock.example.com/api/` | 是 |
+
+第一条会把 `https://www.coupang.com/np/campaigns/82` 回放到 `https://qa-coupang.example/np/campaigns/82`。本应用的原生映射用于**回放**且要求来源、目标协议相同。录制阶段也需要映射，或要做 HTTP↔HTTPS、改 Header/Query/Body 时，请把上游代理设为 Charles，并在 Charles 中使用 Map Remote/Rewrite；只想把域名指到另一个 IP 并保留 Host 时使用 Charles DNS Spoofing。仅在你拥有授权的 QA/Staging 环境使用这些能力。
 
 ## 6. 录制测试用例
 
@@ -197,9 +217,9 @@ socks5://127.0.0.1:1080
 5. 点击“开始录制”，选择“标准录制”或“合规录制”。
 6. 在新打开的 Playwright 浏览器中执行点击、填写、选择和键盘操作。
 7. 需要断言时，可在 Inspector 中使用断言工具，也可以导入后手工增加。
-8. 完成后正常关闭 Inspector 和录制浏览器。
+8. 完成后关闭 **Playwright Inspector**（带录制工具栏/代码的窗口）。不需要点击 Save；不要只关闭被录制的 Chrome 标签页，因为录制进程可能仍在等待。
 9. 页面等待录制进程结束，然后自动保存完整 JavaScript、同步 Python 和可识别的无代码步骤。
-10. 应用自动打开“代码编辑”；核对脚本后即可保存或回放。
+10. 应用自动打开“代码编辑”；此时脚本已经落盘，页面里的“保存代码到本地”只用于你随后手工修改代码的场景。
 
 正常流程不需要点击导入或手写脚本。“手工导入（备用）”只用于浏览器异常关闭、旧录制迁移或自动状态丢失。
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { parseCodegen, parseLocator, readString } from '../lib/codegen-parser.js';
+import { parseCodegen, parseLocator, readString, readValue } from '../lib/codegen-parser.js';
 
 test('readString decodes common Playwright string literals', () => {
   assert.equal(readString("'hello\\'world'"), "hello'world");
@@ -9,6 +9,11 @@ test('readString decodes common Playwright string literals', () => {
 
 test('parseLocator preserves exact role and accessible name', () => {
   assert.deepEqual(parseLocator('getByRole', "'combobox', { name: '搜索' }"), { primary: { strategy: 'role', value: 'combobox', name: '搜索' } });
+});
+
+test('readValue unwraps generated runtime data expressions', () => {
+  assert.equal(readValue("resolveValue('${data.account.username}')"), '${data.account.username}');
+  assert.equal(readValue("Number(resolveValue('3'))"), '3');
 });
 
 test('parseCodegen imports navigation, actions, values, and assertions in order', () => {
@@ -34,4 +39,13 @@ test('parseCodegen ignores unsupported custom code without corrupting supported 
   const steps = parseCodegen("await helper(page);\nawait page.goto('https://example.test');");
   assert.equal(steps.length, 1);
   assert.equal(steps[0].action, 'goto');
+});
+
+test('parseCodegen round-trips generated waits, navigation, typing, and runtime references', () => {
+  const steps = parseCodegen(`await page.reload();
+await page.waitForTimeout(Number(resolveValue('250')));
+await page.getByLabel('Search').pressSequentially(resolveValue('\${data.query}'));
+await page.getByRole('status').waitFor({ state: 'visible' });`);
+  assert.deepEqual(steps.map(step => step.action), ['reload', 'waitForTimeout', 'type', 'waitForVisible']);
+  assert.equal(steps[2].value, '${data.query}');
 });

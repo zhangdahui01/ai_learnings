@@ -136,12 +136,14 @@ npm start
 1. 创建测试计划。
 2. 在计划中创建或加入测试用例。
 3. 配置浏览器、页面语言、起始 URL、代理和测试数据。
-4. 用户点击“开始录制”，在 Playwright Inspector 浏览器中完成操作并正常关闭录制窗口。
+4. 用户点击“开始录制”，完成操作后关闭 Playwright Inspector；不需要点 Save，也不要只关闭被录制的 Chrome 标签页。
 5. 应用自动导入完整 JavaScript、同步生成 Python 和可识别的无代码步骤，并打开代码编辑器；“手工导入”只作为异常恢复入口。
 6. 核对完整代码以及每个可视化步骤的定位方式、角色名称和输入值。
 7. 增加断言、等待、超时、重试或失败后继续策略。
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
+
+同步约定：保存无代码步骤会重建 JS/Python；保存 JavaScript 会把可识别语句同步为无代码步骤并重建 Python；无法识别的复杂 JS 原样保留并提示部分可视化；Python 是派生导出，不做反向同步。测试账号字段只存引用名称。数据用 `${data.key}`/`${data.nested.key}`，机密用 `${env.SECRET_NAME}`。多条 URL 映射按顺序匹配第一条；原生映射仅用于同协议回放，录制阶段或跨协议映射使用上游 Charles Map Remote。
 
 ### 合规录制模式
 
@@ -287,12 +289,14 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 1. Create a test plan.
 2. Create or attach a test case.
 3. Configure browser, page locale, start URL, proxy, and test data.
-4. Click Record, interact with the Playwright Inspector browser, and close the recorder normally.
+4. Click Record, interact with the browser, then close Playwright Inspector. There is no Save action; closing only the recorded Chrome tab is not a reliable completion signal.
 5. The app automatically imports the complete JavaScript, generates Python and recognized no-code steps, and opens the Code editor. Manual import is only a recovery path.
 6. Review the complete source plus each recognized locator, accessible name, and input value.
 7. Add assertions, waits, timeouts, retries, and continue-on-error behavior.
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
+
+Synchronization contract: saving no-code steps regenerates JS/Python; saving JavaScript extracts recognized statements into steps and regenerates Python; unsupported custom JS remains intact with a partial-visualization warning; Python is derived and does not reverse-sync. The account field stores an alias only. Use `${data.key}`/`${data.nested.key}` for test data and `${env.SECRET_NAME}` for secrets. Ordered URL mappings use first match; native mapping is same-protocol replay only, while recording-time or cross-protocol mapping requires upstream Charles Map Remote.
 
 ### Compliant recording mode
 
@@ -322,7 +326,7 @@ Deleting a plan or case does not automatically delete historical recordings or r
 5. Preserve two explicit editing modes: structured steps for no-code users and executable Playwright JavaScript for code users. Generate Python from structured steps and keep both source files on disk.
 6. Preserve case versions. Reject stale browser saves with HTTP 409 so an old page cannot overwrite a newer import.
 7. Preserve recording and replay locale. Keep exact role + accessible-name locators; never silently fall back to any element with the same role because that creates false passes.
-8. Resolve `${data.key}` at execution time and redact secrets and proxy passwords from text logs. Treat screenshots, videos, and traces as sensitive binary evidence that must be reviewed before sharing.
+8. Resolve `${data.key}`, nested `${data.account.username}`, and `${env.SECRET_NAME}` at execution time. Redact secrets and proxy passwords from text logs. Treat screenshots, videos, and traces as sensitive binary evidence that must be reviewed before sharing.
 9. Never attach automation to the user's normal Chrome profile. Use an isolated or dedicated test profile.
 10. Do not bypass CAPTCHA, anti-bot, access-control, DRM, or third-party site protections.
 11. Treat `data/`, `recordings/`, and `artifacts/` as sensitive data on the executing machine or cloud session. Keep them excluded from Git and explain retention before delivery.
@@ -333,6 +337,7 @@ Deleting a plan or case does not automatically delete historical recordings or r
 - Label Playwright WebKit as WebKit, not Safari.
 - Add real Safari only through Selenium WebDriver/SafariDriver on macOS and document its reduced feature set.
 - Apply HTTP/HTTPS/SOCKS proxy configuration before browser/context creation. Never change the global OS proxy.
+- Support ordered URL-prefix mappings for same-protocol replay. Reject unsafe/unsupported cross-protocol native rewrites with a clear instruction to use an authorized upstream Charles Map Remote configuration.
 - Prefer selectors in this order: test ID, role + accessible name, label, stable text/attribute, CSS, XPath.
 - Support semantic controls, frames, shadow DOM, files, downloads, dialogs, keyboard/mouse, navigation, waits, and assertions where the selected browser adapter permits them.
 

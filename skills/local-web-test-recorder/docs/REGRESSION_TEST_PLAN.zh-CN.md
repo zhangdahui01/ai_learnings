@@ -59,6 +59,10 @@
 | FILE-002 | P1 | 未归档用例 | 保存到 `_未归档/` | 文件 E2E |
 | CODE-001 | P0 | 在线保存 JavaScript | 源码落盘，用例切换代码模式 | API E2E |
 | CODE-002 | P0 | Python 同步生成 | role+名称、输入值、导航顺序保留 | Unit/API |
+| CODE-003 | P0 | 保存无代码步骤 | 自动重建 JS/Python，手写代码覆盖前确认 | API/UI E2E |
+| CODE-004 | P0 | 保存可识别 JavaScript | 反向更新无代码步骤并重建 Python | Unit/API E2E |
+| CODE-005 | P1 | 保存复杂 JavaScript | 完整 JS 不丢失，提示只能部分可视化 | Unit/API |
+| CODE-006 | P1 | 保存 Python | 不覆盖 JS/无代码步骤，明确提示单向派生 | API |
 | PARSE-001 | P0 | goto/click/fill/press | 操作顺序和值完整 | Unit |
 | PARSE-002 | P0 | role 可访问名称 | 精确保留，不退化为任意同 role 元素 | Unit |
 | PARSE-003 | P1 | check/selectOption/断言 | 可转为结构化步骤 | Unit |
@@ -81,6 +85,13 @@
 | REPLAY-003 | P0 | WebKit 无代码回放 | 同一核心用例通过 | E2E |
 | REPLAY-004 | P0 | JavaScript 代码回放 | Playwright Test 通过 | E2E |
 | REPLAY-005 | P0 | 本机正式 Chrome channel | Chrome 可启动 | 环境验收 |
+| DATA-001 | P0 | `${data.key}` 与嵌套路径 | 无代码、JS、Python 回放解析一致 | Unit/E2E |
+| DATA-002 | P0 | `${env.SECRET}` | 执行时读取环境变量，不持久化明文 | Unit/代码审查 |
+| DATA-003 | P1 | 测试账号引用 | 仅保存别名，不被当作密码或自动填表 | API/UI |
+| PROXY-001 | P0 | 多条 Map Remote 规则 | 按顺序首条匹配并保留后续路径 | API/E2E |
+| PROXY-002 | P0 | 同协议 URL 映射回放 | 页面内容从目标地址加载，用例通过 | E2E |
+| PROXY-003 | P0 | 跨协议原生映射 | 保存被拒绝并提示改用 Charles | API E2E |
+| PROXY-004 | P1 | 映射规则 UI CRUD | 可添加、编辑、启停、删除多条规则 | UI E2E |
 | STEP-001 | P0 | 精确 role+name 定位 | 找到正确元素，不误点 | Unit/E2E |
 | STEP-002 | P0 | 断言失败 | 标记准确步骤并返回实际/期望 | E2E |
 | STEP-003 | P1 | 失败后继续 | 当前步骤 warning，后续步骤执行 | E2E |
@@ -111,8 +122,9 @@ npm test
 
 1. 用全新测试用例点击“开始录制”。
 2. 在 Inspector 浏览器完成一次输入和点击。
-3. 正常关闭 Inspector，确认页面在数秒内自动打开代码编辑器。
+3. 关闭 Inspector（无需 Save，不要只关闭 Chrome 标签页），确认页面在数秒内自动打开代码编辑器。
 4. 核对 JS 文件含本次操作、Python 文件已生成、无代码步骤含可识别操作。
 5. 回放该用例，检查执行记录和 Trace。
 6. 使用失败用例检查失败步骤、截图、录像和技术详情。
-
+7. 修改无代码值保存，核对 JS/Python 同步；再修改一段受支持 JS，核对无代码步骤反向同步。
+8. 配置一条同协议 Map Remote fixture，分别执行无代码和 JS 回放。

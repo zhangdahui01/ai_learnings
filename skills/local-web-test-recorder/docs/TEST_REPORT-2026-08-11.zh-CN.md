@@ -1,12 +1,12 @@
 # coupayWeb testing 测试报告
 
 测试日期：2026-08-11  
-被测版本：0.3.x（录制自动导入改造）  
+被测版本：0.3.x（录制自动导入、双向同步、数据引用与 Map Remote）
 结论：**有条件通过，可用于已授权测试环境的推广试用。**
 
 ## 1. 执行摘要
 
-- 单元测试：4/4 通过。
+- 单元测试：6/6 通过。
 - 自动化 E2E 套件：通过；覆盖 API、文件系统、浏览器回放和 UI。
 - 浏览器矩阵：Chromium、Firefox、WebKit 核心用例通过。
 - 本机正式 Chrome：channel 启动通过，版本 `151.0.7922.76`。
@@ -23,6 +23,11 @@
 | 一个用例一个文件 | 计划目录下写入 `.spec.js` 与 `test_*.py` | 通过 |
 | 自动同步 Python | 常见可识别步骤转换为 Python Playwright | 通过 |
 | 保留无代码编辑 | 同时提取常见操作/断言为结构化步骤 | 通过 |
+| 无代码 → JS/Python | 保存步骤后两种源码按同一结构化模型生成 | 通过 |
+| JS → 无代码/Python | 保存常见 Playwright JS 后提取 4 步并更新 Python | 通过 |
+| 嵌套测试数据引用 | `${data.account.query}` 在无代码与代码回放中解析 | 通过 |
+| 多条远程映射 | UI 支持 CRUD；同协议 Map Remote 的无代码/代码回放通过 | 通过 |
+| 跨协议保护 | HTTPS→HTTP 原生映射被拒绝并建议使用 Charles | 通过 |
 | 自动导入失败可理解 | 空脚本/异常退出显示明确原因且不覆盖用例 | 通过 |
 
 ## 3. 自动化覆盖结果
@@ -33,6 +38,8 @@
 - 测试用例创建、编辑、删除、409 版本冲突保护。
 - JS/Python 计划文件夹生成与源码保存。
 - codegen 的 goto、click、fill、press、check、selectOption、页面断言和元素断言解析。
+- JavaScript 保存反向同步步骤与 Python；生成代码中的等待、导航、type 和数据引用可重新解析。
+- `${data.key}`、嵌套 `${data.account.query}`、运行时数据注入，以及同协议 URL-prefix 映射。
 - 标准录制状态、合规录制授权校验、Chrome/Profile/storage 参数、登录状态二次加载。
 - 录制自动导入成功、空脚本失败保护、UI 自动打开代码编辑器。
 - Chromium、Firefox、WebKit 无代码回放和 JavaScript 代码回放。
@@ -45,7 +52,7 @@
 
 ```text
 npm test
-Unit: 4 passed, 0 failed
+Unit: 6 passed, 0 failed
 E2E: passed
 ```
 
@@ -68,7 +75,8 @@ Python file          = generated
 ## 5. 测试中发现的问题
 
 1. 回归用例最初把空 `<p role="status">` 当作可见元素，导致“失败后继续”测试失败。确认是 fixture 期望错误，不是产品缺陷；已改为断言可用搜索框并重新通过全套测试。
-2. 复杂自定义 JavaScript、frame locator 和超出解析器白名单的链式写法无法完整转换为无代码步骤或等价 Python；**完整 JavaScript 会原样保存，不会丢失**。这是当前已知能力边界。
+2. 复杂自定义 JavaScript、frame locator 和超出解析器白名单的链式写法无法完整转换为无代码步骤或等价 Python；**完整 JavaScript 会原样保存，并明确提示部分可视化**。Python 不反向覆盖 JS/无代码步骤。这是避免有损转换的产品边界。
+3. Playwright 原生 URL 改写要求协议相同；跨协议和录制阶段映射需通过已授权的 Charles Map Remote 配置。自动化已覆盖原生同协议映射与跨协议校验，但企业 Charles 链路仍需现场验收。
 
 ## 6. 残余风险与推广条件
 

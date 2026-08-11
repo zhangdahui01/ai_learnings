@@ -40,7 +40,7 @@ function compliancePaths(testCase) { return { profileDir: join(profilesDir, safe
 async function store() {
   const db = JSON.parse(await readFile(storePath, 'utf8'));
   db.schemaVersion ||= 2; db.plans ||= []; db.cases ||= []; db.runs ||= [];
-  db.cases.forEach(item => { item.steps ||= []; item.editorMode ||= 'visual'; item.codeLanguage ||= 'javascript'; item.sources ||= {}; item.compliance = { ...defaultCompliance(), ...(item.compliance || {}) }; });
+  db.cases.forEach(item => { item.steps ||= []; item.editorMode ||= 'visual'; item.codeLanguage ||= 'javascript'; item.sources ||= {}; item.defaults ||= {}; item.defaults.proxy = { mode: 'direct', server: '', bypass: '', mappings: [], ...(item.defaults.proxy || {}) }; item.defaults.proxy.mappings = Array.isArray(item.defaults.proxy.mappings) ? item.defaults.proxy.mappings : []; item.compliance = { ...defaultCompliance(), ...(item.compliance || {}) }; });
   const normalizeRun = run => {
     if (run.status !== 'failed' || run.diagnostic) return;
     const failedIndex = Math.max(0, (run.steps || []).findIndex(step => step.status === 'failed')); const failed = run.steps?.[failedIndex]; const raw = failed?.error || run.error || '未知错误';
@@ -56,7 +56,7 @@ function caseSummary(testCase) { return { ...testCase, steps: testCase.steps || 
 const defaultCase = (name = '新测试用例') => ({
   id: randomUUID(), name, version: 1, editorMode: 'visual', codeLanguage: 'javascript', accountRef: '', tags: [], data: {}, sources: {},
   compliance: defaultCompliance(),
-  defaults: { browser: 'chromium', baseUrl: '', locale: 'zh-CN', proxy: { mode: 'direct', server: '', username: '', password: '', bypass: '' }, timeoutMs: 10000 },
+  defaults: { browser: 'chromium', baseUrl: '', locale: 'zh-CN', proxy: { mode: 'direct', server: '', username: '', password: '', bypass: '', mappings: [] }, timeoutMs: 10000 },
   steps: [], createdAt: now(), updatedAt: now()
 });
 
@@ -77,50 +77,50 @@ function pyLocator(step) {
   return methods[p.strategy] ? `page.${methods[p.strategy]}(${pyString(p.value)})` : `page.locator(${pyString(p.strategy === 'xpath' ? `xpath=${p.value}` : p.value)})`;
 }
 function generateJavascript(testCase) {
-  const lines = [`import { test, expect } from 'playwright/test';`, '', `test(${jsString(testCase.name)}, async ({ page }) => {`];
+  const lines = [`import { test, expect } from 'playwright/test';`, '', `const data = JSON.parse(process.env.WTR_TEST_DATA || '{}');`, `const readPath = (source, path) => path.split('.').reduce((value, key) => value?.[key], source);`, `const resolveValue = value => String(value).replace(/\\\$\\{data\\.([\\w.-]+)\\}/g, (_match, path) => String(readPath(data, path) ?? '')).replace(/\\\$\\{env\\.([A-Z0-9_]+)\\}/g, (_match, key) => String(process.env[key] ?? ''));`, '', `test(${jsString(testCase.name)}, async ({ page }) => {`];
   for (const step of testCase.steps || []) {
-    const target = jsLocator(step); const value = step.url ?? step.value ?? step.expected ?? '';
+    const target = jsLocator(step); const value = step.url ?? step.value ?? step.expected ?? ''; const resolved = `resolveValue(${jsString(value)})`;
     if (step.kind === 'assertion') {
-      if (step.assertion === 'toHaveURL' || step.assertion === 'toHaveTitle') lines.push(`  await expect(page).${step.assertion}(${jsString(value)});`);
+      if (step.assertion === 'toHaveURL' || step.assertion === 'toHaveTitle') lines.push(`  await expect(page).${step.assertion}(${resolved});`);
       else if (['toBeVisible', 'toBeHidden', 'toBeEnabled', 'toBeDisabled', 'toBeChecked'].includes(step.assertion)) lines.push(`  await expect(${target}).${step.assertion}();`);
-      else lines.push(`  await expect(${target}).${step.assertion}(${step.assertion === 'toHaveCount' ? Number(value) : jsString(value)});`);
+      else lines.push(`  await expect(${target}).${step.assertion}(${step.assertion === 'toHaveCount' ? `Number(${resolved})` : resolved});`);
       continue;
     }
-    if (step.action === 'goto') lines.push(`  await page.goto(${jsString(value)});`);
+    if (step.action === 'goto') lines.push(`  await page.goto(${resolved});`);
     else if (['reload', 'back', 'forward'].includes(step.action)) lines.push(`  await page.${step.action}();`);
-    else if (step.action === 'waitForTimeout') lines.push(`  await page.waitForTimeout(${Number(value) || 0});`);
-    else if (step.action === 'waitForURL') lines.push(`  await page.waitForURL(${jsString(value)});`);
-    else if (step.action === 'waitForLoadState') lines.push(`  await page.waitForLoadState(${jsString(value || 'domcontentloaded')});`);
+    else if (step.action === 'waitForTimeout') lines.push(`  await page.waitForTimeout(Number(${resolved}));`);
+    else if (step.action === 'waitForURL') lines.push(`  await page.waitForURL(${resolved});`);
+    else if (step.action === 'waitForLoadState') lines.push(`  await page.waitForLoadState(${resolved});`);
     else if (['click', 'dblclick', 'hover', 'focus', 'clear', 'check', 'uncheck'].includes(step.action)) lines.push(`  await ${target}.${step.action}();`);
-    else if (step.action === 'type') lines.push(`  await ${target}.pressSequentially(${jsString(value)});`);
+    else if (step.action === 'type') lines.push(`  await ${target}.pressSequentially(${resolved});`);
     else if (step.action === 'waitForVisible') lines.push(`  await ${target}.waitFor({ state: 'visible' });`);
     else if (step.action === 'waitForHidden') lines.push(`  await ${target}.waitFor({ state: 'hidden' });`);
-    else lines.push(`  await ${target}.${step.action}(${jsString(value)});`);
+    else lines.push(`  await ${target}.${step.action}(${resolved});`);
   }
   lines.push('});', ''); return lines.join('\n');
 }
 function generatePython(testCase) {
-  const lines = ['from playwright.sync_api import Page, expect', '', '', `def test_${safeFile(testCase.name).replace(/-/g, '_')}(page: Page):`];
+  const lines = ['import json', 'import os', 'import re', 'from playwright.sync_api import Page, expect', '', 'data = json.loads(os.getenv("WTR_TEST_DATA", "{}"))', 'def read_path(source, path):', '    value = source', '    for key in path.split("."):', '        value = value.get(key) if isinstance(value, dict) else None', '    return value', 'def resolve_value(value):', '    value = re.sub(r"\\$\\{data\\.([\\w.-]+)\\}", lambda match: str(read_path(data, match.group(1)) or ""), str(value))', '    return re.sub(r"\\$\\{env\\.([A-Z0-9_]+)\\}", lambda match: os.getenv(match.group(1), ""), value)', '', '', `def test_${safeFile(testCase.name).replace(/-/g, '_')}(page: Page):`];
   if (!(testCase.steps || []).length) lines.push('    pass');
   for (const step of testCase.steps || []) {
-    const target = pyLocator(step); const value = step.url ?? step.value ?? step.expected ?? '';
+    const target = pyLocator(step); const value = step.url ?? step.value ?? step.expected ?? ''; const resolved = `resolve_value(${pyString(value)})`;
     if (step.kind === 'assertion') {
       const map = { toBeVisible: 'to_be_visible', toBeHidden: 'to_be_hidden', toBeEnabled: 'to_be_enabled', toBeDisabled: 'to_be_disabled', toBeChecked: 'to_be_checked', toHaveText: 'to_have_text', toContainText: 'to_contain_text', toHaveValue: 'to_have_value', toHaveCount: 'to_have_count', toHaveURL: 'to_have_url', toHaveTitle: 'to_have_title' };
       const fn = map[step.assertion] || step.assertion; const subject = ['toHaveURL', 'toHaveTitle'].includes(step.assertion) ? 'page' : target;
       const noArg = ['toBeVisible', 'toBeHidden', 'toBeEnabled', 'toBeDisabled', 'toBeChecked'].includes(step.assertion);
-      lines.push(`    expect(${subject}).${fn}(${noArg ? '' : step.assertion === 'toHaveCount' ? Number(value) : pyString(value)})`); continue;
+      lines.push(`    expect(${subject}).${fn}(${noArg ? '' : step.assertion === 'toHaveCount' ? `int(${resolved})` : resolved})`); continue;
     }
     const map = { dblclick: 'dblclick', selectOption: 'select_option', waitForVisible: 'wait_for', waitForHidden: 'wait_for', waitForURL: 'wait_for_url', waitForLoadState: 'wait_for_load_state', waitForTimeout: 'wait_for_timeout' };
-    if (step.action === 'goto') lines.push(`    page.goto(${pyString(value)})`);
+    if (step.action === 'goto') lines.push(`    page.goto(${resolved})`);
     else if (['reload', 'back', 'forward'].includes(step.action)) lines.push(`    page.${step.action}()`);
-    else if (step.action === 'waitForTimeout') lines.push(`    page.wait_for_timeout(${Number(value) || 0})`);
-    else if (step.action === 'waitForURL') lines.push(`    page.wait_for_url(${pyString(value)})`);
-    else if (step.action === 'waitForLoadState') lines.push(`    page.wait_for_load_state(${pyString(value || 'domcontentloaded')})`);
+    else if (step.action === 'waitForTimeout') lines.push(`    page.wait_for_timeout(int(${resolved}))`);
+    else if (step.action === 'waitForURL') lines.push(`    page.wait_for_url(${resolved})`);
+    else if (step.action === 'waitForLoadState') lines.push(`    page.wait_for_load_state(${resolved})`);
     else if (step.action === 'waitForVisible') lines.push(`    ${target}.wait_for(state="visible")`);
     else if (step.action === 'waitForHidden') lines.push(`    ${target}.wait_for(state="hidden")`);
     else if (['click', 'dblclick', 'hover', 'focus', 'clear', 'check', 'uncheck'].includes(step.action)) lines.push(`    ${target}.${map[step.action] || step.action}()`);
-    else if (step.action === 'type') lines.push(`    ${target}.press_sequentially(${pyString(value)})`);
-    else lines.push(`    ${target}.${map[step.action] || step.action}(${pyString(value)})`);
+    else if (step.action === 'type') lines.push(`    ${target}.press_sequentially(${resolved})`);
+    else lines.push(`    ${target}.${map[step.action] || step.action}(${resolved})`);
   }
   lines.push(''); return lines.join('\n');
 }
@@ -155,17 +155,33 @@ app.post('/api/cases', async (req, res) => { const db = await store(); const tes
 app.put('/api/cases/:id', async (req, res) => {
   const db = await store(); const index = db.cases.findIndex(x => x.id === req.params.id); if (index < 0) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const old = db.cases[index];
   if (Number(req.body.version) !== Number(old.version)) return res.status(409).json({ error: '该用例已被更新。已加载最新版本，请确认后重新保存。', code: 'VERSION_CONFLICT', currentVersion: old.version });
-  const next = { ...old, ...req.body, id: old.id, createdAt: old.createdAt, version: old.version + 1, updatedAt: now() }; if (!Array.isArray(next.steps)) throw httpError(400, '步骤数据格式错误：steps 必须是数组', 'INVALID_STEPS');
+  const next = { ...old, ...req.body, id: old.id, createdAt: old.createdAt, version: old.version + 1, updatedAt: now() }; if (!Array.isArray(next.steps)) throw httpError(400, '步骤数据格式错误：steps 必须是数组', 'INVALID_STEPS'); validateMappings(next.defaults?.proxy);
   db.cases[index] = next; await persistSources(db, next, Boolean(req.body.regenerateSources)); await save(db); res.json(next);
 });
 app.delete('/api/cases/:id', async (req, res) => { const db = await store(); db.cases = db.cases.filter(x => x.id !== req.params.id); db.plans.forEach(p => { p.caseIds = p.caseIds.filter(id => id !== req.params.id); }); await save(db); res.status(204).end(); });
 app.get('/api/cases/:id/source', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const language = req.query.language === 'python' ? 'python' : 'javascript'; if (!testCase.sources?.[language]) await persistSources(db, testCase, true); await save(db); res.json({ language, code: testCase.sources[language], files: testCase.sourceFiles || [] }); });
-app.put('/api/cases/:id/source', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const language = req.body.language === 'python' ? 'python' : 'javascript'; const code = String(req.body.code || ''); if (!code.trim()) throw httpError(400, '代码不能为空', 'EMPTY_SOURCE'); testCase.sources ||= {}; testCase.sources[language] = language === 'javascript' ? code.replaceAll("'@playwright/test'", "'playwright/test'").replaceAll('"@playwright/test"', '"playwright/test"') : code; testCase.codeLanguage = language; if (language === 'javascript') testCase.editorMode = 'code'; testCase.version += 1; testCase.updatedAt = now(); await persistSources(db, testCase); await save(db); res.json(testCase); });
+app.put('/api/cases/:id/source', async (req, res) => {
+  const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const language = req.body.language === 'python' ? 'python' : 'javascript'; const code = String(req.body.code || ''); if (!code.trim()) throw httpError(400, '代码不能为空', 'EMPTY_SOURCE'); testCase.sources ||= {}; let sync;
+  if (language === 'javascript') {
+    const javascript = code.replaceAll("'@playwright/test'", "'playwright/test'").replaceAll('"@playwright/test"', '"playwright/test"'); const steps = parseCodegen(javascript); const candidates = javascript.split('\n').filter(line => /await\s+(page\.|expect\()/.test(line)).length;
+    testCase.sources.javascript = javascript; testCase.editorMode = 'code';
+    if (steps.length) { testCase.steps = steps; testCase.sources.python = generatePython(testCase); sync = { direction: 'javascript-to-visual-and-python', stepCount: steps.length, warning: candidates > steps.length ? `有 ${candidates - steps.length} 行复杂 JavaScript 无法转换为无代码步骤；完整 JavaScript 已保留。` : null }; }
+    else sync = { direction: 'javascript-only', stepCount: 0, warning: '没有识别到可转换的 Playwright 步骤；已保存完整 JavaScript，但未覆盖无代码步骤和 Python。' };
+  } else { testCase.sources.python = code; sync = { direction: 'python-only', stepCount: 0, warning: 'Python 作为独立导出源码保存，不会反向覆盖 JavaScript 或无代码步骤。请修改无代码步骤或 JavaScript 作为同步源。' }; }
+  testCase.codeLanguage = language; testCase.version += 1; testCase.updatedAt = now(); await persistSources(db, testCase); await save(db); res.json({ ...testCase, sync });
+});
 app.post('/api/cases/:id/generate-source', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); await persistSources(db, testCase, true); testCase.version += 1; testCase.updatedAt = now(); await save(db); res.json(testCase); });
 
 function singleLocator(page, primary) { const value = primary.value; switch (primary.strategy) { case 'role': return page.getByRole(value, primary.name ? { name: primary.name } : undefined); case 'label': return page.getByLabel(value); case 'placeholder': return page.getByPlaceholder(value); case 'text': return page.getByText(value, { exact: Boolean(primary.exact) }); case 'testId': return page.getByTestId(value); case 'altText': return page.getByAltText(value); case 'title': return page.getByTitle(value); case 'xpath': return page.locator(`xpath=${value}`); default: return page.locator(value); } }
 function locator(page, source = {}) { const primary = source.primary || source; const candidates = [primary, ...(source.fallbacks || [])]; const locators = candidates.map(candidate => singleLocator(page, candidate)); return locators.slice(1).reduce((combined, candidate) => combined.or(candidate), locators[0]).first(); }
-function interpolate(value, data) { return typeof value === 'string' ? value.replace(/\$\{data\.([\w.-]+)\}/g, (_m, key) => String(data[key] ?? '')) : value; }
+function readPath(source, path) { return String(path).split('.').reduce((value, key) => value?.[key], source); }
+function interpolate(value, data) { return typeof value === 'string' ? value.replace(/\$\{data\.([\w.-]+)\}/g, (_m, path) => String(readPath(data, path) ?? '')).replace(/\$\{env\.([A-Z0-9_]+)\}/g, (_m, key) => String(process.env[key] ?? '')) : value; }
+function activeMappings(proxy = {}) { return (proxy.mappings || []).filter(rule => rule?.enabled !== false && rule?.from && rule?.to); }
+function mappedUrl(original, mappings) { for (const rule of mappings) { if (!original.startsWith(rule.from)) continue; const suffix = rule.preservePath === false ? '' : original.slice(rule.from.length); return `${String(rule.to).replace(/\/$/, '')}${suffix ? `/${suffix.replace(/^\//, '')}` : ''}`; } return original; }
+async function installMappings(context, proxy = {}) { const mappings = activeMappings(proxy); if (!mappings.length) return; await context.route('**/*', async route => { const original = route.request().url(); const mapped = mappedUrl(original, mappings); if (mapped === original) return route.continue(); const fromProtocol = new URL(original).protocol; const toProtocol = new URL(mapped).protocol; if (fromProtocol !== toProtocol) return route.abort('blockedbyclient'); await route.continue({ url: mapped }); }); }
+function validateMappings(proxy = {}) { for (const [index, rule] of (proxy.mappings || []).entries()) { if (!rule?.from && !rule?.to) continue; let from; let to; try { from = new URL(rule.from); to = new URL(rule.to); } catch { throw httpError(400, `远程映射第 ${index + 1} 条必须填写完整 URL，例如 https://www.coupang.com/`, 'INVALID_PROXY_MAPPING'); } if (!['http:', 'https:'].includes(from.protocol) || !['http:', 'https:'].includes(to.protocol)) throw httpError(400, `远程映射第 ${index + 1} 条只支持 HTTP/HTTPS`, 'INVALID_PROXY_MAPPING'); if (from.protocol !== to.protocol) throw httpError(400, `远程映射第 ${index + 1} 条协议不同。Playwright 原生映射要求协议一致；HTTP↔HTTPS 请使用 Charles Map Remote。`, 'MAPPING_PROTOCOL_MISMATCH'); } }
+function codeMappingBootstrap(proxy = {}) { const mappings = activeMappings(proxy); if (!mappings.length) return ''; return `const __wtrMappings = ${JSON.stringify(mappings)};\ntest.beforeEach(async ({ context }) => {\n  await context.route('**/*', async route => {\n    const original = route.request().url();\n    const rule = __wtrMappings.find(item => original.startsWith(item.from));\n    if (!rule) return route.continue();\n    const suffix = rule.preservePath === false ? '' : original.slice(rule.from.length);\n    const mapped = String(rule.to).replace(/\\/$/, '') + (suffix ? '/' + suffix.replace(/^\\//, '') : '');\n    await route.continue({ url: mapped });\n  });\n});\n`;
+}
 function redact(text, secrets) { let value = String(text || ''); for (const secret of secrets) if (secret) value = value.split(String(secret)).join('***'); return value; }
 function stepTitle(step, index) { const label = step.action || step.assertion || '未知操作'; const p = step.locator?.primary; const target = p ? `${p.strategy}=${p.value}${p.name ? ` (${p.name})` : ''}` : (step.url || step.value || '当前页面'); return `步骤 ${index + 1} · ${label} · ${target}`; }
 function diagnose(raw, step, index, url) {
@@ -201,8 +217,8 @@ async function executeVisualCase(db, testCase, input = {}) {
   const started = Date.now(); const result = { id: runId, scope: 'case', caseId: testCase.id, caseName: testCase.name, planId: input.planId || null, startedAt: now(), status: 'running', steps: [], artifactPath: `/artifacts/${runId}` };
   let browser; let context; let page;
   try {
-    const auth = compliancePaths(testCase); const launchOptions = { headless: input.headless !== false, proxy, ...(complianceEnabled ? { channel: 'chrome' } : {}) }; const contextOptions = { locale: settings.locale || 'zh-CN', recordVideo: { dir: runDir }, ...(complianceEnabled && existsSync(auth.storagePath) ? { storageState: auth.storagePath } : {}) };
-    browser = await engine.launch(launchOptions); context = await browser.newContext(contextOptions); await context.tracing.start({ screenshots: true, snapshots: true }); page = await context.newPage();
+    const auth = compliancePaths(testCase); const mappings = activeMappings(settings.proxy); const launchOptions = { headless: input.headless !== false, proxy, ...(complianceEnabled ? { channel: 'chrome' } : {}) }; const contextOptions = { locale: settings.locale || 'zh-CN', recordVideo: { dir: runDir }, ...(mappings.length ? { serviceWorkers: 'block' } : {}), ...(complianceEnabled && existsSync(auth.storagePath) ? { storageState: auth.storagePath } : {}) };
+    browser = await engine.launch(launchOptions); context = await browser.newContext(contextOptions); await installMappings(context, settings.proxy); await context.tracing.start({ screenshots: true, snapshots: true }); page = await context.newPage();
     for (let index = 0; index < testCase.steps.length; index += 1) {
       const step = testCase.steps[index]; const record = { id: step.id, index, title: stepTitle(step, index), operation: step.action || step.assertion, locator: step.locator?.primary || null, status: 'passed', attempts: 0, startedAt: now() }; const attempts = Math.max(0, Number(step.retryCount || 0)) + 1;
       for (let attempt = 1; attempt <= attempts; attempt += 1) { record.attempts = attempt; try { await executeStep(page, step, { ...testCase.data, ...(input.data || {}) }); break; } catch (error) { record.error = redact(error.message, [settings.proxy?.password]); const siteBlocked = await detectSiteBlock(page); if (attempt < attempts && !siteBlocked) continue; const shot = 'failure.png'; await page.screenshot({ path: join(runDir, shot), fullPage: true }).catch(() => {}); record.diagnostic = siteBlocked ? blockedDiagnostic(step, index, page.url(), record.error) : diagnose(record.error, step, index, page.url()); record.artifacts = { screenshot: `${result.artifactPath}/${shot}`, trace: `${result.artifactPath}/trace.zip` }; if (step.continueOnError) { record.status = 'warning'; break; } record.status = 'failed'; result.status = 'failed'; result.error = record.error; result.diagnostic = record.diagnostic; result.failedStepIndex = index; result.steps.push(record); throw error; } }
@@ -234,10 +250,10 @@ async function executeCodeCase(db, testCase, input = {}) {
   const sourceEntry = testCase.sourceFiles?.[0]; if (!sourceEntry?.javascript) throw httpError(400, '尚未生成 JavaScript 测试文件，请先保存代码。', 'SOURCE_NOT_SAVED');
   const complianceEnabled = Boolean(testCase.compliance?.enabled); const sourcePath = resolve(root, sourceEntry.javascript); const browserName = complianceEnabled ? 'chromium' : (input.browser || testCase.defaults.browser || 'chromium'); if (!['chromium', 'firefox', 'webkit'].includes(browserName)) throw httpError(400, '代码回放支持 Chromium、Firefox 和 WebKit。', 'UNSUPPORTED_BROWSER');
   const proxy = input.proxy?.mode === 'proxy' && input.proxy.server ? { server: input.proxy.server, username: input.proxy.username || undefined, password: input.proxy.password || undefined, bypass: input.proxy.bypass || undefined } : undefined;
-  const playwrightTestUrl = pathToFileURL(join(root, 'node_modules', 'playwright', 'test.mjs')).href; const runnablePath = join(runDir, 'runnable.spec.mjs'); const runnableSource = testCase.sources.javascript.replace(/(['"])playwright\/test\1/g, JSON.stringify(playwrightTestUrl)).replace(/(['"])@playwright\/test\1/g, JSON.stringify(playwrightTestUrl)); await writeFile(runnablePath, runnableSource);
-  const auth = compliancePaths(testCase); const configPath = join(runDir, 'playwright.config.mjs'); const config = `import { defineConfig } from ${JSON.stringify(playwrightTestUrl)};\nexport default defineConfig({ testDir: ${JSON.stringify(runDir)}, testMatch: ${JSON.stringify(basename(runnablePath))}, timeout: ${Number(testCase.defaults.timeoutMs || 30000)}, outputDir: ${JSON.stringify(join(runDir, 'results'))}, reporter: 'line', use: { browserName: ${JSON.stringify(browserName)}, headless: ${input.headless !== false}, locale: ${JSON.stringify(testCase.defaults.locale || 'zh-CN')}, trace: 'on', video: 'on', screenshot: 'only-on-failure'${complianceEnabled ? `, channel: 'chrome'` : ''}${complianceEnabled && existsSync(auth.storagePath) ? `, storageState: ${JSON.stringify(auth.storagePath)}` : ''}${proxy ? `, proxy: ${JSON.stringify(proxy)}` : ''} } });\n`;
+  const playwrightTestUrl = pathToFileURL(join(root, 'node_modules', 'playwright', 'test.mjs')).href; const runnablePath = join(runDir, 'runnable.spec.mjs'); let runnableSource = testCase.sources.javascript.replace(/(['"])playwright\/test\1/g, JSON.stringify(playwrightTestUrl)).replace(/(['"])@playwright\/test\1/g, JSON.stringify(playwrightTestUrl)); const mappingBootstrap = codeMappingBootstrap(testCase.defaults.proxy); if (mappingBootstrap) { const firstBreak = runnableSource.indexOf('\n'); runnableSource = `${runnableSource.slice(0, firstBreak + 1)}\n${mappingBootstrap}\n${runnableSource.slice(firstBreak + 1)}`; } await writeFile(runnablePath, runnableSource);
+  const auth = compliancePaths(testCase); const mappings = activeMappings(testCase.defaults.proxy); const configPath = join(runDir, 'playwright.config.mjs'); const config = `import { defineConfig } from ${JSON.stringify(playwrightTestUrl)};\nexport default defineConfig({ testDir: ${JSON.stringify(runDir)}, testMatch: ${JSON.stringify(basename(runnablePath))}, timeout: ${Number(testCase.defaults.timeoutMs || 30000)}, outputDir: ${JSON.stringify(join(runDir, 'results'))}, reporter: 'line', use: { browserName: ${JSON.stringify(browserName)}, headless: ${input.headless !== false}, locale: ${JSON.stringify(testCase.defaults.locale || 'zh-CN')}, trace: 'on', video: 'on', screenshot: 'only-on-failure'${mappings.length ? `, serviceWorkers: 'block'` : ''}${complianceEnabled ? `, channel: 'chrome'` : ''}${complianceEnabled && existsSync(auth.storagePath) ? `, storageState: ${JSON.stringify(auth.storagePath)}` : ''}${proxy ? `, proxy: ${JSON.stringify(proxy)}` : ''} } });\n`;
   await writeFile(configPath, config); const started = Date.now(); const result = { id: runId, scope: 'case', mode: 'code', caseId: testCase.id, caseName: testCase.name, planId: input.planId || null, startedAt: now(), status: 'running', steps: [], artifactPath: `/artifacts/${runId}` };
-  const processResult = await runProcess('npx', ['playwright', 'test', '--config', configPath], { cwd: root, env: { ...process.env, CI: '1' } }); const output = redact(`${processResult.stdout}\n${processResult.stderr}`.trim(), [proxy?.password]); const files = await findArtifacts(runDir); const screenshot = files.find(x => /test-failed.*\.png$|failure\.png$/i.test(x)); const video = files.find(x => /video\.(webm|mp4)$/i.test(x)); const trace = files.find(x => /trace\.zip$/i.test(x));
+  const processResult = await runProcess('npx', ['playwright', 'test', '--config', configPath], { cwd: root, env: { ...process.env, CI: '1', WTR_TEST_DATA: JSON.stringify({ ...testCase.data, ...(input.data || {}) }) } }); const output = redact(`${processResult.stdout}\n${processResult.stderr}`.trim(), [proxy?.password]); const files = await findArtifacts(runDir); const screenshot = files.find(x => /test-failed.*\.png$|failure\.png$/i.test(x)); const video = files.find(x => /video\.(webm|mp4)$/i.test(x)); const trace = files.find(x => /trace\.zip$/i.test(x));
   result.status = processResult.code === 0 ? 'passed' : 'failed'; result.finishedAt = now(); result.durationMs = Date.now() - started; result.artifacts = { screenshot: screenshot ? `${result.artifactPath}/${screenshot}` : null, video: video ? `${result.artifactPath}/${video}` : null, trace: trace ? `${result.artifactPath}/${trace}` : null };
   if (result.status === 'passed') result.steps = [{ id: 'code', index: 0, title: 'Playwright JavaScript 测试', operation: 'code', status: 'passed', attempts: 1 }];
   else {
@@ -294,7 +310,7 @@ app.post('/api/cases/:id/record', async (req, res) => {
   if (complianceMode) { await mkdir(paths.profileDir, { recursive: true }); args.push('--channel', 'chrome', '--user-data-dir', paths.profileDir, '--save-storage', paths.storagePath); if (existsSync(paths.storagePath)) args.push('--load-storage', paths.storagePath); }
   else if (browser !== 'chromium') args.push('--browser', browser);
   const proxy = req.body.proxy || testCase.defaults.proxy; if (proxy?.mode === 'proxy' && proxy.server) { args.push('--proxy-server', proxy.server); if (proxy.bypass) args.push('--proxy-bypass', proxy.bypass); }
-  if (req.body.url) args.push(req.body.url); const sessionId = randomUUID(); const session = { id: sessionId, caseId: testCase.id, status: 'waiting-for-user', dryRun: process.env.RECORD_DRY_RUN === '1', complianceMode, startedAt: now(), manualVerification: complianceMode, outputPath: out, authPaths: paths, debugArgs: args, outputFile: relative(root, out), profile: complianceMode ? `data/profiles/${safeFile(testCase.id)}` : null, loginState: complianceMode ? `data/auth/${safeFile(testCase.id)}.json` : null, message: complianceMode ? '正式 Chrome 已打开。手工完成登录或 CAPTCHA 后继续；关闭 Inspector 时脚本会自动导入代码编辑器。' : '录制窗口已打开。关闭 Inspector 后，脚本会自动导入代码编辑器。' };
+  if (req.body.url) args.push(req.body.url); const sessionId = randomUUID(); const session = { id: sessionId, caseId: testCase.id, status: 'waiting-for-user', dryRun: process.env.RECORD_DRY_RUN === '1', complianceMode, startedAt: now(), manualVerification: complianceMode, outputPath: out, authPaths: paths, debugArgs: args, outputFile: relative(root, out), profile: complianceMode ? `data/profiles/${safeFile(testCase.id)}` : null, loginState: complianceMode ? `data/auth/${safeFile(testCase.id)}.json` : null, message: complianceMode ? '正式 Chrome 已打开。手工完成登录或 CAPTCHA 后继续；完成后关闭 Inspector（无需 Save），脚本会自动导入代码编辑器。' : '录制窗口已打开。完成后关闭 Inspector（无需 Save），脚本会自动导入代码编辑器。' };
   recordingSessions.set(sessionId, session);
   if (process.env.RECORD_DRY_RUN !== '1') {
     const child = spawn('npx', args, { cwd: root, detached: true, stdio: 'ignore' }); session.pid = child.pid; child.once('error', error => { completeRecordingSession(session, null, error); }); child.once('exit', code => { completeRecordingSession(session, code); }); child.unref();

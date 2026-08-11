@@ -13,7 +13,19 @@
   "defaults": {
     "browser": "chromium",
     "baseUrl": "https://example.test",
-    "proxyRef": "proxies.corp",
+    "proxy": {
+      "mode": "direct",
+      "server": "",
+      "bypass": "localhost,127.0.0.1",
+      "mappings": [
+        {
+          "enabled": true,
+          "from": "https://www.coupang.com/",
+          "to": "https://qa-coupang.example/",
+          "preservePath": true
+        }
+      ]
+    },
     "timeoutMs": 10000
   },
   "dataSetRefs": ["data.login-valid"],
@@ -85,4 +97,4 @@ Allowed strategies: `testId`, `role`, `label`, `placeholder`, `text`, `altText`,
 | WebKit | Playwright WebKit | Label as WebKit, never Safari |
 | Safari | Selenium WebDriver + SafariDriver on macOS | Capability-limited adapter; document unsupported traces, downloads, and interactions |
 
-Apply proxy before creating the browser/context. Support `{server, usernameRef, passwordRef, bypass}` and `direct`; do not mutate global OS proxy settings.
+Apply upstream proxy before creating the browser/context. Support `{mode, server, bypass}` and `direct`; do not mutate global OS proxy settings or persist credentials. `mappings` is an ordered list of URL-prefix rules and the first enabled match wins. Native mappings apply to replay and must keep the protocol unchanged; recording-time or cross-protocol mapping belongs in an authorized external proxy such as Charles Map Remote.
