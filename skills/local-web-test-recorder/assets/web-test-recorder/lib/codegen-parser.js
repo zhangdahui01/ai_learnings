@@ -20,6 +20,10 @@ export function parseLocator(method, args) {
 }
 
 export function parseCodegen(code) {
+  const embedded = [...String(code).matchAll(/^\s*\/\/\s*wtr-step:([A-Za-z0-9_-]+)\s*$/gm)].map(match => {
+    try { return JSON.parse(Buffer.from(match[1], 'base64url').toString('utf8')); } catch { return null; }
+  }).filter(Boolean);
+  if (embedded.length) return embedded;
   const steps = [];
   for (const raw of String(code).split('\n')) {
     const line = raw.trim(); let match;

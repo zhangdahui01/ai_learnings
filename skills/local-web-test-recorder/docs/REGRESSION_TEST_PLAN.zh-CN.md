@@ -96,6 +96,16 @@
 | STEP-002 | P0 | 断言失败 | 标记准确步骤并返回实际/期望 | E2E |
 | STEP-003 | P1 | 失败后继续 | 当前步骤 warning，后续步骤执行 | E2E |
 | STEP-004 | P1 | 重试 | 普通错误按配置重试 | E2E/代码审查 |
+| STABLE-001 | P0 | Web-first 文本断言 | 页面延迟更新时自动轮询后通过 | E2E |
+| STABLE-002 | P0 | 执行前等待 Loading 消失 | Loading 隐藏后才执行断言 | E2E |
+| STABLE-003 | P0 | 点击并等待接口 | 先注册响应监听，校验 URL/方法/HTTP 状态 | E2E |
+| STABLE-004 | P0 | HTTP 503 后退避重试 | 首次失败、第二次通过，记录 attempts=2 和 Flaky | E2E |
+| STABLE-005 | P0 | 副作用自动保护 | auto/never 不重复点击；safe 才允许重试 | Unit/E2E |
+| STABLE-006 | P1 | 固定/指数退避 | 按策略计算间隔并记录恢复过程 | Unit/E2E |
+| STABLE-007 | P1 | 刷新/重新打开恢复 | 重试前执行选定恢复动作 | E2E |
+| STABLE-008 | P0 | 高级步骤 JS 反向同步 | `wtr-step` 标记无损恢复 readiness/retry/response | Unit/API |
+| STABLE-009 | P0 | 高级 Python 生成 | 生成文件通过 `py_compile` | E2E |
+| STABLE-010 | P1 | 稳定性预设 UI | 快速/标准/慢速自动更新三类超时 | UI E2E |
 | BLOCK-001 | P0 | Access Denied/CAPTCHA 页面 | 分类为“目标网站拒绝自动化” | E2E |
 | BLOCK-002 | P0 | 拒绝页面配置重试 | 停止无意义重试，attempts=1 | E2E |
 | ART-001 | P0 | 回放失败 | 生成失败截图和 Trace | E2E |

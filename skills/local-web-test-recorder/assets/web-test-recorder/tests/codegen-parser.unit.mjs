@@ -49,3 +49,9 @@ await page.getByRole('status').waitFor({ state: 'visible' });`);
   assert.deepEqual(steps.map(step => step.action), ['reload', 'waitForTimeout', 'type', 'waitForVisible']);
   assert.equal(steps[2].value, '${data.query}');
 });
+
+test('parseCodegen restores advanced structured steps from generated markers', () => {
+  const original = { id:'advanced', kind:'action', action:'clickAndWaitForResponse', locator:{primary:{strategy:'role',value:'button',name:'搜索'}}, response:{urlPattern:'/api/search',method:'POST',status:200,timeoutMs:30000}, readiness:{type:'elementHidden',locator:{primary:{strategy:'testId',value:'loading'}},timeoutMs:15000}, retryPolicy:{maxAttempts:3,baseDelayMs:1000,backoff:'exponential',recovery:'reload',idempotency:'safe'} };
+  const marker = Buffer.from(JSON.stringify(original)).toString('base64url');
+  assert.deepEqual(parseCodegen(`// wtr-step:${marker}\nawait helper();`), [original]);
+});

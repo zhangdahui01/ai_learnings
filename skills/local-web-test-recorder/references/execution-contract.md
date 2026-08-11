@@ -26,6 +26,12 @@
         }
       ]
     },
+    "stability": {
+      "preset": "standard",
+      "navigationTimeoutMs": 30000,
+      "actionTimeoutMs": 10000,
+      "assertionTimeoutMs": 10000
+    },
     "timeoutMs": 10000
   },
   "dataSetRefs": ["data.login-valid"],
@@ -37,7 +43,19 @@
       "locator": {"primary": {"strategy": "label", "value": "Email"}, "fallbacks": []},
       "value": "${data.email}",
       "sensitive": false,
-      "timeoutMs": 10000
+      "timeoutMs": 10000,
+      "readiness": {
+        "type": "elementHidden",
+        "locator": {"primary": {"strategy": "testId", "value": "loading"}},
+        "timeoutMs": 15000
+      },
+      "retryPolicy": {
+        "maxAttempts": 2,
+        "baseDelayMs": 1000,
+        "backoff": "exponential",
+        "recovery": "reload",
+        "idempotency": "auto"
+      }
     },
     {
       "id": "step-2",
@@ -52,6 +70,10 @@
 
 Reject unknown `action` and `assertion` values. Encrypt secret values at rest and store only `${secret.name}` references in this format.
 
+`readiness.type` supports `none`, `elementVisible`, `elementHidden`, `elementEnabled`, `elementEditable`, `elementText`, `url`, and `loadState`. Prefer an element or business-state signal over `networkidle`. `retryPolicy.idempotency=auto` must not repeat clicks or other potentially side-effecting actions; use `safe` only after the user explicitly confirms idempotency, and `never` for payment, order, deletion, or approval submissions.
+
+For an atomic action/network wait use `action: clickAndWaitForResponse` plus `response: {urlPattern, method, status, timeoutMs}`. Register the response wait before clicking so a fast response cannot be missed.
+
 ## Actions
 
 | Group | Actions |
@@ -61,7 +83,7 @@ Reject unknown `action` and `assertion` values. Encrypt secret values at rest an
 | Text/editable | `fill`, `clear`, `type`, `selectText`, `setInputFiles` |
 | Choice controls | `check`, `uncheck`, `selectOption`, `chooseRadio`, `setSliderValue` |
 | Rich widgets | `selectAutocompleteOption`, `expandTreeNode`, `collapseTreeNode`, `selectGridRow`, `dismissDialog`, `acceptDialog` |
-| Wait/data | `waitForVisible`, `waitForHidden`, `waitForURL`, `waitForLoadState`, `waitForDownload`, `extractText` |
+| Wait/data | `waitForVisible`, `waitForHidden`, `waitForURL`, `waitForLoadState`, `clickAndWaitForResponse`, `waitForDownload`, `extractText` |
 | Frames/shadow | `switchFrame`, `switchMainFrame`, `pierceShadow` |
 
 Use `fill` for text/password/textarea/contenteditable when supported; detect password fields and always set `sensitive: true`. Treat file chooser and native dialogs as browser-adapter-dependent.

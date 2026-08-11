@@ -235,7 +235,7 @@ Each step contains:
 - Accessible name: the name used with a role locator.
 - Value: input text, key, URL, expectation, or delay in milliseconds.
 - Timeout: maximum wait for the step.
-- Retry: number of extra attempts after a failure.
+- Stability and advanced waits: pre-step readiness, retry backoff, recovery, and idempotency.
 - Continue: record a warning and continue after the final failed attempt.
 
 Prefer locators in this order: `testId` → `role + name` → `label` → stable text/attribute → `css` → `xpath`.
@@ -275,10 +275,25 @@ Prefer condition-based waits:
 
 Use `waitForTimeout` only when a fixed pause is necessary. Its value is milliseconds, for example `1000`.
 
+### Slow pages and asynchronous APIs
+
+Choose Fast, Standard (recommended), Slow network, or Custom under Configuration and data. Navigation, action, and assertion timeouts are separate so one global value does not control every phase.
+
+Per-step Stability and advanced waits support:
+
+- Wait for an element to appear, disappear, become enabled/editable, or contain text.
+- Wait for URL, `DOMContentLoaded`, or `load`.
+- Fixed/exponential backoff plus reload/reopen recovery.
+- Click and wait for response: register URL/method observation before the click, then validate HTTP status without missing a fast response.
+
+Do not use `networkidle` as a universal readiness signal; modern pages may poll continuously. Wait for a loading indicator, primary content, or a business API instead.
+
+Idempotency is critical. Auto does not repeat clicks or other potentially side-effecting actions. Select Safe only for confirmed repeatable queries/expansions. Mark payment, order creation, deletion, refund, and approval submissions as Never repeat.
+
 ### Error handling
 
-- Timeout: increase `10000` to `30000` for a genuinely slow page.
-- Retry: use one or two retries for temporary instability.
+- Timeout: adjust navigation, action, or assertion timeouts only for a genuinely slow phase.
+- Retry: use one or two backoff retries only for transient timeouts, network failures, and HTTP 5xx. A recovered run remains visibly flaky/recovered.
 - Continue: use only for non-critical checks. Do not continue after failed login, payment, or submission steps.
 
 ## 9. Replay cases and plans

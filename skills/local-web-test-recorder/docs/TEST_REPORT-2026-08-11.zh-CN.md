@@ -6,7 +6,7 @@
 
 ## 1. 执行摘要
 
-- 单元测试：6/6 通过。
+- 单元测试：7/7 通过。
 - 自动化 E2E 套件：通过；覆盖 API、文件系统、浏览器回放和 UI。
 - 浏览器矩阵：Chromium、Firefox、WebKit 核心用例通过。
 - 本机正式 Chrome：channel 启动通过，版本 `151.0.7922.76`。
@@ -28,6 +28,11 @@
 | 嵌套测试数据引用 | `${data.account.query}` 在无代码与代码回放中解析 | 通过 |
 | 多条远程映射 | UI 支持 CRUD；同协议 Map Remote 的无代码/代码回放通过 | 通过 |
 | 跨协议保护 | HTTPS→HTTP 原生映射被拒绝并建议使用 Charles | 通过 |
+| Web-first 断言 | 慢速文本更新不再一次读取后误判失败 | 通过 |
+| 页面就绪条件 | Loading 消失后再执行目标断言 | 通过 |
+| 点击并等待接口 | URL、方法和 HTTP 状态原子等待 | 通过 |
+| 安全退避重试 | 首次 HTTP 503、第二次 200；记录 attempts=2、recovered、Flaky | 通过 |
+| 高级配置双语源码 | JS 保留结构化 marker，Python 通过 `py_compile` | 通过 |
 | 自动导入失败可理解 | 空脚本/异常退出显示明确原因且不覆盖用例 | 通过 |
 
 ## 3. 自动化覆盖结果
@@ -52,7 +57,7 @@
 
 ```text
 npm test
-Unit: 6 passed, 0 failed
+Unit: 7 passed, 0 failed
 E2E: passed
 ```
 

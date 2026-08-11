@@ -143,6 +143,8 @@ npm start
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
 
+慢页面优先使用“回放稳定性”预设和步骤内“稳定性与高级等待”：等待 Loading 消失、元素可用/可编辑、文本或 URL 达到目标，或使用“点击并等待接口”。使用 Web-first 断言，不用一次性读取 DOM。只对 Timeout、网络重置和 HTTP 5xx 等临时错误退避重试；`auto` 不重复潜在副作用点击，只有确认幂等后才设为 `safe`。记录每次失败、等待和恢复，重试后通过仍标记为 Flaky。
+
 同步约定：保存无代码步骤会重建 JS/Python；保存 JavaScript 会把可识别语句同步为无代码步骤并重建 Python；无法识别的复杂 JS 原样保留并提示部分可视化；Python 是派生导出，不做反向同步。测试账号字段只存引用名称。数据用 `${data.key}`/`${data.nested.key}`，机密用 `${env.SECRET_NAME}`。多条 URL 映射按顺序匹配第一条；原生映射仅用于同协议回放，录制阶段或跨协议映射使用上游 Charles Map Remote。
 
 ### 合规录制模式
@@ -296,6 +298,8 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
 
+For slow pages, use Stability presets and per-step Advanced readiness: wait for loading indicators to disappear, elements to become enabled/editable, text or URL state, or Click and wait for response. Use Web-first assertions rather than one-shot DOM reads. Retry only transient timeouts, network resets, and HTTP 5xx with backoff; `auto` never repeats potentially side-effecting clicks, and `safe` requires an explicit idempotency decision. Keep every failed attempt/recovery and mark recovered runs as flaky.
+
 Synchronization contract: saving no-code steps regenerates JS/Python; saving JavaScript extracts recognized statements into steps and regenerates Python; unsupported custom JS remains intact with a partial-visualization warning; Python is derived and does not reverse-sync. The account field stores an alias only. Use `${data.key}`/`${data.nested.key}` for test data and `${env.SECRET_NAME}` for secrets. Ordered URL mappings use first match; native mapping is same-protocol replay only, while recording-time or cross-protocol mapping requires upstream Charles Map Remote.
 
 ### Compliant recording mode
@@ -327,9 +331,10 @@ Deleting a plan or case does not automatically delete historical recordings or r
 6. Preserve case versions. Reject stale browser saves with HTTP 409 so an old page cannot overwrite a newer import.
 7. Preserve recording and replay locale. Keep exact role + accessible-name locators; never silently fall back to any element with the same role because that creates false passes.
 8. Resolve `${data.key}`, nested `${data.account.username}`, and `${env.SECRET_NAME}` at execution time. Redact secrets and proxy passwords from text logs. Treat screenshots, videos, and traces as sensitive binary evidence that must be reviewed before sharing.
-9. Never attach automation to the user's normal Chrome profile. Use an isolated or dedicated test profile.
-10. Do not bypass CAPTCHA, anti-bot, access-control, DRM, or third-party site protections.
-11. Treat `data/`, `recordings/`, and `artifacts/` as sensitive data on the executing machine or cloud session. Keep them excluded from Git and explain retention before delivery.
+9. Generate structured readiness and retry policies into both JavaScript and Python. Preserve `// wtr-step:` metadata markers so saving generated JavaScript restores advanced no-code fields without lossy parsing.
+10. Never attach automation to the user's normal Chrome profile. Use an isolated or dedicated test profile.
+11. Do not bypass CAPTCHA, anti-bot, access-control, DRM, or third-party site protections.
+12. Treat `data/`, `recordings/`, and `artifacts/` as sensitive data on the executing machine or cloud session. Keep them excluded from Git and explain retention before delivery.
 
 ## Browser and capability contract
 
