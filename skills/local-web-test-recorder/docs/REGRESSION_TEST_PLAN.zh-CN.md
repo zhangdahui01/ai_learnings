@@ -1,6 +1,6 @@
 # coupayWeb testing 回归测试计划
 
-版本：0.4.1
+版本：0.4.2
 维护日期：2026-08-12
 适用范围：`skills/local-web-test-recorder/assets/web-test-recorder`
 
@@ -79,6 +79,10 @@
 | CASE-004 | P0 | 删除用例 | 计划关系清理，历史证据不误删 | API E2E |
 | FILE-001 | P0 | 用例加入计划 | 一个用例生成一个 JS 和一个 Python 文件 | 文件 E2E |
 | FILE-002 | P1 | 未归档用例 | 保存到 `_未归档/` | 文件 E2E |
+| FILE-003 | P0 | Suite 步骤保存 | Setup/Teardown 立即重建 JS/Python，Case 文件嵌入套件生命周期 | API/文件 E2E |
+| FILE-004 | P0 | 公共流程步骤保存 | 当前版本 JS/Python 同步到 `_公共流程/` | API/文件 E2E |
+| CLI-001 | P0 | 本地 JavaScript 执行 | `npx playwright test <case.spec.js>` 真实启动浏览器并通过 | 命令行 E2E |
+| CLI-002 | P0 | 本地 Python 可执行性 | 生成文件通过 `python3 -m py_compile` | 命令行 E2E |
 | CODE-001 | P0 | 在线保存 JavaScript | 源码落盘，用例切换代码模式 | API E2E |
 | CODE-002 | P0 | Python 同步生成 | role+名称、输入值、导航顺序保留 | Unit/API |
 | CODE-003 | P0 | 保存无代码步骤 | 自动重建 JS/Python，手写代码覆盖前确认 | API/UI E2E |

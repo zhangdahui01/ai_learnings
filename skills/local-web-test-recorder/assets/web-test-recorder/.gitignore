@@ -5,3 +5,4 @@ data/auth/
 artifacts/
 recordings/
 playwright-report/
+test-results/

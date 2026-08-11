@@ -1,6 +1,6 @@
 {
   "name": "local-web-test-recorder",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "private": true,
   "type": "module",
   "scripts": {
@@ -8,6 +8,7 @@
     "dev": "node --watch server.js",
     "test:unit": "node --test tests/*.unit.mjs",
     "test:e2e": "node tests/e2e.mjs",
+    "test:generated": "playwright test --config playwright.generated.config.mjs",
     "test": "npm run test:unit && npm run test:e2e"
   },
   "dependencies": {

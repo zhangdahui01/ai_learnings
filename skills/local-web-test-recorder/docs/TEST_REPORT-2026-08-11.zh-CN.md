@@ -1,7 +1,7 @@
 # coupayWeb testing 测试报告
 
 测试日期：2026-08-12
-被测版本：0.4.1（Suite/公共流程录制回放、覆盖确认、生命周期与会话隔离）
+被测版本：0.4.2（Suite/公共流程双语源码同步、Plan/Suite/Case 可执行文件、代理隔离）
 结论：**通过，可在已授权测试环境推广试用；真实企业代理链路仍需现场验收。**
 
 ## 1. 执行摘要
@@ -13,6 +13,8 @@
 - 真实 Inspector 验收：通过。实际打开录制浏览器、执行页面操作、正常关闭；会话返回 `completed`，自动导入 JavaScript、生成 Python、提取 2 个结构化步骤并把用例切换到代码模式。
 - 最终自动化失败数：0。
 - 国际化增量回归：中文、英文、韩文切换与刷新持久化通过；韩文动态测试用例弹窗通过；切回中文通过。
+- 真实 YouTube 验收：公共流程通过；搜索 `playwright AI agent` Case 5/5 步通过；Suite Setup、Case、Suite Teardown 全通过。
+- 生成 JavaScript CLI：指定单个 YouTube Case，确认 `Running 1 test`，13.9 秒通过。
 
 ## 2. 本次修复验证
 
@@ -49,6 +51,17 @@
 | Suite 阶段录制回放 | Setup/Teardown 可独立录制、导入代码及步骤、独立回放 | 通过 |
 | 公共流程录制回放 | 录制生成新版本、保存 JS/Python/无代码步骤、回放通过 | 通过 |
 | 覆盖确认保护 | 已有步骤时进入待确认状态；确认才覆盖，取消保持原数据 | 通过 |
+| Suite 步骤修改同步 | 保存 Setup/Teardown 后 JS/Python 和所属 Case 可执行文件同步重建 | 通过 |
+| 公共流程修改同步 | 创建新 revision，并重建 `_公共流程` 下 JS/Python | 通过 |
+| Plan/Suite/Case 本地结构 | Case 文件嵌入 Suite Setup → Case → Suite Teardown | 通过 |
+| 本地 JavaScript 命令 | 生成的 `.spec.js` 用 Playwright CLI 启动真实 Chromium 并通过 | 通过 |
+| 本地 Python 验证 | 生成的 `test_*.py` 通过 `py_compile` | 通过 |
+| 直连代理隔离 | direct 模式不再继承终端 HTTP/HTTPS/ALL_PROXY | 通过 |
+| 代理瞬断重试 | `ERR_PROXY_CONNECTION_FAILED` 归类为可重试网络错误 | 通过 |
+| CLI 单文件选择 | 修复固定目录参数导致全部用例被启动；现在只运行指定文件 | 通过 |
+| CLI 总超时 | 从 Playwright 默认 30s 改为可配置 120s，不会早于步骤超时关闭 Teardown | 通过 |
+| CLI 用例配置 | 生成源码携带 browser/locale/timeout/proxy，代理凭据只从环境变量读取 | 通过 |
+| 真实 YouTube 定位修正 | 失败截图显示搜索框存在；由脆弱 CSS 改为 `role=combobox, name=搜索` 后通过 | 通过 |
 
 ## 3. 自动化覆盖结果
 

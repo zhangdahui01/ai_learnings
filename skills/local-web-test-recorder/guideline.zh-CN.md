@@ -97,13 +97,28 @@ npm start
 | `data/profiles/<用例 ID>/` | 合规录制使用的本机正式 Chrome 专用 Profile | 可能包含 Cookie、缓存和登录会话；不要提交、分享或改为日常 Chrome Profile。 |
 | `data/auth/<用例 ID>.json` | 关闭合规录制时保存、下次加载的 Cookie/登录状态 | 相当于登录凭据；离职、账号撤销或授权到期时应删除。 |
 | `recordings/*.spec.js` | Playwright Inspector 生成的原始录制代码 | 录制时输入的账号、搜索词或其他值可能以明文出现。 |
-| `test-suites/<计划名>/<套件名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个用例一个文件；包含 Case Setup/Steps/Teardown。 |
-| `test-suites/<计划名>/<套件名>/test_*.py` | 从无代码步骤同步生成的 Python/Playwright 测试 | Teardown 使用 `finally`；当前应用回放 JS，Python 可独立运行。 |
+| `test-suites/<计划名>/<套件名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个 Case 一个文件；按 Suite Setup → Case Setup/Steps/Teardown → Suite Teardown 生成。 |
+| `test-suites/<计划名>/<套件名>/test_*.py` | 从同一步骤模型生成的 Python/Playwright 测试 | 与 JavaScript 保持同样的 Suite/Case 生命周期；Python 可用 pytest-playwright 独立运行。 |
+| `test-suites/<计划名>/<套件名>/suite.*` | Suite Setup/Teardown 的 JS/Python 源码 | 无代码阶段保存后自动同步；Case 可执行文件中也会嵌入这些阶段。 |
+| `test-suites/_公共流程/` | 公共流程当前版本的 JS/Python | 修改无代码步骤或重新录制后同步更新。 |
 | `artifacts/<run-id>/failure.png` | 失败页面截图 | 可能显示用户资料、订单、账号或其他页面内容。 |
 | `artifacts/<run-id>/trace.zip` | Playwright Trace、页面快照和网络证据 | 可能包含 URL、DOM、请求信息和输入值。 |
 | `artifacts/<run-id>/*.webm` | 回放视频 | 可能包含操作过程和页面中的敏感内容。 |
 
 应用默认绑定本机 `localhost`，不会主动把这些文件上传到云端。但是执行网页操作时，请求会正常发送给被测试网站；安装依赖时 npm 和 Playwright 会访问各自的下载服务。
+
+在项目根目录执行本地代码：
+
+```bash
+# 整个生成目录，也可在 -- 后传入某个 Plan/Suite/Case 路径
+npm run test:generated
+npm run test:generated -- "test-suites/<计划名>/<套件名>/<用例名>.spec.js"
+
+# Python 需先安装 pytest-playwright 并执行 playwright install
+python3 -m pytest "test-suites/<计划名>/<套件名>/test_<用例名>.py"
+```
+
+生成的 JavaScript 会带上用例的浏览器、locale、操作/导航超时和代理服务器；代理密码不写入文件，命令行用 `WTR_PROXY_USERNAME` / `WTR_PROXY_PASSWORD` 提供。可用 `WTR_TEST_TIMEOUT`、`WTR_EXPECT_TIMEOUT`、`WTR_BROWSER` 和 `WTR_HEADLESS=false` 调整 CLI 运行。
 
 ### 环境文件
 
