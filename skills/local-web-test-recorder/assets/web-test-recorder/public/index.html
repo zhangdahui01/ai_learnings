@@ -6,6 +6,7 @@
   <title>coupayWeb testing · Web 自动化录制回放平台</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="/compliance.css">
+  <link rel="stylesheet" href="/i18n.css">
 </head>
 <body>
   <div class="app-shell">
@@ -20,11 +21,12 @@
       <div class="storage-card"><strong>数据保存在本机</strong><p><code>data/</code> 元数据<br><code>test-suites/</code> JS/Python<br><code>artifacts/</code> 截图、录像、Trace</p></div>
     </aside>
     <main class="workspace">
-      <header class="topbar"><div><p class="eyebrow" id="breadcrumb">测试工作台</p><h1 id="pageTitle">概览</h1></div><div class="top-actions"><button class="btn ghost" id="newCase">新建用例</button><button class="btn primary" id="newPlan">新建计划</button></div></header>
+      <header class="topbar"><div><p class="eyebrow" id="breadcrumb">测试工作台</p><h1 id="pageTitle">概览</h1></div><div class="top-actions"><label class="locale-switcher" for="uiLocale"><span>界面语言</span><select id="uiLocale" aria-label="界面语言"><option value="zh-CN">中文</option><option value="en">English</option><option value="ko">한국어</option></select></label><button class="btn ghost" id="newCase">新建用例</button><button class="btn primary" id="newPlan">新建计划</button></div></header>
       <section id="content" aria-live="polite"></section>
     </main>
   </div>
   <div id="toastRegion" class="toast-region" aria-live="assertive"></div>
+  <script src="/i18n.js"></script>
   <script type="module" src="/app.js"></script>
 </body>
 </html>

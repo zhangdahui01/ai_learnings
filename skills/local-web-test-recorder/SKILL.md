@@ -143,6 +143,8 @@ npm start
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
 
+界面右上角“界面语言”可切换中文、English 和 한국어，选择保存在当前浏览器的 `localStorage`（键：`coupayWeb.uiLocale`），刷新后继续生效。界面语言只影响平台菜单、表单、提示、弹窗和友好错误，不会修改测试用例的“页面语言”、定位器、测试数据或录制代码。需要切换被测页面语言时仍在用例“配置与数据 → 页面语言”填写 BCP 47 locale，例如 `zh-CN`、`en-US`、`ko-KR`。
+
 慢页面优先使用“回放稳定性”预设和步骤内“稳定性与高级等待”：等待 Loading 消失、元素可用/可编辑、文本或 URL 达到目标，或使用“点击并等待接口”。使用 Web-first 断言，不用一次性读取 DOM。只对 Timeout、网络重置和 HTTP 5xx 等临时错误退避重试；`auto` 不重复潜在副作用点击，只有确认幂等后才设为 `safe`。记录每次失败、等待和恢复，重试后通过仍标记为 Flaky。
 
 同步约定：保存无代码步骤会重建 JS/Python；保存 JavaScript 会把可识别语句同步为无代码步骤并重建 Python；无法识别的复杂 JS 原样保留并提示部分可视化；Python 是派生导出，不做反向同步。测试账号字段只存引用名称。数据用 `${data.key}`/`${data.nested.key}`，机密用 `${env.SECRET_NAME}`。多条 URL 映射按顺序匹配第一条；原生映射仅用于同协议回放，录制阶段或跨协议映射使用上游 Charles Map Remote。
@@ -297,6 +299,8 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 7. Add assertions, waits, timeouts, retries, and continue-on-error behavior.
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
+
+Use **Interface language** in the top-right corner to switch among 中文, English, and 한국어. The choice is stored in the current browser's `localStorage` under `coupayWeb.uiLocale` and persists across reloads. UI language affects platform navigation, forms, notifications, dialogs, and friendly errors only; it never changes the case's test-page locale, locators, test data, or recorded code. Configure the target page separately under **Settings & data → Test page locale** with a BCP 47 value such as `zh-CN`, `en-US`, or `ko-KR`.
 
 For slow pages, use Stability presets and per-step Advanced readiness: wait for loading indicators to disappear, elements to become enabled/editable, text or URL state, or Click and wait for response. Use Web-first assertions rather than one-shot DOM reads. Retry only transient timeouts, network resets, and HTTP 5xx with backoff; `auto` never repeats potentially side-effecting clicks, and `safe` requires an explicit idempotency decision. Keep every failed attempt/recovery and mark recovered runs as flaky.
 

@@ -160,6 +160,14 @@ Use a BCP 47 locale such as:
 
 Use the same locale for recording and replay. Role locators keep the exact accessible name and fail when it is absent; the runner never clicks an arbitrary same-role element because that can create false passes.
 
+### Platform interface language (中文 / English / 한국어)
+
+Use **Interface language** in the top-right corner to switch the platform UI among Chinese, English, and Korean. Navigation, dashboard, plans/cases/runs, step editing, advanced waits, settings, recording dialogs, toasts, confirmations, and friendly error messages update immediately. The selection persists after a reload or reopening the application.
+
+The choice is stored only in the current browser's `localStorage` under `coupayWeb.uiLocale`. It is not written to `data/store.json` and is not exported with plans. Clearing site data or running `localStorage.removeItem('coupayWeb.uiLocale')` restores the default Chinese UI.
+
+Keep the two settings distinct: the top-right selector controls the platform interface; **Settings & data → Test page locale** controls the Playwright locale of the target website. Switching the interface never rewrites recorded code, accessible names, test data, or the target page locale.
+
 ### Start URL
 
 Use a complete URL such as `https://example.com/login`, including `https://`.

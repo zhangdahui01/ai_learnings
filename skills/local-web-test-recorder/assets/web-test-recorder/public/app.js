@@ -8,12 +8,12 @@ let state = { plans: [], cases: [], runs: [] };
 let view = 'dashboard'; let selectedPlanId; let selectedCaseId; let caseTab = 'visual'; let codeLanguage = 'javascript';
 
 function esc(value = '') { return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[char])); }
-function formatTime(value) { return value ? new Date(value).toLocaleString('zh-CN', { hour12: false }) : '—'; }
-function formatDuration(ms = 0) { return ms < 1000 ? `${ms} ms` : `${(ms / 1000).toFixed(1)} 秒`; }
-function toast(message, type = '') { const node = document.createElement('div'); node.className = `toast ${type}`; node.textContent = message; $('#toastRegion').append(node); setTimeout(() => node.remove(), 4500); }
+function formatTime(value) { return value ? new Date(value).toLocaleString(window.I18N.intlLocale(), { hour12: false }) : '—'; }
+function formatDuration(ms = 0) { return ms < 1000 ? `${ms} ms` : window.I18N.t(`${(ms / 1000).toFixed(1)} 秒`); }
+function toast(message, type = '') { const node = document.createElement('div'); node.className = `toast ${type}`; node.textContent = window.I18N.t(message); $('#toastRegion').append(node); setTimeout(() => node.remove(), 4500); }
 async function api(path, options = {}) {
   const response = await fetch(path, { headers: { 'Content-Type': 'application/json' }, ...options }); const body = response.status === 204 ? null : await response.json();
-  if (!response.ok) { const error = new Error(body?.error || '操作失败'); error.status = response.status; error.code = body?.code; error.payload = body; throw error; } return body;
+  if (!response.ok) { const error = new Error(window.I18N.translateError(body?.code, body?.error || '操作失败')); error.status = response.status; error.code = body?.code; error.payload = body; throw error; } return body;
 }
 async function refresh(keepContent = false) { state = await api('/api/state'); updateShell(); if (!keepContent) render(); }
 function updateShell() { $('#planCount').textContent = state.plans.length; $('#caseCount').textContent = state.cases.length; $('#runCount').textContent = state.runs.length; const completed = state.runs.filter(x => ['passed', 'failed'].includes(x.status)); const pass = completed.filter(x => x.status === 'passed').length; $('#navHealth').textContent = completed.length ? `${Math.round(pass / completed.length * 100)}%` : '—'; $$('.nav-link').forEach(x => x.classList.toggle('active', x.dataset.view === view)); }
@@ -131,4 +131,5 @@ async function deleteCase(testCase){if(!confirm(`删除测试用例“${testCase
 
 $$('.nav-link').forEach(node=>node.onclick=()=>go(node.dataset.view));
 $('#newPlan').onclick=()=>openPlanModal(); $('#newCase').onclick=()=>openCaseModal();
+window.addEventListener('i18n:change',()=>{ updateShell(); render(); });
 refresh().catch(error=>{toast(`加载失败：${error.message}`,'error');$('#content').innerHTML=emptyHtml('无法加载本地数据','请确认服务器正在运行，然后刷新页面。');});
