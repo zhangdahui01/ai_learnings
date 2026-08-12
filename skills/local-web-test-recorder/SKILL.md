@@ -296,6 +296,7 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 1. Create a test plan, add test suites to the plan, and add test cases to suites.
 2. Put login/logout in Suite Setup/Teardown, case-local preparation/cleanup in Case Setup/Teardown, and reusable business actions in versioned shared flows.
    Suite Setup, Suite Teardown, and shared flows can each be recorded and replayed independently. Recording imports full JavaScript, generated Python, and no-code steps together. Existing steps require explicit overwrite confirmation; canceling preserves the target.
+   Configure browser, locale, proxy, and timeouts for standalone shared-flow recording/replay in the flow's Edit information dialog. A flow invoked by a case or suite uses the calling case settings instead.
 3. Configure browser, page locale, start URL, proxy, and test data.
 4. Click Record, interact with the browser, then close Playwright Inspector. There is no Save action; closing only the recorded Chrome tab is not a reliable completion signal.
 5. The app automatically imports the complete JavaScript, generates Python and recognized no-code steps, and opens the Code editor. Manual import is only a recovery path.

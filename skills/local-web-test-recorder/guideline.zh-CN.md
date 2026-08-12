@@ -240,6 +240,7 @@ socks5://127.0.0.1:1080
 - 测试用例（Case）包含 Case Setup、主体步骤/断言和 Case Teardown。Case 默认使用全新 Browser Context；Case Teardown 放入 `finally`，主体失败后仍执行。
 - 公共流程适合“进入商品详情页”“加购物车”等复用场景。调用时填写参数 JSON，保存时固定流程版本；以后修改流程会生成新版本，不会静默改变旧用例。支付、下单和绑卡设为“敏感操作”，平台禁止自动重试。
 - Suite Setup、Suite Teardown 和公共流程编辑页均提供独立“录制”和“回放”。关闭 Inspector 后，平台同时导入完整 JavaScript、生成 Python 和可编辑无代码步骤。若目标已有步骤，导入暂停并显示覆盖确认；选择取消时原代码与步骤完全不变。
+- 公共流程独立录制/回放不会借用某个 Case 的代理。在公共流程“编辑信息 → 独立录制/回放配置”中保存浏览器、页面语言、代理和超时。流程被 Case/Suite 引用时，则使用当前 Case 的执行配置。`ERR_ABORTED` 且实际页是 `about:blank` 时，先检查网络出口和该流程的代理，加长元素等待无效。
 
 推荐结构：Plan「支付回归」→ Suite「信用卡支付」→ Suite Setup「测试账号登录」→ Case Setup「打开指定商品」→ Steps「下单与断言」→ Case Teardown「清理购物车」→ Suite Teardown「退出登录」。
 

@@ -229,6 +229,7 @@ Remote mappings provide ordered key-value Map Remote rules. For example, source 
 - A Case has Case Setup, body steps/assertions, and Case Teardown. Each case gets a fresh Browser Context by default, and generated code places teardown in `finally`.
 - A shared flow models reusable actions such as opening a product or adding it to the cart. Calls pass JSON parameters and pin a flow version. Editing a flow creates a new version without silently changing existing cases. Mark payment, card binding, and order submission as destructive so they are never automatically retried.
 - Suite Setup, Suite Teardown, and shared-flow editors each provide standalone Record and Replay actions. Closing Inspector imports full JavaScript, generated Python, and editable no-code steps together. If steps already exist, import pauses for overwrite confirmation; Cancel preserves both code and steps.
+- A standalone shared-flow recording or replay does not borrow a case proxy. Save its browser, page locale, proxy, and timeouts under **Edit information → Standalone record/replay settings**. When a case or suite calls the flow, the calling case settings apply instead. If `ERR_ABORTED` leaves the browser at `about:blank`, check the network route and the flow proxy first; increasing an element timeout cannot repair a connection that was never established.
 
 Recommended hierarchy: Plan “Payment regression” → Suite “Card payment” → Suite Setup “Log in” → Case Setup “Open product” → body assertions → Case Teardown “Clear cart” → Suite Teardown “Log out”.
 
