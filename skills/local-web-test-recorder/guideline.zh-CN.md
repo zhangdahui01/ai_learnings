@@ -235,6 +235,12 @@ socks5://127.0.0.1:1080
 
 ### Plan、Suite、Case 与公共流程怎么组织
 
+步骤可通过左侧拖拽手柄排序，也可用“＋↑/＋↓”在任意步骤前后插入。定位器支持 role、label、text、testId、placeholder、altText、title、id、name、class、CSS 和 XPath；匹配关系支持等于、包含、不等于、不包含和正则。优先采用 testId、role 和 label，class/XPath 只作为最后手段。
+
+“查找页面元素”会使用当前用例的浏览器、页面语言和代理打开已授权 URL，扫描可见交互元素并返回带稳定性分数的候选。选择候选只是修改编辑表单，必须保存并回放确认。
+
+失败结果中的“本地 AI 诊断与修复”默认在本机运行规则诊断。设置 `LOCAL_AI_URL`、`LOCAL_AI_MODEL` 和可选 `LOCAL_AI_API_KEY` 可连接 OpenAI-compatible 本地模型。Apply 只接受服务器白名单中的结构化修改并保留前后快照，不执行 AI 任意代码。
+
 - 测试计划（Plan）是发布/回归目标；按顺序包含多个测试套件。
 - 测试套件（Suite）组织同一业务域的用例。Suite Setup 每次套件运行一次，适合登录；它产生的 Cookie/Storage 只作为内存快照传给本次套件中的用例，不写入持久文件。Suite Teardown 无论 Setup 或 Case 是否失败都会运行，适合退出登录或测试数据清理。
 - 测试用例（Case）包含 Case Setup、主体步骤/断言和 Case Teardown。Case 默认使用全新 Browser Context；Case Teardown 放入 `finally`，主体失败后仍执行。

@@ -108,7 +108,7 @@ Each assertion takes `expected` where applicable, `negated`, `timeoutMs`, and op
 }
 ```
 
-Allowed strategies: `testId`, `role`, `label`, `placeholder`, `text`, `altText`, `title`, `css`, `xpath`. Prefer exactly one semantic primary locator. XPath is last-resort and needs a recorder warning.
+Allowed strategies: `testId`, `role`, `label`, `placeholder`, `text`, `altText`, `title`, `id`, `name`, `class`, `css`, `xpath`. `operator` supports `equals`, `contains`, `notEquals`, `notContains`, and `regex`. Prefer exactly one semantic primary locator. Treat `id`, `name`, and `class` as CSS/attribute implementations whose stability must be reviewed; XPath is last-resort and needs a recorder warning. Locator discovery may inspect an authorized target page and rank test ID, role, label, stable attributes, CSS, and XPath candidates, but the user must replay to validate the chosen locator.
 
 ## Browser adapters
 

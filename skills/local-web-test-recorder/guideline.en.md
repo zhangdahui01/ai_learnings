@@ -224,6 +224,12 @@ Remote mappings provide ordered key-value Map Remote rules. For example, source 
 
 ### Organize plans, suites, cases, and shared flows
 
+Reorder steps with the drag handle, or insert before/after any step with the adjacent controls. Locator strategies include role, label, text, test ID, placeholder, alt text, title, id, name, class, CSS, and XPath. Match operators include equals, contains, not equals, not contains, and regular expression. Prefer test ID, role, and label; keep class and XPath as last resorts.
+
+**Find page element** opens an authorized URL with the current browser, locale, and proxy settings, scans visible interactive elements, and ranks candidates by resilience. Selecting a candidate only updates the form; save and replay to validate it.
+
+**Local AI diagnosis and fix** uses deterministic on-device rules by default. Configure `LOCAL_AI_URL`, `LOCAL_AI_MODEL`, and optional `LOCAL_AI_API_KEY` for an OpenAI-compatible local model. Apply accepts only server-allowlisted structured patches and stores before/after evidence; arbitrary model-generated code is never executed.
+
 - A Plan is a release or regression target and runs its suites in order.
 - A Suite groups one business area. Suite Setup runs once and can log in; its cookie/storage snapshot is passed in memory only to cases in that suite run. Suite Teardown always runs, even after setup or case failure.
 - A Case has Case Setup, body steps/assertions, and Case Teardown. Each case gets a fresh Browser Context by default, and generated code places teardown in `finally`.
