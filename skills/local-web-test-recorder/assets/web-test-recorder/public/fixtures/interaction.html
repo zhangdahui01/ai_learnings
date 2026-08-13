@@ -1,1 +1,45 @@
-<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>Recorder E2E Fixture</title><style>body{min-height:1800px;font-family:sans-serif}.primary-action{color:rgb(49,94,251)}#gesture{width:300px;height:140px;overflow:auto;border:1px solid #999;touch-action:none}.gesture-content{width:900px;height:400px;background:linear-gradient(90deg,#eef,#fee)}#drag-source,#drop-target{display:inline-grid;place-items:center;width:130px;height:60px;margin:12px;border:1px solid #777}#scroll-marker{margin-top:900px}</style><body><label>搜索 <input role="combobox" aria-label="搜索" id="search" name="query"></label><button id="submit" class="primary-action" data-kind="search" aria-description="提交搜索内容">搜索</button><button id="tap">轻触按钮</button><button id="slow">慢速结果</button><button id="api">加载接口结果</button><label>上传文件 <input id="upload" type="file"></label><select id="multi" multiple aria-label="多选值"><option value="alpha" selected>Alpha</option><option value="beta" selected>Beta</option></select><span data-testid="loading" hidden>加载中</span><p id="result" role="status"></p><div id="empty"></div><div id="gesture"><div class="gesture-content">滑动区域</div></div><div id="drag-source" draggable="true">拖拽源</div><div id="drop-target">拖拽目标</div><div id="scroll-marker">滚动目标</div><script>const result=document.querySelector('#result');const loading=document.querySelector('[data-testid="loading"]');const show=()=>result.textContent=`Results for: ${document.querySelector('#search').value}`;document.querySelector('#submit').onclick=show;document.querySelector('#submit').oncontextmenu=e=>{e.preventDefault();result.textContent='Right click ready'};document.querySelector('#tap').onclick=()=>result.textContent='Tap ready';document.querySelector('#search').onkeydown=e=>{if(e.key==='Enter')show()};document.querySelector('#slow').onclick=()=>{loading.hidden=false;setTimeout(()=>{result.textContent='Slow result ready';loading.hidden=true},350)};document.querySelector('#api').onclick=async()=>{loading.hidden=false;try{const response=await fetch('/api/test-fixtures/flaky');result.textContent=response.ok?'API ready':`API ${response.status}`}finally{loading.hidden=true}};document.querySelector('#drag-source').ondragstart=e=>e.dataTransfer.setData('text/plain','dragged');document.querySelector('#drop-target').ondragover=e=>e.preventDefault();document.querySelector('#drop-target').ondrop=e=>{e.preventDefault();e.currentTarget.textContent='Dropped'};</script></body></html>
+<!doctype html>
+<html lang="zh-CN">
+<meta charset="utf-8">
+<title>Recorder E2E Fixture</title>
+<style>
+  body{min-height:1800px;font-family:sans-serif}.primary-action{color:rgb(49,94,251)}
+  #gesture{width:300px;height:140px;overflow:auto;border:1px solid #999;touch-action:none}.gesture-content{width:900px;height:400px;background:linear-gradient(90deg,#eef,#fee)}
+  #drag-source,#drop-target{display:inline-grid;place-items:center;width:130px;height:60px;margin:12px;border:1px solid #777}#scroll-marker{margin-top:900px}
+  [role=option]{display:block;padding:4px;border:1px solid #ddd;width:180px}[role=treeitem],[role=row]{padding:5px;border:1px solid #ddd;width:220px}
+</style>
+<body>
+  <label>搜索 <input role="combobox" aria-label="搜索" id="search" name="query"></label>
+  <button id="submit" class="primary-action" data-kind="search" aria-description="提交搜索内容">搜索</button>
+  <button id="tap">轻触按钮</button><button id="slow">慢速结果</button><button id="api">加载接口结果</button>
+  <button id="alert">显示弹窗</button><button id="confirm">显示确认框</button>
+  <a id="popup" href="/fixtures/interaction.html?popup=1" target="_blank">打开新窗口</a>
+  <a id="download" download="sample.txt" href="data:text/plain,download-ready">下载文件</a>
+  <label>上传文件 <input id="upload" type="file"></label>
+  <label>选项 A <input type="radio" name="choice" value="a"></label>
+  <label>选项 B <input type="radio" name="choice" value="b" id="radio-b"></label>
+  <label>音量 <input type="range" aria-label="音量" min="0" max="100" value="10"></label>
+  <select id="multi" multiple aria-label="多选值"><option value="alpha" selected>Alpha</option><option value="beta" selected>Beta</option></select>
+  <label>城市 <input id="city" aria-label="城市"></label><div role="option" data-testid="city-seoul">Seoul</div>
+  <label>邮箱 <input id="invalid-email" aria-label="邮箱" aria-invalid="true" aria-errormessage="email-error"></label><span id="email-error">邮箱格式错误</span>
+  <div role="treeitem" aria-expanded="false" id="tree-node">订单目录</div>
+  <div role="row" aria-selected="false" id="grid-row">订单 #100</div>
+  <button id="custom-event">高级事件</button>
+  <span data-testid="loading" hidden>加载中</span><p id="result" role="status"></p><div id="empty"></div>
+  <iframe id="test-frame" title="支付 Frame" srcdoc="<!doctype html><button id='frame-button' onclick='document.getElementById(&quot;frame-status&quot;).textContent=&quot;Frame ready&quot;'>Frame 支付</button><p id='frame-status' role='status'></p>"></iframe>
+  <div id="gesture"><div class="gesture-content">滑动区域</div></div><div id="drag-source" draggable="true">拖拽源</div><div id="drop-target">拖拽目标</div><div id="scroll-marker">滚动目标</div>
+<script>
+const result=document.querySelector('#result'),loading=document.querySelector('[data-testid="loading"]');
+const show=()=>result.textContent=`Results for: ${document.querySelector('#search').value}`;
+document.querySelector('#submit').onclick=show;document.querySelector('#submit').oncontextmenu=e=>{e.preventDefault();result.textContent='Right click ready'};
+document.querySelector('#tap').onclick=()=>result.textContent='Tap ready';document.querySelector('#search').onkeydown=e=>{if(e.key==='Enter')show()};
+document.querySelector('#slow').onclick=()=>{loading.hidden=false;setTimeout(()=>{result.textContent='Slow result ready';loading.hidden=true},350)};
+document.querySelector('#api').onclick=async()=>{loading.hidden=false;try{const response=await fetch('/api/test-fixtures/flaky');result.textContent=response.ok?'API ready':`API ${response.status}`}finally{loading.hidden=true}};
+document.querySelector('#alert').onclick=()=>alert('Alert ready');document.querySelector('#confirm').onclick=()=>result.textContent=confirm('Confirm ready')?'Confirmed':'Dismissed';
+document.querySelector('[data-testid=city-seoul]').onclick=()=>{document.querySelector('#city').value='Seoul';result.textContent='City: Seoul'};
+document.querySelector('#tree-node').onclick=e=>e.currentTarget.setAttribute('aria-expanded',e.currentTarget.getAttribute('aria-expanded')==='true'?'false':'true');
+document.querySelector('#grid-row').onclick=e=>{e.currentTarget.setAttribute('aria-selected','true');result.textContent='Row selected'};
+document.querySelector('#custom-event').addEventListener('wtr-ready',()=>result.textContent='Custom event ready');
+document.querySelector('#drag-source').ondragstart=e=>e.dataTransfer.setData('text/plain','dragged');document.querySelector('#drop-target').ondragover=e=>e.preventDefault();document.querySelector('#drop-target').ondrop=e=>{e.preventDefault();e.currentTarget.textContent='Dropped'};
+</script>
+</body></html>

@@ -10,6 +10,8 @@ ACTIONS = {
     "click", "rightClick", "dblclick", "tap", "hover", "focus", "press", "keyDown", "keyUp", "scroll",
     "scrollDown", "scrollUp", "scrollLeft", "scrollRight", "scrollToElement", "scrollToTop", "scrollToBottom",
     "swipeLeft", "swipeRight", "swipeUp", "swipeDown", "dragTo", "mouseMove", "fill", "clear", "type", "selectText", "setInputFiles",
+    "acceptDialog", "dismissDialog", "clickAndSwitchPage", "clickAndWaitForDownload", "pageScreenshot", "elementScreenshot",
+    "keyboardType", "mouseDown", "mouseUp", "mouseClick", "dispatchEvent", "extractText",
     "check", "uncheck", "selectOption", "chooseRadio", "setSliderValue",
     "selectAutocompleteOption", "expandTreeNode", "collapseTreeNode", "selectGridRow",
     "dismissDialog", "acceptDialog", "waitForVisible", "waitForHidden", "waitForURL",
@@ -20,7 +22,8 @@ ASSERTIONS = {
     "toBeVisible", "toBeHidden", "toBeEnabled", "toBeDisabled", "toBeChecked",
     "toBeAttached", "toBeEditable", "toBeEmpty", "toBeFocused", "toBeInViewport",
     "toHaveText", "toContainText", "toHaveValue", "toHaveValues", "toHaveAttribute", "toHaveClass", "toContainClass",
-    "toHaveCSS", "toHaveId", "toHaveAccessibleName", "toHaveAccessibleDescription", "toHaveRole",
+    "toHaveCSS", "toHaveId", "toHaveJSProperty", "toHaveAccessibleName", "toHaveAccessibleDescription", "toHaveAccessibleErrorMessage", "toHaveRole", "toMatchAriaSnapshot",
+    "toHavePageCount", "toHaveDownloadFilename", "toHaveDialogMessage", "toHaveResponseStatus", "toHaveStoredValue",
     "toHaveCount", "toHaveURL", "toHaveTitle", "toMatchScreenshot", "toHaveDownload",
     "toHaveResponseStatus",
 }

@@ -86,6 +86,8 @@ For an atomic action/network wait use `action: clickAndWaitForResponse` plus `re
 | Wait/data | `waitForVisible`, `waitForHidden`, `waitForURL`, `waitForLoadState`, `clickAndWaitForResponse`, `waitForDownload`, `extractText` |
 | Frames/shadow | `switchFrame`, `switchMainFrame`, `pierceShadow` |
 
+The no-code editor groups these operations by product priority: P0 common Web actions; P1 dialogs/windows/files; P1 frames and complex widgets; and P2 low-level keyboard/mouse/events. Event-coupled actions must be atomic: register the dialog, popup, response, or download wait before triggering the click. `switchFrame` sets the active locator scope until `switchMainFrame`; `clickAndSwitchPage` changes the active page until `closePage` or `switchPage`.
+
 Use `fill` for text/password/textarea/contenteditable when supported; detect password fields and always set `sensitive: true`. Treat file chooser and native dialogs as browser-adapter-dependent.
 
 ## Assertions
@@ -93,6 +95,8 @@ Use `fill` for text/password/textarea/contenteditable when supported; detect pas
 Support at least:
 
 `toBeVisible`, `toBeHidden`, `toBeAttached`, `toBeEnabled`, `toBeDisabled`, `toBeEditable`, `toBeEmpty`, `toBeFocused`, `toBeInViewport`, `toBeChecked`, `toHaveText`, `toContainText`, `toHaveValue`, `toHaveValues`, `toHaveAttribute`, `toHaveClass`, `toContainClass`, `toHaveCSS`, `toHaveId`, `toHaveAccessibleName`, `toHaveAccessibleDescription`, `toHaveRole`, `toHaveCount`, `toHaveURL`, `toHaveTitle`, `toMatchScreenshot`, `toHaveDownload`, `toHaveResponseStatus`.
+
+Also support `toHaveJSProperty`, `toHaveAccessibleErrorMessage`, inline `toMatchAriaSnapshot`, `toHavePageCount`, `toHaveDownloadFilename`, `toHaveDialogMessage`, and `toHaveStoredValue`. `negated: true` applies the inverse matcher. `soft: true` records a warning and continues without hiding the failure from the step report. Screenshot actions save evidence immediately; visual screenshot comparison remains a separate baseline-review workflow and must never silently create or overwrite a baseline.
 
 ## Public-flow version policy
 
