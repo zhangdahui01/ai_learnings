@@ -79,7 +79,7 @@ For an atomic action/network wait use `action: clickAndWaitForResponse` plus `re
 | Group | Actions |
 |---|---|
 | Navigation/window | `goto`, `back`, `forward`, `reload`, `newPage`, `switchPage`, `closePage` |
-| Pointer/keyboard | `click`, `dblclick`, `hover`, `focus`, `press`, `keyDown`, `keyUp`, `scroll`, `dragTo`, `mouseMove` |
+| Pointer/keyboard | `click`, `rightClick`, `dblclick`, `tap`, `hover`, `focus`, `press`, `keyDown`, `keyUp`, `scrollDown`, `scrollUp`, `scrollLeft`, `scrollRight`, `scrollToElement`, `scrollToTop`, `scrollToBottom`, `swipeLeft`, `swipeRight`, `swipeUp`, `swipeDown`, `dragTo`, `mouseMove` |
 | Text/editable | `fill`, `clear`, `type`, `selectText`, `setInputFiles` |
 | Choice controls | `check`, `uncheck`, `selectOption`, `chooseRadio`, `setSliderValue` |
 | Rich widgets | `selectAutocompleteOption`, `expandTreeNode`, `collapseTreeNode`, `selectGridRow`, `dismissDialog`, `acceptDialog` |
@@ -92,7 +92,11 @@ Use `fill` for text/password/textarea/contenteditable when supported; detect pas
 
 Support at least:
 
-`toBeVisible`, `toBeHidden`, `toBeEnabled`, `toBeDisabled`, `toBeChecked`, `toHaveText`, `toContainText`, `toHaveValue`, `toHaveAttribute`, `toHaveClass`, `toHaveCount`, `toHaveURL`, `toHaveTitle`, `toMatchScreenshot`, `toHaveDownload`, `toHaveResponseStatus`.
+`toBeVisible`, `toBeHidden`, `toBeAttached`, `toBeEnabled`, `toBeDisabled`, `toBeEditable`, `toBeEmpty`, `toBeFocused`, `toBeInViewport`, `toBeChecked`, `toHaveText`, `toContainText`, `toHaveValue`, `toHaveValues`, `toHaveAttribute`, `toHaveClass`, `toContainClass`, `toHaveCSS`, `toHaveId`, `toHaveAccessibleName`, `toHaveAccessibleDescription`, `toHaveRole`, `toHaveCount`, `toHaveURL`, `toHaveTitle`, `toMatchScreenshot`, `toHaveDownload`, `toHaveResponseStatus`.
+
+## Public-flow version policy
+
+A `flowCall` uses `versionPolicy: "pinned" | "latest"`. `pinned` stores `flowVersion` and keeps regression behavior stable until the user explicitly clicks upgrade. `latest` resolves the flow's current version at execution time and leaves `flowVersion` empty. Existing calls without `versionPolicy` are treated as pinned for backward compatibility. The editor must show the resolved version and must not ask users to type a version number.
 
 Each assertion takes `expected` where applicable, `negated`, `timeoutMs`, and optional `soft`. Screenshot baselines need an explicit review/approval workflow; never overwrite them after a failure.
 

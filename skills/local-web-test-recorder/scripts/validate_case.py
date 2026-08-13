@@ -7,8 +7,9 @@ from pathlib import Path
 
 ACTIONS = {
     "goto", "back", "forward", "reload", "newPage", "switchPage", "closePage",
-    "click", "dblclick", "hover", "focus", "press", "keyDown", "keyUp", "scroll",
-    "dragTo", "mouseMove", "fill", "clear", "type", "selectText", "setInputFiles",
+    "click", "rightClick", "dblclick", "tap", "hover", "focus", "press", "keyDown", "keyUp", "scroll",
+    "scrollDown", "scrollUp", "scrollLeft", "scrollRight", "scrollToElement", "scrollToTop", "scrollToBottom",
+    "swipeLeft", "swipeRight", "swipeUp", "swipeDown", "dragTo", "mouseMove", "fill", "clear", "type", "selectText", "setInputFiles",
     "check", "uncheck", "selectOption", "chooseRadio", "setSliderValue",
     "selectAutocompleteOption", "expandTreeNode", "collapseTreeNode", "selectGridRow",
     "dismissDialog", "acceptDialog", "waitForVisible", "waitForHidden", "waitForURL",
@@ -17,7 +18,9 @@ ACTIONS = {
 }
 ASSERTIONS = {
     "toBeVisible", "toBeHidden", "toBeEnabled", "toBeDisabled", "toBeChecked",
-    "toHaveText", "toContainText", "toHaveValue", "toHaveAttribute", "toHaveClass",
+    "toBeAttached", "toBeEditable", "toBeEmpty", "toBeFocused", "toBeInViewport",
+    "toHaveText", "toContainText", "toHaveValue", "toHaveValues", "toHaveAttribute", "toHaveClass", "toContainClass",
+    "toHaveCSS", "toHaveId", "toHaveAccessibleName", "toHaveAccessibleDescription", "toHaveRole",
     "toHaveCount", "toHaveURL", "toHaveTitle", "toMatchScreenshot", "toHaveDownload",
     "toHaveResponseStatus",
 }
