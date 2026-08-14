@@ -104,6 +104,17 @@ A `flowCall` uses `versionPolicy: "pinned" | "latest"`. `pinned` stores `flowVer
 
 Each assertion takes `expected` where applicable, `negated`, `timeoutMs`, and optional `soft`. Screenshot baselines need an explicit review/approval workflow; never overwrite them after a failure.
 
+## Asset version policy
+
+Cases, suites, and public flows share one immutable execution-version model. Keep `currentVersion`, `stableVersion`, `editRevision`, and a `versions` array on each asset. `editRevision` is only an optimistic-concurrency token; never use it as an executable version. A version entry stores status (`draft`, `candidate`, `stable`, or `deprecated`), tags, description, source, creation time, base version, and a complete executable snapshot.
+
+- Recording, visual-step saves, JavaScript/Python saves, membership changes, and applied AI fixes create a new version. Never mutate an existing stable snapshot.
+- A replay request uses `versionSelector.policy: stable | latest | specific`; `specific` also carries `version`.
+- A suite version snapshots Setup, Teardown, configuration, data, account, ordered case membership, and each case binding policy. Case bindings support `pinned`, `stable`, and `latest`.
+- A public-flow call supports `pinned`, `stable`, and `latest`. The UI resolves versions from a list; users never type raw version numbers.
+- Every run record stores the resolved asset version and resolved dependency versions. Historical records must not be re-resolved after Stable or Latest changes.
+- Existing flat files remain as convenience launchers, while immutable sources are also written under `versions/vN/` folders.
+
 ## Locator bundle
 
 ```json

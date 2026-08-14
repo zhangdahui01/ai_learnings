@@ -392,7 +392,15 @@ Use another port:
 PORT=4174 npm start
 ```
 
-## 12. Security and limitations
+## 12. Asset versions, Stable, and replay selection
+
+Cases, suites, and public flows keep multiple immutable versions. Completing a recording, saving no-code steps or source, or applying an AI fix creates a new version instead of overwriting history. The detail header shows Latest and Stable; open Version history to inspect, replay, or mark a version Stable.
+
+When replaying a case, suite, or public flow, choose Stable for regression, Latest for active debugging, or a specific version to reproduce an old result. A suite version includes Setup, Teardown, configuration, data, and child-case version policies. Run records preserve the versions that were actually resolved.
+
+Convenience source files remain at their original locations, while immutable sources are also saved under `test-suites/.../versions/vN/`. Do not manually overwrite historical version folders.
+
+## 13. Security and limitations
 
 - Never store production passwords, tokens, card data, or one-time codes.
 - Do not connect automation to the normal Chrome profile; use an isolated test profile.
