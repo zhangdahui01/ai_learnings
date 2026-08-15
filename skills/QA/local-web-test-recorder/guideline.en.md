@@ -254,6 +254,10 @@ Recommended hierarchy: Plan “Payment regression” → Suite “Card payment�
 
 The normal workflow requires neither manual import nor handwritten code. “Manual import (fallback)” is only for abnormal browser exits, old recordings, or a lost session status.
 
+### Record after manual login
+
+When a case should contain only authenticated business actions, choose **Record after manual login** in the Record dialog. Complete authentication in the recording browser during Stage 1, but keep Inspector open. Return to the platform and click **Login complete, start recording business steps**. The platform snapshots the login-step boundary and counts only later actions as case steps. Close Inspector after the business flow, then choose whether to create the next version. Saving excludes the login prefix and synchronizes only the business steps to no-code, JavaScript, and Python. The raw Inspector file remains under `recordings/` and can contain entered account values, so protect it as sensitive data. If Inspector has not flushed its script yet, wait briefly and retry the boundary button. Closing Inspector before marking the boundary is rejected to prevent login actions from entering the case.
+
 ### Compliant recording mode
 
 1. Click Record and choose Compliant recording. Locally installed Google Chrome is required.

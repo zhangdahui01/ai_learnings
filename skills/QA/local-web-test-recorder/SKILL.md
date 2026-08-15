@@ -144,6 +144,8 @@ npm start
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
 
+如果只想保存登录后的 Case 操作，选择“手工登录后录制”：先在录制浏览器完成登录，不关闭 Inspector；回到平台点击“登录完成，开始录制业务步骤”；完成业务操作后再关闭 Inspector。平台丢弃标记前的登录步骤，并把标记后的步骤同步为无代码、JavaScript 和 Python。
+
 步骤编辑器支持拖拽排序和在任意步骤前后插入。定位器优先使用 testId、role+可访问名称、label 和用户可见文本；也支持 id、name、class、CSS、XPath，以及等于、包含、不等于、不包含和正则匹配。可使用“查找页面元素”在已授权目标页面上生成并排序定位器候选，选择后必须回放验证。
 
 失败记录的“本地 AI 诊断与修复”默认使用内置确定性规则；配置 `LOCAL_AI_URL`、`LOCAL_AI_MODEL` 和可选 `LOCAL_AI_API_KEY` 后，可调用 OpenAI-compatible 本地模型补充摘要。只有超时等待和精确匹配等白名单结构化修改允许 Apply，应用前必须由用户确认；永远不执行模型生成的任意代码，也不自动修改代理凭据或绕过目标网站安全控制。
@@ -308,6 +310,8 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 7. Add assertions, waits, timeouts, retries, and continue-on-error behavior.
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
+
+To save only post-login case actions, choose **Record after manual login**. Authenticate in the recording browser without closing Inspector, return to the platform and click **Login complete, start recording business steps**, perform the business actions, and then close Inspector. The app discards the login prefix and synchronizes only post-boundary steps to no-code, JavaScript, and Python.
 
 Use **Interface language** in the top-right corner to switch among 中文, English, and 한국어. The choice is stored in the current browser's `localStorage` under `coupayWeb.uiLocale` and persists across reloads. UI language affects platform navigation, forms, notifications, dialogs, and friendly errors only; it never changes the case's test-page locale, locators, test data, or recorded code. Configure the target page separately under **Settings & data → Test page locale** with a BCP 47 value such as `zh-CN`, `en-US`, or `ko-KR`.
 
