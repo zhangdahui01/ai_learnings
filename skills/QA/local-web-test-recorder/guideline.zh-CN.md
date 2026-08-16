@@ -272,6 +272,35 @@ socks5://127.0.0.1:1080
 
 录制某个 Case 阶段时，导入目标由点击录制时所在的页签决定：在 Case Setup 录制只更新 `setupSteps`，在测试步骤录制只更新 `steps`，在 Case Teardown 录制只更新 `teardownSteps`。如果已经把一段完整业务录进“测试步骤”，点击“选择步骤作为 Setup/Teardown”，可多选后移动或复制到目标阶段；一次确认只创建一个新版本，并同步 JS/Python。
 
+### iframe 页面如何录制和回放
+
+录制器会识别 Playwright Inspector 生成的 `page.frameLocator(...)` 和 `page.locator(...).contentFrame()`。导入时自动转换为“进入 Frame → Frame 内操作/断言 → 返回主页面”，不要把 iframe 的 CSS 误填到 Frame 内按钮或输入框的定位值中。
+
+- 单层 iframe：“进入 Frame”的值填写 iframe CSS，例如 `#payment-frame`；下一步按钮仍使用 `role + 可访问名称`、`label`、`text` 或 `testId`。
+- 嵌套 iframe：“进入 Frame”的值使用 JSON 路径，例如 `["#outer-frame","iframe[name=checkout]"]`，从外层到内层排列。
+- 操作主页面元素前添加“返回主页面”。自动导入会在 frame 链切换回 `page` 时自动补这一步。
+- 每个 Case/Suite 阶段开始时默认从主页面上下文开始；回放记录会显示当前 `iframe: 外层 → 内层` 路径，便于定位失败发生在哪一层。
+- iframe 动态加载时，在“进入 Frame”后给第一个内部元素配置 `waitForVisible` 或元素自动等待；不要只增加固定延时。
+
+JavaScript 生成代码使用 `frameScope(page, framePath)`，Python 使用 `frame_scope(page, frame_path)`；无代码、JS 和 Python 保存的是同一条 frame 路径。
+
+### 常用操作与断言速查
+
+Suite Setup/Teardown、公共流程以及 Case Setup/测试步骤/Teardown 共用同一份“步骤/断言指南”。点击步骤标题右侧按钮后，可按导航、表单、等待、弹窗、窗口、文件、iframe、断言、定位、数据和导入兼容性筛选，也可搜索操作名。
+
+| 场景 | 推荐步骤 | 关键填写方式 |
+| --- | --- | --- |
+| 登录、搜索、表单 | `fill`、`clear`、`press`、`check`、`selectOption` | 输入值支持 `${data.key}`；多选值使用 JSON 数组。 |
+| 页面慢、异步加载 | `waitForVisible`、`waitForHidden`、`waitForURL`、`waitForLoadState` | 等待明确元素或 URL；固定等待只用于无法观察的短动画。 |
+| Alert/Confirm/Prompt | `acceptDialog` 或 `dismissDialog`，随后 `toHaveDialogMessage` | 直接在弹窗操作步骤中定位“触发弹窗的按钮”，平台会先注册监听再点击。 |
+| 新窗口 | `clickAndSwitchPage`、`switchPage`、`closePage` | 不要用普通 click 后固定等待；切换值可用窗口序号、URL 或标题片段。 |
+| 上传与下载 | `setInputFiles`、`clickAndWaitForDownload`、`toHaveDownloadFilename` | 上传填写绝对路径；下载使用原子步骤并保存在 artifacts。 |
+| iframe | `switchFrame`、内部操作/断言、`switchMainFrame` | 单层填 CSS，嵌套填外到内 JSON 数组。 |
+| 内容和状态 | `toBeVisible`、`toBeEnabled`、`toHaveText`、`toContainText`、`toHaveValue` | 关键业务结果使用硬断言；非关键检查才使用软断言。 |
+| DOM 与可访问性 | `toHaveAttribute`、`toHaveClass`、`toHaveCSS`、`toHaveAccessibleName` | 属性/CSS 断言同时填写属性名和期望值。 |
+
+导入器可自动转换常用 `goto/click/fill/press/check/selectOption/setInputFiles`、常用断言以及 `frameLocator/contentFrame`。`filter/has/hasText/first/last/nth`、变量 Locator、自定义函数、Canvas/地图、闭合 Shadow DOM 和操作系统原生窗口必须在代码编辑器中检查；完整 JavaScript 会保留，但不保证全部可视化。
+
 ### 手工登录后录制
 
 当 Case 只需要保存登录后的业务操作时，在“开始录制”弹窗选择“手工登录后录制”。第一阶段在录制浏览器完成登录，但不要关闭 Inspector；登录成功后回到平台点击“登录完成，开始录制业务步骤”。平台会保存登录步骤边界，之后才开始计算 Case 的业务步骤。完成业务操作后关闭 Inspector，并在版本确认框选择是否创建新版本。选择保存时，登录步骤不会进入 Case，无代码步骤、JavaScript 和 Python 仅包含边界后的业务操作；原始 Inspector 文件仍保留在 `recordings/`，可能含账号输入，必须按敏感数据保护。若 Inspector 尚未刷新脚本，边界按钮会提示稍等后重试；没有点击边界按钮就关闭 Inspector 时，平台拒绝导入，避免误把登录过程保存进 Case。

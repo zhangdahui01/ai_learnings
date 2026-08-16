@@ -209,6 +209,35 @@ Use `${data.searchText}` or nested `${data.account.username}` in no-code URLs, v
 
 No-code users should treat steps as authoritative; developers should treat JavaScript as authoritative. Do not edit both views concurrently.
 
+### Recording and replaying iframe pages
+
+The importer recognizes both `page.frameLocator(...)` and `page.locator(...).contentFrame()` emitted by Playwright Inspector. It converts them into Enter frame → in-frame actions/assertions → Return to main page. Do not put the iframe CSS selector into the locator field of a button or input inside that frame.
+
+- For one iframe, set Enter frame to a CSS selector such as `#payment-frame`; locate the next control with role + accessible name, label, text, or test ID.
+- For nested iframes, use an outer-to-inner JSON path such as `["#outer-frame","iframe[name=checkout]"]`.
+- Add Return to main page before operating on the top-level page. Automatic import adds it when the recorded chain switches back to `page`.
+- Every case or suite phase starts in the main-page context. Run details display `iframe: outer → inner` for easier diagnosis.
+- For dynamically loaded frames, add `waitForVisible` or automatic element readiness to the first in-frame element instead of relying only on fixed delays.
+
+Generated JavaScript uses `frameScope(page, framePath)` and Python uses `frame_scope(page, frame_path)`, so no-code, JavaScript, and Python share the same frame path.
+
+### Common action and assertion reference
+
+Suite Setup/Teardown, shared flows, and all three case phases use the same searchable Steps/Assertions guide. Filter it by navigation, forms, waits, dialogs, windows, files, iframe, assertions, locators, data, or import compatibility.
+
+| Scenario | Recommended steps | Key input |
+| --- | --- | --- |
+| Login, search, forms | `fill`, `clear`, `press`, `check`, `selectOption` | Values accept `${data.key}`; multi-select uses a JSON array. |
+| Slow or asynchronous pages | `waitForVisible`, `waitForHidden`, `waitForURL`, `waitForLoadState` | Wait for an explicit element or URL; use fixed waits only for unobservable short animations. |
+| Alert/Confirm/Prompt | `acceptDialog` or `dismissDialog`, then `toHaveDialogMessage` | Locate the button that triggers the dialog in the dialog action itself; the platform registers the listener before clicking. |
+| Popup/new tab | `clickAndSwitchPage`, `switchPage`, `closePage` | Do not use a plain click followed by a fixed delay. |
+| Upload/download | `setInputFiles`, `clickAndWaitForDownload`, `toHaveDownloadFilename` | Upload uses absolute paths; downloads are saved under run artifacts. |
+| iframe | `switchFrame`, in-frame steps, `switchMainFrame` | Use CSS for one frame and an outer-to-inner JSON array for nested frames. |
+| Content and state | `toBeVisible`, `toBeEnabled`, `toHaveText`, `toContainText`, `toHaveValue` | Use hard assertions for critical outcomes and soft assertions only for noncritical checks. |
+| DOM/accessibility | `toHaveAttribute`, `toHaveClass`, `toHaveCSS`, `toHaveAccessibleName` | Attribute and CSS assertions require both the property name and expected value. |
+
+The importer converts common `goto/click/fill/press/check/selectOption/setInputFiles`, common assertions, and `frameLocator/contentFrame`. Review `filter/has/hasText/first/last/nth`, locator variables, custom helpers, Canvas/maps, closed Shadow DOM, and native operating-system windows in the code editor. Full JavaScript is preserved even when a construct cannot be visualized completely.
+
 ### Proxy
 
 Examples:

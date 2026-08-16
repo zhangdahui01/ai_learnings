@@ -382,6 +382,8 @@ Version management uses immutable snapshots. A suite atomically versions Setup, 
 - Support ordered URL-prefix mappings for same-protocol replay. Reject unsafe/unsupported cross-protocol native rewrites with a clear instruction to use an authorized upstream Charles Map Remote configuration.
 - Prefer selectors in this order: test ID, role + accessible name, label, stable text/attribute, CSS, XPath.
 - Support semantic controls, frames, shadow DOM, files, downloads, dialogs, keyboard/mouse, navigation, waits, and assertions where the selected browser adapter permits them.
+- Import Playwright `frameLocator(...)` and `locator(...).contentFrame()` chains as explicit `switchFrame`/`switchMainFrame` boundaries. Store one iframe CSS selector as a string and nested iframe selectors as an outer-to-inner JSON array; keep the same path in no-code, JavaScript, Python, replay diagnostics, and generated files.
+- Keep one searchable, categorized operation/assertion guide available beside every Suite Setup/Teardown, shared-flow, and Case Setup/steps/Teardown editor. Cover common form controls, dialogs, windows, files, frames, waits, locators, data references, and assertions; clearly distinguish reliably imported Playwright code from constructs that require manual review or code mode.
 
 ## Validation and delivery gates
 
