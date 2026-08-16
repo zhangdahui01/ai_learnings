@@ -254,6 +254,8 @@ Recommended hierarchy: Plan “Payment regression” → Suite “Card payment�
 
 The normal workflow requires neither manual import nor handwritten code. “Manual import (fallback)” is only for abnormal browser exits, old recordings, or a lost session status.
 
+The selected tab determines the import target when recording a case phase: recording from Case Setup updates only `setupSteps`, recording from case steps updates only `steps`, and recording from Case Teardown updates only `teardownSteps`. If a complete flow was recorded into the main steps, click **Choose steps for Setup/Teardown**, select one or more steps, and move or copy them to the target phase. One confirmation creates only one new version and synchronizes JS/Python.
+
 ### Record after manual login
 
 When a case should contain only authenticated business actions, choose **Record after manual login** in the Record dialog. Complete authentication in the recording browser during Stage 1, but keep Inspector open. Return to the platform and click **Login complete, start recording business steps**. The platform snapshots the login-step boundary and counts only later actions as case steps. Close Inspector after the business flow, then choose whether to create the next version. Saving excludes the login prefix and synchronizes only the business steps to no-code, JavaScript, and Python. The raw Inspector file remains under `recordings/` and can contain entered account values, so protect it as sensitive data. If Inspector has not flushed its script yet, wait briefly and retry the boundary button. Closing Inspector before marking the boundary is rejected to prevent login actions from entering the case.
@@ -399,11 +401,17 @@ PORT=4174 npm start
 
 ## 12. Asset versions, Stable, and replay selection
 
-Cases, suites, and public flows keep multiple immutable versions. Completing a recording, saving no-code steps or source, or applying an AI fix creates a new version instead of overwriting history. The detail header shows Latest and Stable; open Version history to inspect, replay, or mark a version Stable.
+Cases, suites, and public flows keep multiple immutable versions. Completing a recording, saving no-code steps or source, or applying an AI fix creates a new version instead of overwriting history. The detail header shows Latest and Stable; open Version history to inspect, replay, compare, edit the version description, or mark a version Stable. Versions no longer have extra tags: Stable is the single stability marker. Case-level business tags remain available for asset search and filtering.
 
 When replaying a case, suite, or public flow, choose Stable for regression, Latest for active debugging, or a specific version to reproduce an old result. A suite version includes Setup, Teardown, configuration, data, and child-case version policies. Run records preserve the versions that were actually resolved.
 
 Convenience source files remain at their original locations, while immutable sources are also saved under `test-suites/.../versions/vN/`. Do not manually overwrite historical version folders.
+
+Historical versions are never edited in place. Choose **Edit from this version** to load its Suite Setup/Teardown, Case Setup/steps/Teardown, or shared-flow steps as a working copy. Saving creates the next never-before-used version number and synchronizes structured steps, JavaScript, and Python. Deleted numbers are not reused.
+
+Cleanup has two levels. **Archive** hides a version from default lists and replay selectors while retaining its files and allowing restoration. **Delete permanently** requires the version to be archived first and requires typing `vN`; it then removes the structured snapshot, JS/Python files, and any suite-version login state. Latest, Stable, the only remaining version, an active recording base, or a version pinned by a suite/shared flow cannot be archived or deleted. Versions referenced by run history can be archived but not permanently deleted. Change Stable/Latest or pinned references before retrying cleanup. Version numbers are never renumbered.
+
+A suite version is an atomic snapshot of Setup, Teardown, configuration, data, and case bindings. A case version atomically includes Setup, main steps, Teardown, configuration, and both source languages. The UI reports changed scopes but does not mix unrelated lifecycle-phase versions, keeping replay deterministic.
 
 ## 13. Security and limitations
 

@@ -146,6 +146,8 @@ npm start
 
 Case Setup、测试步骤、Case Teardown、Suite Setup/Teardown 和公共流程都提供“标准录制”和“手工登录后录制”。后者要求先在录制浏览器完成登录且不关闭 Inspector，再回到平台点击“登录完成，开始录制业务步骤”；平台丢弃标记前的登录步骤，只把后续步骤同步为无代码、JavaScript 和 Python。
 
+Case 录制必须把步骤写入启动录制时选择的阶段。若用户先把完整流程录入主体步骤，可使用“选择步骤作为 Setup/Teardown”多选并移动或复制；该操作必须原子创建一个新版本并同时重建 JavaScript/Python，不能要求用户手工剪贴代码。
+
 Case 的标准录制还可选择“Suite 上下文中录制”：选择所属 Suite 以及 Stable、Latest 或指定版本，平台加载 `data/auth/suites/<suite-id>/vN/storage-state.json` 后直接打开 Case 起始页。该文件由对应版本的 Suite Setup 成功回放或录制后生成；缺失时必须先生成登录状态，平台不会静默回退到未登录会话。
 
 步骤编辑器支持拖拽排序和在任意步骤前后插入。定位器优先使用 testId、role+可访问名称、label 和用户可见文本；也支持 id、name、class、CSS、XPath，以及等于、包含、不等于、不包含和正则匹配。可使用“查找页面元素”在已授权目标页面上生成并排序定位器候选，选择后必须回放验证。
@@ -178,6 +180,8 @@ Case 的标准录制还可选择“Suite 上下文中录制”：选择所属 Su
 在生成项目根目录使用 `npm run test:generated`，或传入具体 `test-suites/<计划>/<套件>/<用例>.spec.js` 路径执行本地 JavaScript。Python 需安装 `pytest-playwright` 后用 `python3 -m pytest <test_*.py>` 执行。
 
 删除计划或用例不会自动删除历史录制与运行产物。备份或清理前先停止服务器。详细说明见中文指南的“数据存储、备份和删除”。
+
+版本管理采用不可变快照。Suite 将 Setup/Teardown/配置/Case 绑定原子保存，Case 将 Setup/测试步骤/Teardown/配置/JS/Python 原子保存，公共流程单独保存。编辑历史版本必须“基于此版本编辑”并创建新版本；版本可修改说明、对比、归档和恢复，并用 Stable 作为唯一稳定标记，不设置额外版本标签。测试用例业务标签仍独立用于资产筛选。永久删除必须先归档，并受 Latest、Stable、固定引用、执行记录和录制会话保护；删除后的版本号不得复用。
 
 ## English quick start
 
@@ -343,6 +347,8 @@ All application data stays under the generated project directory by default and 
 From the generated project root, run JavaScript with `npm run test:generated` or pass a specific `test-suites/<plan>/<suite>/<case>.spec.js` path. Install `pytest-playwright` before running Python with `python3 -m pytest <test_*.py>`.
 
 Deleting a plan or case does not automatically delete historical recordings or run artifacts. Stop the server before backup or cleanup. Read “Data storage, backup, and deletion” in the English guide.
+
+Version management uses immutable snapshots. A suite atomically versions Setup, Teardown, settings, and case bindings; a case atomically versions Setup, main steps, Teardown, settings, JavaScript, and Python; a public flow versions its own steps. Editing history means “Edit from this version” and saving a new version. Users can update the description, compare, archive, and restore versions. Stable is the only version stability marker; extra version tags are not used. Case business tags remain separate for asset filtering. Permanent deletion requires prior archival and is protected by Latest, Stable, pinned references, run records, and active recording sessions. Never reuse deleted version numbers.
 
 ## Implementation workflow for coding agents
 
