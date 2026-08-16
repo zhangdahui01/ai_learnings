@@ -33,7 +33,7 @@ Devin: @skills:local-web-test-recorder 分析这次回放失败的 Trace。
 | Playwright 浏览器 | 必需 | 使用命令下载 Chromium、Firefox 和 WebKit；不是操作系统里已有的普通浏览器。 |
 | Git | 按安装方式 | Claude Code/Devin 仓库安装和手工克隆时需要；Codex 使用 `$skill-installer` 时无需用户手工运行 Git。 |
 | Python 3 | 可选 | 仅运行 `scripts/validate_case.py` 时需要；录制器服务器不依赖 Python。 |
-| Google Chrome | 合规录制模式必需 | 标准模式使用 Playwright Chromium；合规模式使用本机正式 Chrome 和专用测试 Profile。不要连接日常 Chrome Profile。 |
+| Google Chrome | 可选 | 产品录制使用 Playwright 浏览器；仅在其他本地调试工作流明确需要正式 Chrome 时安装。 |
 | Firefox、Safari | 可选 | Firefox 可由 Playwright 安装；WebKit 用于 Safari 兼容性测试，但不等于真实 Apple Safari。 |
 
 准备至少约 2 GB 可用磁盘空间存放 Node 依赖、三个 Playwright 浏览器和运行产物。Linux 安装浏览器系统库可能需要 `sudo` 权限。本应用不需要 Java、Docker、数据库、Selenium Server 或浏览器扩展。
@@ -121,8 +121,8 @@ npm start
 | --- | --- | --- |
 | `PORT` | `4173` | 本地服务器端口。 |
 | `DATA_DIR` | `<项目>/data` | `store.json` 的目录。 |
-| `PROFILES_DIR` | `<DATA_DIR>/profiles` | 合规录制专用 Chrome Profile；包含敏感会话数据。 |
-| `AUTH_STATE_DIR` | `<DATA_DIR>/auth` | 合规录制保存的 Cookie/登录状态；必须按凭据保护。 |
+| `PROFILES_DIR` | `<DATA_DIR>/profiles` | 旧版本兼容 Profile 目录；新录制入口不再使用。 |
+| `AUTH_STATE_DIR` | `<DATA_DIR>/auth` | Suite 版本 Cookie/登录状态目录；必须按凭据保护。 |
 | `RECORDINGS_DIR` | `<项目>/recordings` | Inspector 录制脚本目录。 |
 | `ARTIFACTS_DIR` | `<项目>/artifacts` | Trace、视频和失败截图目录。 |
 | `TEST_SUITES_DIR` | `<项目>/test-suites` | 以计划名称分目录保存 JS/Python 测试文件。 |
@@ -144,7 +144,9 @@ npm start
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
 
-如果只想保存登录后的 Case 操作，选择“手工登录后录制”：先在录制浏览器完成登录，不关闭 Inspector；回到平台点击“登录完成，开始录制业务步骤”；完成业务操作后再关闭 Inspector。平台丢弃标记前的登录步骤，并把标记后的步骤同步为无代码、JavaScript 和 Python。
+Case Setup、测试步骤、Case Teardown、Suite Setup/Teardown 和公共流程都提供“标准录制”和“手工登录后录制”。后者要求先在录制浏览器完成登录且不关闭 Inspector，再回到平台点击“登录完成，开始录制业务步骤”；平台丢弃标记前的登录步骤，只把后续步骤同步为无代码、JavaScript 和 Python。
+
+Case 的标准录制还可选择“Suite 上下文中录制”：选择所属 Suite 以及 Stable、Latest 或指定版本，平台加载 `data/auth/suites/<suite-id>/vN/storage-state.json` 后直接打开 Case 起始页。该文件由对应版本的 Suite Setup 成功回放或录制后生成；缺失时必须先生成登录状态，平台不会静默回退到未登录会话。
 
 步骤编辑器支持拖拽排序和在任意步骤前后插入。定位器优先使用 testId、role+可访问名称、label 和用户可见文本；也支持 id、name、class、CSS、XPath，以及等于、包含、不等于、不包含和正则匹配。可使用“查找页面元素”在已授权目标页面上生成并排序定位器候选，选择后必须回放验证。
 
@@ -156,9 +158,9 @@ npm start
 
 同步约定：保存无代码步骤会重建 JS/Python；保存 JavaScript 会把可识别语句同步为无代码步骤并重建 Python；无法识别的复杂 JS 原样保留并提示部分可视化；Python 是派生导出，不做反向同步。测试账号字段只存引用名称。数据用 `${data.key}`/`${data.nested.key}`，机密用 `${env.SECRET_NAME}`。多条 URL 映射按顺序匹配第一条；原生映射仅用于同协议回放，录制阶段或跨协议映射使用上游 Charles Map Remote。
 
-### 会话隔离与合规录制模式
+### 会话隔离与 Suite 上下文录制
 
-每次标准录制和回放默认创建全新浏览器会话，不继承上次 Cookie、缓存、Local/Session Storage 或 IndexedDB。合规录制使用本机正式 Chrome 和独立的临时 Profile，结束后删除。只有用户在“配置与数据”显式选择“持久化登录态（高级）”时，才写入 `data/profiles/<case-id>/` 和 `data/auth/<case-id>.json` 并供以后加载；可用“删除历史登录态和缓存”清理。
+每次标准录制和回放默认创建全新浏览器会话，不继承上次 Cookie、缓存、Local/Session Storage 或 IndexedDB。“合规录制”入口已移除。需要在登录后的页面录制 Case 时，优先选择 Suite 上下文并显式选择 Suite 版本；没有可用状态时使用“手工登录后录制”。
 
 遇到 CAPTCHA 或登录验证时，在打开的 Chrome 中手工完成后继续。录制器本身处于交互等待状态，不会破解 CAPTCHA、隐藏自动化特征或规避目标网站控制。白名单字段只是审批记录；真正的 IP/账号白名单必须由目标系统管理员配置。回放检测到 Access Denied、CAPTCHA 或异常流量页面时，会标记为“目标网站拒绝自动化”，停止无意义重试并给出合规建议。
 
@@ -167,8 +169,8 @@ npm start
 所有业务数据默认保存在生成项目目录中，不由本应用主动上传：
 
 - `data/store.json`：测试计划、测试套件、测试用例、公共流程及版本、生命周期步骤、测试数据、配置和执行记录元数据。
-- `data/profiles/_sessions/<session-id>/`：默认合规录制的临时 Profile；正常结束后自动删除。
-- `data/profiles/<case-id>/` 与 `data/auth/<case-id>.json`：仅显式持久化模式使用，按登录凭据保护。
+- `data/auth/suites/<suite-id>/vN/storage-state.json`：Suite Setup vN 成功录制或回放后保存的 Cookie/localStorage，供 Case 的 Suite 上下文录制加载；按登录凭据保护。
+- `data/profiles/` 与旧 `data/auth/<case-id>.json`：旧版本合规录制兼容数据；新录制入口不再创建。
 - `recordings/`：Playwright Inspector 生成的脚本；可能包含录制时输入的明文。
 - `test-suites/<计划名>/<套件名>/`：每个 Case 一个可执行 `.spec.js` 和一个 Python 文件，并嵌入 Suite Setup/Teardown；`suite.*` 保存 Suite 阶段的同步源码。公共流程位于 `test-suites/_公共流程/`。
 - `artifacts/<run-id>/`：失败截图、视频和 Trace；可能包含页面内容、账号信息和网络证据。
@@ -203,7 +205,7 @@ Treat installation as two layers: the Agent Skill teaches the selected coding ag
 | Playwright browsers | Yes | Download Chromium, Firefox, and WebKit with the commands below. |
 | Git | Depends on installation | Needed for Claude Code/Devin repository installation and manual cloning; Codex `$skill-installer` does not require manual Git commands. |
 | Python 3 | Optional | Needed only for `scripts/validate_case.py`, not for the recorder server. |
-| Google Chrome | Required for compliant recording | Standard mode uses Playwright Chromium. Compliant mode uses the locally installed stable Chrome with a dedicated test profile. Never attach the normal daily profile. |
+| Google Chrome | Optional | Product recording uses Playwright browsers; install stable Chrome only for separate local debugging workflows that explicitly need it. |
 | Firefox or Safari | Optional | Firefox can be installed by Playwright. WebKit approximates Safari compatibility but is not the Apple Safari application. |
 
 Allow roughly 2 GB of free disk space for dependencies, browser binaries, and artifacts. Linux system dependencies may require `sudo`. Java, Docker, a database, Selenium Server, and browser extensions are not required.
@@ -287,8 +289,8 @@ Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to st
 | --- | --- | --- |
 | `PORT` | `4173` | Local server port. |
 | `DATA_DIR` | `<project>/data` | Directory containing `store.json`. |
-| `PROFILES_DIR` | `<DATA_DIR>/profiles` | Dedicated Chrome profiles for compliant recording; contains sensitive session data. |
-| `AUTH_STATE_DIR` | `<DATA_DIR>/auth` | Saved cookies/login state for compliant recording; protect as credentials. |
+| `PROFILES_DIR` | `<DATA_DIR>/profiles` | Legacy profile directory; new recording entry points do not use it. |
+| `AUTH_STATE_DIR` | `<DATA_DIR>/auth` | Versioned suite Cookie/login state; protect as credentials. |
 | `RECORDINGS_DIR` | `<project>/recordings` | Inspector-generated scripts. |
 | `ARTIFACTS_DIR` | `<project>/artifacts` | Traces, videos, and failure screenshots. |
 | `TEST_SUITES_DIR` | `<project>/test-suites` | Plan folders containing per-case JavaScript and Python files. |
@@ -311,7 +313,9 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
 
-To save only post-login case actions, choose **Record after manual login**. Authenticate in the recording browser without closing Inspector, return to the platform and click **Login complete, start recording business steps**, perform the business actions, and then close Inspector. The app discards the login prefix and synchronizes only post-boundary steps to no-code, JavaScript, and Python.
+Case Setup, case steps, Case Teardown, Suite Setup/Teardown, and shared flows all offer **Standard recording** and **Record after manual login**. The latter requires authenticating without closing Inspector, returning to the platform to mark the business-step boundary, and then recording the steps to keep. The app discards the login prefix and synchronizes only post-boundary steps to no-code, JavaScript, and Python.
+
+Standard case recording also offers **Record in suite context**. Select the containing suite and its Stable, Latest, or a specific version. The recorder loads `data/auth/suites/<suite-id>/vN/storage-state.json` and opens the case start URL. A successful replay or recording of that Suite Setup version creates the state file; missing state is reported explicitly and never falls back silently to a signed-out session.
 
 Use **Interface language** in the top-right corner to switch among 中文, English, and 한국어. The choice is stored in the current browser's `localStorage` under `coupayWeb.uiLocale` and persists across reloads. UI language affects platform navigation, forms, notifications, dialogs, and friendly errors only; it never changes the case's test-page locale, locators, test data, or recorded code. Configure the target page separately under **Settings & data → Test page locale** with a BCP 47 value such as `zh-CN`, `en-US`, or `ko-KR`.
 
@@ -319,9 +323,9 @@ For slow pages, use Stability presets and per-step Advanced readiness: wait for 
 
 Synchronization contract: saving no-code steps regenerates JS/Python; saving JavaScript extracts recognized statements into steps and regenerates Python; unsupported custom JS remains intact with a partial-visualization warning; Python is derived and does not reverse-sync. The account field stores an alias only. Use `${data.key}`/`${data.nested.key}` for test data and `${env.SECRET_NAME}` for secrets. Ordered URL mappings use first match; native mapping is same-protocol replay only, while recording-time or cross-protocol mapping requires upstream Charles Map Remote.
 
-### Session isolation and compliant recording
+### Session isolation and suite-context recording
 
-Standard recording and replay use a fresh browser context by default, with no cookies, cache, Local/Session Storage, or IndexedDB inherited from the previous run. Compliant recording launches locally installed stable Chrome with a temporary isolated profile that is removed when recording completes. Only the explicit advanced persistent-session setting writes `data/profiles/<case-id>/` and `data/auth/<case-id>.json` for later reuse. Use the UI action to delete saved state.
+Standard recording and replay use a fresh browser context by default, with no cookies, cache, Local/Session Storage, or IndexedDB inherited from the previous run. The Compliant recording entry has been removed. To record an authenticated case, explicitly load a versioned suite context or use Record after manual login.
 
 For CAPTCHA or login challenges, complete the verification manually in the opened Chrome window and then continue. The recorder waits for user interaction; it does not solve CAPTCHA, spoof fingerprints, or evade target controls. Allowlist fields document approval only—the target-system administrator must configure the real IP/account allowlist. Access Denied, CAPTCHA, and unusual-traffic pages are reported as “Target site rejected automation,” with pointless retries stopped and compliant next steps shown.
 
@@ -330,8 +334,8 @@ For CAPTCHA or login challenges, complete the verification manually in the opene
 All application data stays under the generated project directory by default and is not proactively uploaded by this application:
 
 - `data/store.json`: plans, suites, cases, versioned shared flows, lifecycle steps, test data, configuration, and run metadata.
-- `data/profiles/_sessions/<session-id>/`: temporary compliant-recording profiles, normally removed at completion.
-- `data/profiles/<case-id>/` and `data/auth/<case-id>.json`: used only by explicitly enabled persistent sessions; protect them like credentials.
+- `data/auth/suites/<suite-id>/vN/storage-state.json`: versioned Cookie/localStorage captured by successful Suite Setup recording or replay and loaded by suite-context case recording; protect it like credentials.
+- `data/profiles/` and legacy `data/auth/<case-id>.json`: compatibility data from earlier compliant-recording releases; new recording entry points do not create it.
 - `recordings/`: scripts generated by Playwright Inspector; these can contain literal values entered while recording.
 - `test-suites/<plan-name>/<suite-name>/`: one executable `.spec.js` and one Python file per case, with Suite Setup/Teardown embedded; `suite.*` contains synchronized Suite-phase sources. Shared flows live under `test-suites/_公共流程/`.
 - `artifacts/<run-id>/`: screenshots, videos, and traces; these can contain page content, account information, and network evidence.

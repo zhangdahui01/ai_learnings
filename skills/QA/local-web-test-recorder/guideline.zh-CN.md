@@ -94,8 +94,8 @@ npm start
 | 路径 | 保存内容 | 注意事项 |
 |---|---|---|
 | `data/store.json` | 测试计划、套件、用例、公共流程版本、生命周期、步骤、断言、测试数据、配置和执行记录元数据 | 当前版本使用本地 JSON，不是远程数据库。测试数据可能敏感。 |
-| `data/profiles/<用例 ID>/` | 合规录制使用的本机正式 Chrome 专用 Profile | 可能包含 Cookie、缓存和登录会话；不要提交、分享或改为日常 Chrome Profile。 |
-| `data/auth/<用例 ID>.json` | 关闭合规录制时保存、下次加载的 Cookie/登录状态 | 相当于登录凭据；离职、账号撤销或授权到期时应删除。 |
+| `data/auth/suites/<Suite ID>/vN/storage-state.json` | Suite Setup vN 成功录制或回放后保存的 Cookie/localStorage | Case 的 Suite 上下文录制会加载；相当于登录凭据，禁止提交或分享。 |
+| `data/profiles/`、`data/auth/<用例 ID>.json` | 旧版本合规录制的兼容数据 | 新录制入口不再创建；确认无需兼容后可人工清理。 |
 | `recordings/*.spec.js` | Playwright Inspector 生成的原始录制代码 | 录制时输入的账号、搜索词或其他值可能以明文出现。 |
 | `test-suites/<计划名>/<套件名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个 Case 一个文件；按 Suite Setup → Case Setup/Steps/Teardown → Suite Teardown 生成。 |
 | `test-suites/<计划名>/<套件名>/test_*.py` | 从同一步骤模型生成的 Python/Playwright 测试 | 与 JavaScript 保持同样的 Suite/Case 生命周期；Python 可用 pytest-playwright 独立运行。 |
@@ -256,7 +256,7 @@ socks5://127.0.0.1:1080
 2. 在计划中点击“新建用例并加入”。
 3. 填写用例名称、浏览器、页面语言和起始 URL。
 4. 点击“保存用例”。
-5. 点击“开始录制”，选择“标准录制”或“合规录制”。
+5. 在 Case Setup、测试步骤或 Case Teardown 中点击“录制当前阶段”，选择“标准录制”或“手工登录后录制”。Suite Setup/Teardown 和公共流程的录制弹窗也提供相同两种方式。
 6. 在新打开的 Playwright 浏览器中执行点击、填写、选择和键盘操作。
 7. 需要断言时，可在 Inspector 中使用断言工具，也可以导入后手工增加。
 8. 完成后关闭 **Playwright Inspector**（带录制工具栏/代码的窗口）。不需要点击 Save；不要只关闭被录制的 Chrome 标签页，因为录制进程可能仍在等待。
@@ -269,15 +269,16 @@ socks5://127.0.0.1:1080
 
 当 Case 只需要保存登录后的业务操作时，在“开始录制”弹窗选择“手工登录后录制”。第一阶段在录制浏览器完成登录，但不要关闭 Inspector；登录成功后回到平台点击“登录完成，开始录制业务步骤”。平台会保存登录步骤边界，之后才开始计算 Case 的业务步骤。完成业务操作后关闭 Inspector，并在版本确认框选择是否创建新版本。选择保存时，登录步骤不会进入 Case，无代码步骤、JavaScript 和 Python 仅包含边界后的业务操作；原始 Inspector 文件仍保留在 `recordings/`，可能含账号输入，必须按敏感数据保护。若 Inspector 尚未刷新脚本，边界按钮会提示稍等后重试；没有点击边界按钮就关闭 Inspector 时，平台拒绝导入，避免误把登录过程保存进 Case。
 
-### 合规录制模式
+### 在 Suite 上下文中录制 Case
 
-1. 点击“开始录制”并选择“合规录制”。必须先安装本机 Google Chrome。
-2. 勾选“目标环境和账号已获授权”。不要在产品中填写密码或复杂审批信息。
-3. 应用默认创建独立临时 Profile，结束后删除。只有在“配置与数据”显式选择持久化登录态时，才加载/保存以前的 Cookie。
-4. 遇到 CAPTCHA 或登录验证时，在 Chrome 中手工完成后继续操作；录制器会等待。
-5. 完成后关闭 Inspector，脚本自动导入代码编辑器。默认不保留登录态；显式持久化时才写入 `data/auth/<用例 ID>.json`。
+1. 先录制或编辑 Suite Setup，使它完成登录。
+2. 回放该 Suite Setup 版本；回放成功后平台保存 `data/auth/suites/<suite-id>/vN/storage-state.json`。录制 Suite Setup 并确认创建新版本时，也会保存该新版本的状态。
+3. 进入该 Suite 下的 Case，在要录制的 Case Setup、测试步骤或 Case Teardown 点击“录制当前阶段”。
+4. 选择“标准录制”，在“会话起点”选择“使用 Suite 上下文”。
+5. 选择所属 Suite，再选择 Stable、Latest 或指定版本。只有标记“登录态可用”的版本才能启动。
+6. 平台加载该版本 Cookie/localStorage 并打开 Case 起始 URL；用户只录制当前 Case 阶段。
 
-平台不会破解 CAPTCHA、伪造指纹或规避站点安全控制。实际 IP/账号白名单及详细审批信息必须由目标系统管理员或企业测试管理系统维护。
+如果所选版本没有登录态，平台明确提示“Suite vN 尚未生成登录状态”，不会静默使用未登录会话。“合规录制”入口已经移除；无法通过 Suite Setup 生成状态时使用“手工登录后录制”。平台不会破解 CAPTCHA、伪造指纹或规避站点安全控制。
 
 ## 7. 编辑步骤和定位器
 
@@ -397,7 +398,7 @@ Trace 可查看步骤、页面快照、网络请求和控制台信息。
 
 ### `Access Denied` 或 CAPTCHA
 
-回放会把 Access Denied、CAPTCHA 和异常流量页面标记为“目标网站拒绝自动化”，而不是普通元素超时，并停止无意义重试。不要绕过安全控制；使用已授权测试环境，申请 IP/测试账号白名单，或在合规录制模式中手工完成验证。
+回放会把 Access Denied、CAPTCHA 和异常流量页面标记为“目标网站拒绝自动化”，而不是普通元素超时，并停止无意义重试。不要绕过安全控制；使用已授权测试环境，申请 IP/测试账号白名单，或在允许人工验证时使用“手工登录后录制”。
 
 ### 端口被占用
 
