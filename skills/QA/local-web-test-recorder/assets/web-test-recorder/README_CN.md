@@ -79,10 +79,10 @@ node scripts/create_mvp.js /absolute/path/to/web-test-recorder
 cd /absolute/path/to/web-test-recorder
 npm install
 npx playwright install chromium firefox webkit
-npm start
+node start-server.mjs
 ```
 
-打开 <http://localhost:4173>。停止服务时，在运行服务的终端按 `Ctrl+C`。
+打开 <http://localhost:4173>。停止服务时，在运行服务的终端按 `Ctrl+C`。脚本会检查环境并把日志写入 `data/logs/server.log`。依赖缺失时运行 `node start-server.mjs --install`；换端口运行 `node start-server.mjs --port 4174`。`npm start` 仍可作为备用方式。
 
 ## 4. 数据存储、备份和删除
 

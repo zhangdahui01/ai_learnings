@@ -108,10 +108,10 @@ npx playwright install --with-deps chromium firefox webkit
 
 ```bash
 npm run test:e2e
-npm start
+node start-server.mjs
 ```
 
-看到服务器地址后打开 <http://localhost:4173>。保持启动终端不关闭；用 `Ctrl+C` 停止服务器。若 4173 被占用，macOS/Linux 使用 `PORT=4174 npm start`，PowerShell 使用 `$env:PORT=4174; npm start`。
+看到服务器地址后打开 <http://localhost:4173>。保持启动终端不关闭；用 `Ctrl+C` 停止服务器。脚本会检查运行环境并把服务日志写入 `data/logs/server.log`。依赖缺失时使用 `node start-server.mjs --install`；端口被占用时使用 `node start-server.mjs --port 4174`。`npm start` 仍是备用启动方式。
 
 ### 环境变量与代理
 
@@ -282,10 +282,10 @@ npx playwright install --with-deps chromium firefox webkit
 
 ```bash
 npm run test:e2e
-npm start
+node start-server.mjs
 ```
 
-Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to stop. If port 4173 is busy, use `PORT=4174 npm start` on macOS/Linux or `$env:PORT=4174; npm start` in PowerShell.
+Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to stop. The launcher validates the environment and appends server output to `data/logs/server.log`. Use `node start-server.mjs --install` when dependencies are missing, or `node start-server.mjs --port 4174` when the default port is occupied. `npm start` remains a fallback.
 
 ### Environment variables and proxies
 

@@ -79,10 +79,10 @@ Install and start it:
 cd /absolute/path/to/web-test-recorder
 npm install
 npx playwright install chromium firefox webkit
-npm start
+node start-server.mjs
 ```
 
-Open <http://localhost:4173>. Press `Ctrl+C` in the server terminal to stop it.
+Open <http://localhost:4173>. Press `Ctrl+C` in the server terminal to stop it. The launcher validates the environment and writes output to `data/logs/server.log`. Use `node start-server.mjs --install` when dependencies are missing, or `node start-server.mjs --port 4174` to change the port. `npm start` remains available as a fallback.
 
 ## 4. Data storage, backup, and deletion
 
