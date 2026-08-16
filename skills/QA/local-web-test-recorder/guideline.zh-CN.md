@@ -241,10 +241,15 @@ socks5://127.0.0.1:1080
 
 失败结果中的“本地 AI 诊断与修复”默认在本机运行规则诊断。设置 `LOCAL_AI_URL`、`LOCAL_AI_MODEL` 和可选 `LOCAL_AI_API_KEY` 可连接 OpenAI-compatible 本地模型。Apply 只接受服务器白名单中的结构化修改并保留前后快照，不执行 AI 任意代码。
 
-- 测试计划（Plan）是发布/回归目标；按顺序包含多个测试套件。
-- 测试套件（Suite）组织同一业务域的用例。Suite Setup 每次套件运行一次，适合登录；它产生的 Cookie/Storage 只作为内存快照传给本次套件中的用例，不写入持久文件。Suite Teardown 无论 Setup 或 Case 是否失败都会运行，适合退出登录或测试数据清理。
-- 测试用例（Case）包含 Case Setup、主体步骤/断言和 Case Teardown。Case 默认使用全新 Browser Context；Case Teardown 放入 `finally`，主体失败后仍执行。
-- 公共流程适合“进入商品详情页”“加购物车”等复用场景。调用时填写参数 JSON，保存时固定流程版本；以后修改流程会生成新版本，不会静默改变旧用例。支付、下单和绑卡设为“敏感操作”，平台禁止自动重试。
+- 测试资产采用严格单父级层级：`Test Plan → Test Suite → Test Case`。新建或编辑 Suite 必须选择一个 Plan；新建或编辑 Case 必须选择一个 Suite。移动父级会创建新版本并同步本地文件路径。
+- 测试计划（Plan）是发布/回归目标；按顺序执行多个测试套件。每个 Suite 是独立执行会话，计划记录按 Suite 展开状态、失败步骤、截图、录像和 Trace。
+- 测试套件（Suite）组织同一业务域的用例。运行整个 Suite 时只启动一次 Browser、一个 Browser Context 和一个主 Page，会依次执行 Suite Setup → 其中调用的公共流程 → 每个 Case 的 Setup/主体/Teardown → Suite Teardown。Cookie、localStorage 和页面状态在这个会话中连续保留；Suite Teardown 即使 Setup 或 Case 失败也会尝试执行。整套运行只生成一个主录像和一个 Trace，失败步骤各自保存截图。
+- 在“测试执行”中按 `Test Plan → Test Suite → Test Case` 三列选择范围。点击某个 Plan 后中列只显示该 Plan 的 Suite；点击某个 Suite 后右列只显示该 Suite 的 Case。勾选 Plan 会默认勾选其全部 Suite 和 Case，勾选 Suite 会默认勾选其全部 Case；取消任意子项后父项显示部分选中。只选 Case 时也会自动执行所属 Suite 的 Setup 和 Teardown，不会退化为无登录态的独立 Case 会话。
+- 版本在三列下方的“本次执行版本”配置：Suite 选择 Stable、Latest 或指定 vN，该 vN 同时用于 Suite Setup 和 Suite Teardown；不能分别混用两个 Suite 版本。只选择部分 Case 时，可以为每个 Case 覆盖 Stable、Latest 或指定版本。页面执行前预览版本链，执行记录永久保存实际解析的 Suite、Case 和公共流程版本。
+- “手工登录后录制”在点击“登录完成，开始录制业务步骤”时同时记录登录步骤快照和步骤数。正常情况下精确删除登录前缀；Inspector 改写前缀时用点击时的步骤数恢复边界并提示检查第一个业务步骤；若最终脚本无法可靠应用边界，则完整导入而不是报错丢失录制，并用红色提示要求手工删除登录步骤。该规则一致适用于 Suite Setup/Teardown、Case 三阶段和公共流程。
+- 单独回放 Suite Setup/Teardown、Case、Case 某阶段或公共流程时，仍创建独立的全新浏览器会话和独立录像，不会继承其他回放的 Cookie 或缓存。
+- 测试用例（Case）包含 Case Setup、主体步骤/断言和 Case Teardown。单独回放 Case 时使用全新 Browser Context；在 Suite 整体执行中则加入该 Suite 的共享会话。Case Teardown 在主体失败后仍执行。
+- 公共流程可设为全局、属于某个 Suite 或属于某个 Case。Suite 流程可用于该 Suite 生命周期与子用例，Case 流程只用于当前 Case；调用时填写参数 JSON并选择版本策略。支付、下单和绑卡设为“敏感操作”，平台禁止自动重试。
 - Suite Setup、Suite Teardown 和公共流程编辑页均提供独立“录制”和“回放”。关闭 Inspector 后，平台同时导入完整 JavaScript、生成 Python 和可编辑无代码步骤。若目标已有步骤，导入暂停并显示覆盖确认；选择取消时原代码与步骤完全不变。
 - 公共流程独立录制/回放不会借用某个 Case 的代理。在公共流程“编辑信息 → 独立录制/回放配置”中保存浏览器、页面语言、代理和超时。流程被 Case/Suite 引用时，则使用当前 Case 的执行配置。`ERR_ABORTED` 且实际页是 `about:blank` 时，先检查网络出口和该流程的代理，加长元素等待无效。
 
@@ -253,9 +258,9 @@ socks5://127.0.0.1:1080
 ## 6. 录制测试用例
 
 1. 创建测试计划。
-2. 在计划中点击“新建用例并加入”。
-3. 填写用例名称、浏览器、页面语言和起始 URL。
-4. 点击“保存用例”。
+2. 新建测试套件并在“所属测试计划”选择该 Plan。
+3. 新建测试用例并在“所属测试套件”选择该 Suite，然后设置名称、优先级和标签。
+4. 在 Suite 或 Case 的“配置与数据”填写浏览器、页面语言、起始 URL 和测试数据。
 5. 在 Case Setup、测试步骤或 Case Teardown 中点击“录制当前阶段”，选择“标准录制”或“手工登录后录制”。Suite Setup/Teardown 和公共流程的录制弹窗也提供相同两种方式。
 6. 在新打开的 Playwright 浏览器中执行点击、填写、选择和键盘操作。
 7. 需要断言时，可在 Inspector 中使用断言工具，也可以导入后手工增加。
@@ -358,7 +363,7 @@ socks5://127.0.0.1:1080
 
 - 用例回放：在用例页点击“回放用例”。无代码模式按步骤执行；代码模式执行本地 `.spec.js`。
 - 计划回放：打开测试计划，点击“运行整个计划”，应用会逐个执行计划内用例并汇总通过/失败。
-- 执行记录：在左侧“执行记录”按状态和范围筛选，点击详情查看证据；可以删除单条或清空元数据。
+- 执行记录：在左侧“执行记录”按状态和范围筛选。点击详情可按 Suite 查看 Suite 版本、Setup/Teardown 版本、每个 Case 的版本与通过/失败/跳过状态；展开阶段可查看逐步明细、失败原因、建议和步骤截图，套件顶部提供整段录像与 Trace。可以删除单条或清空元数据。
 - 仪表盘：展示计划、用例、执行次数、通过率、最近执行和最近失败。
 
 ## 10. 查看失败证据

@@ -133,7 +133,7 @@ node start-server.mjs
 
 ### 基本使用流程
 
-1. 创建测试计划，在计划中创建或加入测试套件，再把测试用例加入套件。
+1. 按严格单父级层级创建资产：`Test Plan → Test Suite → Test Case`。新建/编辑 Suite 必须选择 Plan，新建/编辑 Case 必须选择 Suite；公共流程可设为全局、属于 Suite 或属于 Case。
 2. 把登录/退出登录放在 Suite Setup/Teardown，把单用例前置/清理放在 Case Setup/Teardown；把加购物车、进入商品页等复用动作建成有版本的公共流程。
    Suite Setup、Suite Teardown 和公共流程都可单独录制及回放。录制结束同时保存完整 JavaScript、生成 Python 并导入无代码步骤；目标已有步骤时必须由用户确认后才覆盖，取消不修改原数据。
 3. 配置浏览器、页面语言、起始 URL、代理和测试数据。
@@ -144,7 +144,11 @@ node start-server.mjs
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
 
-Case Setup、测试步骤、Case Teardown、Suite Setup/Teardown 和公共流程都提供“标准录制”和“手工登录后录制”。后者要求先在录制浏览器完成登录且不关闭 Inspector，再回到平台点击“登录完成，开始录制业务步骤”；平台丢弃标记前的登录步骤，只把后续步骤同步为无代码、JavaScript 和 Python。
+运行整个 Suite 时只创建一个 Browser、Browser Context 和主 Page，会连续执行 Suite Setup、其中调用的公共流程、所有 Case 的 Setup/主体/Teardown 以及 Suite Teardown，因此登录 Cookie/localStorage 不会在阶段之间丢失。整套执行只保存一个主录像和一个 Trace，失败步骤单独截图，并在执行记录中按阶段显示。执行 Plan 时每个 Suite 各自使用一个独立会话，Plan 记录按 Suite 分组。只有单独回放 Suite 阶段、Case/Case 阶段或公共流程时才创建独立浏览器和独立录像。
+
+“测试执行”使用 `Plan → Suite → Case` 三列联动选择：点击 Plan 只展开其 Suite，点击 Suite 只展开其 Case。勾选 Plan 必须级联勾选全部 Suite/Case，勾选 Suite 必须级联勾选全部 Case；取消子项后父项显示部分选中。只选 Case 仍必须由所属 Suite 的 Setup/Teardown 包裹并共享一个浏览器会话。执行前为每个 Suite 选择 Stable、Latest 或指定版本，该 Suite 版本同时决定 Setup、Teardown、配置和成员快照；部分 Case 执行可再覆盖各 Case 的版本。确认区域必须预览 `Suite Setup vN → Case vM… → Suite Teardown vN`。执行记录详情按 Suite 展示 Setup、每个 Case 和 Teardown 的实际版本与通过/失败/跳过状态，并在阶段内展示步骤明细、失败原因、截图、录像和 Trace；记录之后不随 Stable/Latest 改变。
+
+Case Setup、测试步骤、Case Teardown、Suite Setup/Teardown 和公共流程都提供“标准录制”和“手工登录后录制”。后者要求先在录制浏览器完成登录且不关闭 Inspector，再回到平台点击“登录完成，开始录制业务步骤”；平台记录当时的步骤快照与步骤数，优先精确删除登录前缀，Inspector 改写前缀时按记录的步骤数恢复边界，只把后续步骤同步为无代码、JavaScript 和 Python。如果关闭后的脚本短到无法应用该边界，平台不得丢弃整次录制：完整导入并醒目提示用户手工删除登录步骤。
 
 Case 录制必须把步骤写入启动录制时选择的阶段。若用户先把完整流程录入主体步骤，可使用“选择步骤作为 Setup/Teardown”多选并移动或复制；该操作必须原子创建一个新版本并同时重建 JavaScript/Python，不能要求用户手工剪贴代码。
 
@@ -305,7 +309,7 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 
 ### Basic workflow
 
-1. Create a test plan, add test suites to the plan, and add test cases to suites.
+1. Create assets with a strict single-parent hierarchy: `Test Plan → Test Suite → Test Case`. Creating or editing a Suite requires a Plan; creating or editing a Case requires a Suite. A shared flow can be global, Suite-owned, or Case-owned.
 2. Put login/logout in Suite Setup/Teardown, case-local preparation/cleanup in Case Setup/Teardown, and reusable business actions in versioned shared flows.
    Suite Setup, Suite Teardown, and shared flows can each be recorded and replayed independently. Recording imports full JavaScript, generated Python, and no-code steps together. Existing steps require explicit overwrite confirmation; canceling preserves the target.
    Configure browser, locale, proxy, and timeouts for standalone shared-flow recording/replay in the flow's Edit information dialog. A flow invoked by a case or suite uses the calling case settings instead.
@@ -317,7 +321,11 @@ Read the [English guide](guideline.en.md) for configuration, recording, assertio
 8. Save and replay a case, or run every case from the plan page; query history under Runs.
 9. On failure, read the failed-step diagnosis first, then inspect the screenshot, video, and trace.
 
-Case Setup, case steps, Case Teardown, Suite Setup/Teardown, and shared flows all offer **Standard recording** and **Record after manual login**. The latter requires authenticating without closing Inspector, returning to the platform to mark the business-step boundary, and then recording the steps to keep. The app discards the login prefix and synchronizes only post-boundary steps to no-code, JavaScript, and Python.
+A full Suite run creates one Browser, Browser Context, and primary Page for Suite Setup, expanded shared flows, every Case Setup/body/Teardown, and Suite Teardown, so authentication cookies/localStorage survive across stages. It stores one primary video and one Trace plus per-failure screenshots, with stage results in one ordered session. A Plan starts one independent shared session per Suite and groups evidence by Suite. Standalone phase, Case, or shared-flow replay still launches an isolated browser and records separate artifacts.
+
+The Test execution screen uses linked `Plan → Suite → Case` columns: focusing a plan shows only its suites, and focusing a suite shows only its cases. Checking a Plan cascades to every Suite/Case; checking a Suite cascades to every Case. Clearing a child leaves the parent indeterminate. A case-only selection still runs inside its owning Suite Setup/Teardown and shared browser session. Before execution, choose Stable, Latest, or a specific suite version; that atomic suite version controls Setup, Teardown, settings, and membership. A case subset can override each case version. Preview `Suite Setup vN → Case vM… → Suite Teardown vN`. Run details must show the resolved version and pass/fail/skip state for Setup, every Case, and Teardown, plus step details, failure reasons, screenshots, video, and Trace; the immutable record never follows later Stable/Latest changes.
+
+Case Setup, case steps, Case Teardown, Suite Setup/Teardown, and shared flows all offer **Standard recording** and **Record after manual login**. The latter captures both the step snapshot and count when the user marks the business boundary. It first removes an exact login prefix and falls back to the captured step count if Inspector rewrites that prefix. If the final script is too short to apply either boundary safely, never discard the recording: import all recognized steps and show a prominent instruction to remove login actions manually.
 
 Standard case recording also offers **Record in suite context**. Select the containing suite and its Stable, Latest, or a specific version. The recorder loads `data/auth/suites/<suite-id>/vN/storage-state.json` and opens the case start URL. A successful replay or recording of that Suite Setup version creates the state file; missing state is reported explicitly and never falls back silently to a signed-out session.
 

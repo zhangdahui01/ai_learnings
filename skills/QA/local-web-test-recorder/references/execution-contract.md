@@ -104,6 +104,26 @@ A `flowCall` uses `versionPolicy: "pinned" | "latest"`. `pinned` stores `flowVer
 
 Each assertion takes `expected` where applicable, `negated`, `timeoutMs`, and optional `soft`. Screenshot baselines need an explicit review/approval workflow; never overwrite them after a failure.
 
+## Hierarchy and execution-session policy
+
+Assets use a strict single-parent hierarchy. A Suite stores `planId`; a Case stores `suiteId`. Reverse `plan.suiteIds` and `suite.caseIds` arrays are ordered indexes and must be rebuilt or validated against those canonical parent IDs. The UI requires a valid parent when creating or editing either asset. Legacy orphaned assets migrate into an explicit unfiled Plan/Suite without losing their content.
+
+A full Suite execution owns exactly one Playwright Browser, Browser Context, primary Page, Trace, and primary video. Run Suite Setup, expanded shared-flow steps, each Case Setup/body/Teardown, and Suite Teardown in that same context so cookies, localStorage, open-page state, downloads, and authenticated state remain continuous. A Case failure must not prevent its Case Teardown or the Suite Teardown from being attempted. Record a single ordered `timeline` plus child stage results that share the Suite `sessionId`. Store the video and Trace once at Suite level; child stages may reference them as `sharedArtifacts`, while failure screenshots remain attached to the failing stage.
+
+A Plan execution starts one independent shared session per Suite and groups its record by `suiteRuns`. Standalone Suite phase, Case, Case phase, or shared-flow replay creates a fresh isolated context and its own artifacts. Never reuse a browser session across different Suites in one Plan.
+
+Hierarchical batch execution accepts Suite-scoped selections. Each selection carries a Suite `versionSelector`, either all cases or explicit `{caseId, versionSelector}` entries, and the canonical parent Plan is derived from `suite.planId`. A case-only selection must call the Suite executor with that case subset; it must never call the standalone Case executor. The selected Suite version supplies both Setup and Teardown, while explicit case selectors may override the Suite snapshot's case bindings. Reject a selected Case that is absent from the resolved Suite version instead of silently changing membership.
+
+The hierarchical selector uses real cascade state, not disabled visual coverage. Checking a Plan adds all descendant Suite and Case IDs; checking a Suite adds all descendant Case IDs. Clearing a child removes its fully-selected ancestors and renders those ancestors indeterminate while retaining selected siblings. The serialized request may compact a fully selected branch into `allCases`, but the UI state must remain inspectable and reversible.
+
+Run-history detail is an immutable evidence tree. For each Suite it shows the resolved Suite version, Setup version/status, every selected Case version/status, and Teardown version/status. Each executed stage exposes ordered step results, attempts, locator, failure reason and recommendation, and step screenshot. The Suite level exposes its single shared video and Trace. Skipped or unconfigured stages must be explicit rather than silently omitted.
+
+Before launch, the UI previews `Suite Setup vN → Case vM… → Suite Teardown vN`. Run records store `resolvedLifecycleVersions`, resolved Case dependencies, resolved shared-flow dependencies, the requested policies, and the Suite `sessionId`. Stable/Latest changes after execution must not alter historical version evidence.
+
+Shared flows store `ownerType: global | suite | case` plus the matching `suiteId` or `caseId`. Global flows can be called anywhere, Suite flows by their Suite lifecycle and child Cases, and Case flows only by that Case.
+
+Manual-login recording boundaries are session evidence. At the boundary click, retain a private parsed-step snapshot and the parsed step count. On close, remove an exact matching prefix when possible. If Inspector rewrote the prefix but the final recording contains more steps than the captured count, slice by that count and return a visible medium-confidence warning. If neither boundary can be applied safely, import every recognized step with `manualCleanupRequired=true` and a visible warning instead of failing or silently retaining the old asset. Never expose the private login snapshot through the session API.
+
 ## Asset version policy
 
 Cases, suites, and public flows share one immutable execution-version model. Keep `currentVersion`, `stableVersion`, `editRevision`, and a `versions` array on each asset. `editRevision` is only an optimistic-concurrency token; never use it as an executable version. A version entry stores status (`draft`, `candidate`, `stable`, or `deprecated`), tags, description, source, creation time, base version, and a complete executable snapshot.

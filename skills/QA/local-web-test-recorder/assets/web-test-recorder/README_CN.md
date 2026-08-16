@@ -19,23 +19,24 @@
 
 本工具在你的电脑上运行，用来：
 
-- 创建、编辑和删除测试计划。
-- 创建、编辑和删除测试用例，并把用例加入或移出计划。
+- 按 `测试计划 → 测试套件 → 测试用例` 严格层级创建、编辑、移动和删除资产。
+- 把公共流程设置为全局、属于某个测试套件或属于某个测试用例。
 - 使用 Playwright Inspector 录制网页操作。
 - 把录制代码转换成可以编辑的结构化步骤。
 - 在线编辑并执行 Playwright JavaScript；从步骤同步生成 Python。
 - 一个计划对应一个文件夹，一个用例对应一个 JS 文件和一个 Python 文件。
 - 增加断言、等待、超时、重试和失败后继续。
 - 在 Chromium/Chrome、Firefox 和 WebKit 中回放。
-- 批量执行测试计划，查询和删除执行记录。
+- 执行完整 Suite 时用同一个浏览器会话连续运行 Setup、公共流程、Case 生命周期和 Teardown，并只保存一个主录像和 Trace。
+- 批量执行测试计划，按 Suite 查询执行结果和证据，并查询或删除执行记录。
 - 通过仪表盘查看计划、用例、执行次数和通过率。
 - 显示失败步骤、原因和建议，并保存截图、视频和 Playwright Trace。
 
 数据默认保存在项目目录：
 
-- `data/store.json`：计划、用例和最近运行记录。
+- `data/store.json`：计划、套件、用例、公共流程、版本和最近运行记录。
 - `recordings/`：Playwright Inspector 生成的代码。
-- `test-suites/<计划名>/`：每个用例的 JavaScript 和 Python 文件。
+- `test-suites/<计划名>/<套件名>/`：每个用例的 JavaScript 和 Python 文件。
 - `artifacts/`：截图、视频和 Trace。
 
 ## 2. 环境安装
@@ -94,11 +95,11 @@ node start-server.mjs
 |---|---|---|
 | `data/store.json` | 测试计划、用例、步骤、断言、测试数据、账号引用、浏览器/语言/代理配置和执行记录元数据 | 当前版本使用本地 JSON，不是远程数据库。测试数据可能敏感。 |
 | `recordings/*.spec.js` | Playwright Inspector 生成的原始录制代码 | 录制时输入的账号、搜索词或其他值可能以明文出现。 |
-| `test-suites/<计划名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个用例一个文件；适合纳入版本控制。 |
-| `test-suites/<计划名>/test_*.py` | 从无代码步骤同步生成的 Python/Playwright 测试 | 当前应用回放 JS；Python 文件可在安装 Python Playwright 后独立运行。 |
+| `test-suites/<计划名>/<套件名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个用例一个文件；适合纳入版本控制。 |
+| `test-suites/<计划名>/<套件名>/test_*.py` | 从无代码步骤同步生成的 Python/Playwright 测试 | 当前应用回放 JS；Python 文件可在安装 Python Playwright 后独立运行。 |
 | `artifacts/<run-id>/failure.png` | 失败页面截图 | 可能显示用户资料、订单、账号或其他页面内容。 |
 | `artifacts/<run-id>/trace.zip` | Playwright Trace、页面快照和网络证据 | 可能包含 URL、DOM、请求信息和输入值。 |
-| `artifacts/<run-id>/*.webm` | 回放视频 | 可能包含操作过程和页面中的敏感内容。 |
+| `artifacts/<run-id>/*.webm` | 回放视频 | 完整 Suite 一次执行保存一个主录像；独立阶段/用例/公共流程各自保存独立录像。 |
 
 应用默认绑定本机 `localhost`，不会主动把这些文件上传到云端。但是执行网页操作时，请求会正常发送给被测试网站；安装依赖时 npm 和 Playwright 会访问各自的下载服务。
 

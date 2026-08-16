@@ -230,10 +230,12 @@ Reorder steps with the drag handle, or insert before/after any step with the adj
 
 **Local AI diagnosis and fix** uses deterministic on-device rules by default. Configure `LOCAL_AI_URL`, `LOCAL_AI_MODEL`, and optional `LOCAL_AI_API_KEY` for an OpenAI-compatible local model. Apply accepts only server-allowlisted structured patches and stores before/after evidence; arbitrary model-generated code is never executed.
 
-- A Plan is a release or regression target and runs its suites in order.
-- A Suite groups one business area. Suite Setup runs once and can log in; its cookie/storage snapshot is passed in memory only to cases in that suite run. Suite Teardown always runs, even after setup or case failure.
-- A Case has Case Setup, body steps/assertions, and Case Teardown. Each case gets a fresh Browser Context by default, and generated code places teardown in `finally`.
-- A shared flow models reusable actions such as opening a product or adding it to the cart. Calls pass JSON parameters and pin a flow version. Editing a flow creates a new version without silently changing existing cases. Mark payment, card binding, and order submission as destructive so they are never automatically retried.
+- Test assets use a strict single-parent hierarchy: `Test Plan → Test Suite → Test Case`. Creating or editing a Suite requires one Plan; creating or editing a Case requires one Suite. Moving an asset creates a new version and updates its generated file path.
+- A Plan is a release or regression target and runs its Suites in order. Each Suite is a separate execution session, and the Plan record groups status, failed steps, screenshots, video, and Trace by Suite.
+- A full Suite run launches one Browser, one Browser Context, and one primary Page, then executes Suite Setup → called shared flows → every Case Setup/body/Teardown → Suite Teardown. Cookies, localStorage, and page state remain continuous. Suite Teardown is still attempted after Setup or Case failure. The whole Suite produces one primary video and one Trace, with per-failure screenshots.
+- Standalone replay of Suite Setup/Teardown, a Case or case phase, or a shared flow still creates an isolated fresh browser session and its own video. It never inherits cookies or cache from another replay.
+- A Case has Case Setup, body steps/assertions, and Case Teardown. Standalone Case replay gets a fresh Browser Context; during a full Suite run it joins that Suite's shared session. Case Teardown still runs after a body failure.
+- A shared flow can be global, Suite-owned, or Case-owned. Suite flows are available to that Suite lifecycle and child Cases; Case flows are limited to that Case. Calls pass JSON parameters and select a version policy. Mark payment, card binding, and order submission as destructive so they are never automatically retried.
 - Suite Setup, Suite Teardown, and shared-flow editors each provide standalone Record and Replay actions. Closing Inspector imports full JavaScript, generated Python, and editable no-code steps together. If steps already exist, import pauses for overwrite confirmation; Cancel preserves both code and steps.
 - A standalone shared-flow recording or replay does not borrow a case proxy. Save its browser, page locale, proxy, and timeouts under **Edit information → Standalone record/replay settings**. When a case or suite calls the flow, the calling case settings apply instead. If `ERR_ABORTED` leaves the browser at `about:blank`, check the network route and the flow proxy first; increasing an element timeout cannot repair a connection that was never established.
 
@@ -242,9 +244,9 @@ Recommended hierarchy: Plan “Payment regression” → Suite “Card payment�
 ## 6. Record a test case
 
 1. Create a test plan.
-2. Click “Create case and attach” inside the plan.
-3. Set the name, browser, page locale, and start URL.
-4. Save the case.
+2. Create a test suite and select that Plan under **Parent test plan**.
+3. Create a test case and select that Suite under **Parent test suite**, then set its name, priority, and tags.
+4. Configure browser, page locale, start URL, and test data under Suite or Case settings.
 5. From Case Setup, case steps, or Case Teardown, click Record current phase and choose Standard recording or Record after manual login. Suite Setup/Teardown and shared-flow recording offer the same two choices.
 6. Perform clicks, fills, selections, and keyboard actions in the Playwright browser.
 7. Add assertions in Inspector when convenient, or add them after import.
@@ -404,6 +406,12 @@ PORT=4174 npm start
 Cases, suites, and public flows keep multiple immutable versions. Completing a recording, saving no-code steps or source, or applying an AI fix creates a new version instead of overwriting history. The detail header shows Latest and Stable; open Version history to inspect, replay, compare, edit the version description, or mark a version Stable. Versions no longer have extra tags: Stable is the single stability marker. Case-level business tags remain available for asset search and filtering.
 
 When replaying a case, suite, or public flow, choose Stable for regression, Latest for active debugging, or a specific version to reproduce an old result. A suite version includes Setup, Teardown, configuration, data, and child-case version policies. Run records preserve the versions that were actually resolved.
+
+A linked selector on **Test execution** displays `Test Plan → Test Suite → Test Case`. Focusing a plan shows only that plan's suites; focusing a suite shows only that suite's cases. Checking a Plan selects every child Suite and Case by default, and checking a Suite selects every child Case. Clearing a child makes its parent indeterminate. Case-only execution still runs the owning Suite Setup and Teardown in the same browser session, so authentication is preserved.
+
+Use **Versions for this run** below the hierarchy. Choose Stable, Latest, or a specific suite version; the selected atomic suite version supplies both Suite Setup and Suite Teardown plus settings and membership. For a case subset, override each case with Stable, Latest, or a specific version. The preview shows the exact version chain. Run details show the resolved Suite, Setup, Case, and Teardown versions and pass/fail/skip state, with per-step failure reasons and screenshots plus the shared video and Trace. These values are stored permanently.
+
+**Record after manual login** captures both the login-step snapshot and step count when **Login complete, start recording business steps** is clicked. The importer removes an exact login prefix first. If Inspector rewrites that prefix, it uses the captured count and asks the user to verify the first business step. If the final script cannot safely apply either boundary, it imports the complete recording instead of failing and prominently asks the user to remove login actions manually. This applies consistently to Suite Setup/Teardown, all Case phases, and shared flows.
 
 Convenience source files remain at their original locations, while immutable sources are also saved under `test-suites/.../versions/vN/`. Do not manually overwrite historical version folders.
 

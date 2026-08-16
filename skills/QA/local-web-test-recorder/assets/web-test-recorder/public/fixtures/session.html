@@ -6,6 +6,6 @@
     const status = document.querySelector('[role=status]');
     if (new URLSearchParams(location.search).has('seed')) {
       localStorage.setItem('wtr-session', 'seeded'); document.cookie = 'wtr_session=seeded; path=/'; status.textContent = 'seeded';
-    } else status.textContent = localStorage.getItem('wtr-session') || document.cookie.includes('wtr_session=') ? 'dirty' : 'clean';
+    } else status.textContent = localStorage.getItem('wtr-session') || (document.cookie.includes('wtr_session=') ? 'seeded' : 'clean');
   </script>
 </body></html>
