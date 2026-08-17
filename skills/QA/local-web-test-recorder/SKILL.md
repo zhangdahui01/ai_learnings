@@ -138,8 +138,8 @@ node start-server.mjs
    Suite Setup、Suite Teardown 和公共流程都可单独录制及回放。录制结束同时保存完整 JavaScript、生成 Python 并导入无代码步骤；目标已有步骤时必须由用户确认后才覆盖，取消不修改原数据。
 3. 配置浏览器、页面语言、起始 URL、代理和测试数据。
 4. 用户点击“开始录制”，完成操作后关闭 Playwright Inspector；不需要点 Save，也不要只关闭被录制的 Chrome 标签页。
-5. 应用把 Inspector JavaScript 作为不可变“原始录制代码”永久保留，同时生成可编辑无代码步骤及其 JS/Python 导出；“手工导入”只作为异常恢复入口。
-6. 核对原始录制代码、无代码导入覆盖率，以及每个可视化步骤的定位方式、角色名称和输入值。原始录制与无代码版本是两个独立执行来源。
+5. 应用把 Inspector JavaScript 作为不可变“录制时原始快照”永久保留，并初始化一份可编辑“原生回放 JavaScript”，同时生成可编辑无代码步骤及其只读 JS/Python 导出；“手工导入”只作为异常恢复入口。
+6. 核对录制快照、原生回放代码、无代码导入覆盖率，以及每个可视化步骤的定位方式、角色名称和输入值。原生代码与无代码步骤是两个独立执行来源；修改任何一方都不覆盖另一方。
 7. 增加断言、等待、超时、重试或失败后继续策略。
 8. 保存并回放用例，或在计划页运行整个计划；在“执行记录”查询历史结果。
 9. 失败时先阅读页面上的失败步骤、原因和处理建议，再查看截图、录像和 Trace。
@@ -162,7 +162,7 @@ Case 的标准录制还可选择“Suite 上下文中录制”：选择所属 Su
 
 慢页面优先使用“回放稳定性”预设和步骤内“稳定性与高级等待”：等待 Loading 消失、元素可用/可编辑、文本或 URL 达到目标，或使用“点击并等待接口”。使用 Web-first 断言，不用一次性读取 DOM。只对 Timeout、网络重置和 HTTP 5xx 等临时错误退避重试；`auto` 不重复潜在副作用点击，只有确认幂等后才设为 `safe`。记录每次失败、等待和恢复，重试后通过仍标记为 Flaky。
 
-双来源约定：录制得到的 Playwright JavaScript 存入版本快照的 `recordedSources`，只读且永不被无代码编辑覆盖；导入器仍生成可编辑无代码步骤，保存步骤只重建对应 JS/Python 导出。保存导出 JavaScript/Python 不再反向修改无代码步骤。单独回放阶段、Case 或公共流程时可选择“按原录制回放”或“按当前步骤回放”；Suite/Plan 执行可选“各阶段默认”“优先原录制”或“全部当前步骤”。无论混用哪种引擎，一次 Suite 执行仍使用同一 Browser/Context/Page、一个录像和一个 Trace。历史资产没有 `recordedSources` 时自动按无代码执行，不伪装成原始录制。测试账号字段只存引用名称。数据用 `${data.key}`/`${data.nested.key}`，机密用 `${env.SECRET_NAME}`。多条 URL 映射按顺序匹配第一条；原生映射仅用于同协议回放，录制阶段或跨协议映射使用上游 Charles Map Remote。
+双来源约定：`recordedSources.<phase>.originalJavascript` 是永久只读的录制快照，`runnableJavascript` 是可编辑、可直接执行的原生回放代码。保存原生代码必须创建新资产版本，只更新当前阶段的 `runnableJavascript` 和默认执行方式，绝不改写快照或无代码步骤。导入器仍生成可编辑无代码步骤；保存步骤只重建只读 JS/Python 导出，不反向覆盖原生代码。单独回放阶段、Case 或公共流程时可选择“按原生代码回放”或“按当前步骤回放”；Suite/Plan 执行可选“各阶段默认”“优先原生代码”或“全部当前步骤”。无论混用哪种引擎，一次 Suite 执行仍使用同一 Browser/Context/Page、一个录像和一个 Trace。历史资产没有 `recordedSources` 时自动按无代码执行。测试账号字段只存引用名称。数据用 `${data.key}`/`${data.nested.key}`，机密用 `${env.SECRET_NAME}`。多条 URL 映射按顺序匹配第一条；原生映射仅用于同协议回放，录制阶段或跨协议映射使用上游 Charles Map Remote。
 
 ### 会话隔离与 Suite 上下文录制
 
@@ -178,9 +178,9 @@ Case 的标准录制还可选择“Suite 上下文中录制”：选择所属 Su
 - `data/auth/suites/<suite-id>/vN/storage-state.json`：Suite Setup vN 成功录制或回放后保存的 Cookie/localStorage，供 Case 的 Suite 上下文录制加载；按登录凭据保护。
 - `data/profiles/` 与旧 `data/auth/<case-id>.json`：旧版本合规录制兼容数据；新录制入口不再创建。
 - `recordings/`：Playwright Inspector 生成的脚本；可能包含录制时输入的明文。
-- `test-suites/<计划名>/<套件名>/`：每个 Case 一个从无代码步骤生成的 `.spec.js` 和 Python 导出，并嵌入 Suite Setup/Teardown；`suite.*` 保存 Suite 阶段导出。每个 `versions/vN/` 同时保存 `steps.json`、`generated.spec.js`、`generated.py` 和 `recorded.<phase>.spec.js`（存在原始录制时）；公共流程采用同样规则并位于 `test-suites/_公共流程/`。旧文件名继续生成，已有命令和历史路径不失效。
+- `test-suites/<计划名>/<套件名>/`：每个 Case 一个从无代码步骤生成的 `.spec.js` 和 Python 导出，并嵌入 Suite Setup/Teardown；`suite.*` 保存 Suite 阶段导出。每个 `versions/vN/` 同时保存 `steps.json`、`generated.spec.js`、`generated.py`、只读 `recorded.<phase>.spec.js` 和可编辑回放源 `native.<phase>.spec.js`（存在录制时）；公共流程采用同样规则并位于 `test-suites/_公共流程/`。旧文件名继续生成，已有命令和历史路径不失效。
 
-普通用户页面只展示“无代码步骤”“配置与数据”“录制”“回放”和“版本历史”。代码能力收进“高级功能”：原始录制严格只读，当前步骤生成的 JS/Python 只读且可下载；需要改代码时使用“复制为自定义代码用例”，新用例可编辑且不承诺与无代码步骤双向同步。版本管理可基于任意活动版本设置各阶段默认回放方式，并创建新版本，不修改历史快照。
+普通用户页面只展示“无代码步骤”“配置与数据”“录制”“回放”和“版本历史”。代码能力收进“高级功能”：原生回放 JavaScript 可编辑且保存为新版本，录制时原始快照严格只读，当前步骤生成的 JS/Python 只读且可下载。不再提供会创建额外空资产的“复制为自定义代码用例”入口；历史自定义代码用例仍可查看和编辑。版本历史的每一行必须按阶段展示该版本的默认回放方式（原生代码或无代码步骤），并在无代码为默认但原生代码可用时标明“可切换原生”。
 - `artifacts/<run-id>/`：失败截图、视频和 Trace；可能包含页面内容、账号信息和网络证据。
 
 在生成项目根目录使用 `npm run test:generated`，或传入具体 `test-suites/<计划>/<套件>/<用例>.spec.js` 路径执行本地 JavaScript。Python 需安装 `pytest-playwright` 后用 `python3 -m pytest <test_*.py>` 执行。
@@ -335,7 +335,7 @@ Use **Interface language** in the top-right corner to switch among 中文, Engli
 
 For slow pages, use Stability presets and per-step Advanced readiness: wait for loading indicators to disappear, elements to become enabled/editable, text or URL state, or Click and wait for response. Use Web-first assertions rather than one-shot DOM reads. Retry only transient timeouts, network resets, and HTTP 5xx with backoff; `auto` never repeats potentially side-effecting clicks, and `safe` requires an explicit idempotency decision. Keep every failed attempt/recovery and mark recovered runs as flaky.
 
-Dual-source contract: recorded Playwright JavaScript is stored in each version snapshot under `recordedSources`, is read-only, and is never overwritten by no-code edits. Import still produces editable no-code steps; saving steps regenerates only their JS/Python exports. Saving an exported JavaScript or Python file no longer reverse-syncs into no-code. Standalone phase, Case, or shared-flow replay offers **Replay original recording** and **Replay current steps**. Suite/Plan execution offers per-phase defaults, prefer-original, or all-current-steps. Mixed engines still run inside the same Browser/Context/Page, video, and Trace for one Suite execution. Historical assets without `recordedSources` automatically use no-code and are never mislabeled as original recordings. The account field stores an alias only. Use `${data.key}`/`${data.nested.key}` for test data and `${env.SECRET_NAME}` for secrets. Ordered URL mappings use first match; native mapping is same-protocol replay only, while recording-time or cross-protocol mapping requires upstream Charles Map Remote.
+Dual-source contract: `recordedSources.<phase>.originalJavascript` is the immutable recording snapshot, while `runnableJavascript` is editable native replay code. Saving native code creates a new asset version and changes only that phase's runnable source and default mode; it never changes the snapshot or no-code steps. Import still produces editable no-code steps, and saving them regenerates only read-only JS/Python exports without overwriting native code. Standalone phase, Case, or shared-flow replay offers **Replay native code** and **Replay current steps**. Suite/Plan execution offers per-phase defaults, prefer-native, or all-current-steps. Mixed engines still run inside the same Browser/Context/Page, video, and Trace for one Suite execution. Historical assets without `recordedSources` automatically use no-code. The account field stores an alias only. Use `${data.key}`/`${data.nested.key}` for test data and `${env.SECRET_NAME}` for secrets. Ordered URL mappings use first match; native mapping is same-protocol replay only, while recording-time or cross-protocol mapping requires upstream Charles Map Remote.
 
 ### Session isolation and suite-context recording
 
@@ -351,9 +351,9 @@ All application data stays under the generated project directory by default and 
 - `data/auth/suites/<suite-id>/vN/storage-state.json`: versioned Cookie/localStorage captured by successful Suite Setup recording or replay and loaded by suite-context case recording; protect it like credentials.
 - `data/profiles/` and legacy `data/auth/<case-id>.json`: compatibility data from earlier compliant-recording releases; new recording entry points do not create it.
 - `recordings/`: scripts generated by Playwright Inspector; these can contain literal values entered while recording.
-- `test-suites/<plan-name>/<suite-name>/`: one no-code-generated `.spec.js` and Python export per case, with Suite Setup/Teardown embedded; `suite.*` contains Suite-phase exports. Each `versions/vN/` contains `steps.json`, `generated.spec.js`, `generated.py`, and `recorded.<phase>.spec.js` when an immutable recording exists. Shared flows use the same rule under `test-suites/_公共流程/`. Legacy filenames remain available for compatibility.
+- `test-suites/<plan-name>/<suite-name>/`: one no-code-generated `.spec.js` and Python export per case, with Suite Setup/Teardown embedded; `suite.*` contains Suite-phase exports. Each `versions/vN/` contains `steps.json`, `generated.spec.js`, `generated.py`, immutable `recorded.<phase>.spec.js`, and editable `native.<phase>.spec.js` when a recording exists. Shared flows use the same rule under `test-suites/_公共流程/`. Legacy filenames remain available for compatibility.
 
-The ordinary UI exposes no-code steps, configuration/data, recording, replay, and version history. Code tools live under Advanced: immutable recordings are read-only, generated JS/Python is read-only and downloadable, and “Copy as custom code case” creates a separately editable case with no bidirectional no-code promise. Version management can derive a new version with per-phase default replay modes without mutating its base snapshot.
+The ordinary UI exposes no-code steps, configuration/data, recording, replay, and version history. Code tools live under Advanced: native replay JavaScript is editable and saved as a new version, immutable recording snapshots are read-only, and generated JS/Python is read-only and downloadable. Do not expose “Copy as custom code case,” which created a confusing extra empty asset; existing historical custom-code cases remain editable. Every version-history row must show the default replay mode for each phase (native code or no-code steps), including “native available” when no-code is the default but a native source exists.
 - `artifacts/<run-id>/`: screenshots, videos, and traces; these can contain page content, account information, and network evidence.
 
 From the generated project root, run JavaScript with `npm run test:generated` or pass a specific `test-suites/<plan>/<suite>/<case>.spec.js` path. Install `pytest-playwright` before running Python with `python3 -m pytest <test_*.py>`.

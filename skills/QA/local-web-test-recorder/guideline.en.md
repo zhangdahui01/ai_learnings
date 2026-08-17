@@ -103,6 +103,7 @@ All relative paths are under the generated `web-test-recorder` project directory
 | `test-suites/<plan-name>/<suite-name>/suite.*` | JavaScript/Python sources for Suite Setup/Teardown | Rebuilt when no-code phases are saved and embedded into executable case files. |
 | `test-suites/_公共流程/` | JavaScript/Python for the current version of each shared flow | Synchronized after no-code edits or a new recording. |
 | `test-suites/.../versions/vN/recorded.<phase>.spec.js` | Immutable original recording for one phase in vN | `phase` is `setupSteps`, `steps`, or `teardownSteps`; no-code or export-code edits never overwrite it. |
+| `test-suites/.../versions/vN/native.<phase>.spec.js` | Editable native JavaScript replay source for one phase in vN | Saving it from Advanced creates a new asset version and never changes `recorded.<phase>.spec.js` or no-code steps. |
 | `artifacts/<run-id>/failure.png` | Screenshot of the failed page | May show profiles, orders, accounts, or other page content. |
 | `artifacts/<run-id>/trace.zip` | Playwright trace, page snapshots, and network evidence | May contain URLs, DOM content, request information, and entered values. |
 | `artifacts/<run-id>/*.webm` | Replay video | May contain the interaction flow and sensitive page content. |
@@ -203,15 +204,17 @@ Use a complete URL such as `https://example.com/login`, including `https://`.
 
 Use `${data.searchText}` or nested `${data.account.username}` in no-code URLs, values, and expectations. Generated JS/Python keeps the same references and resolves them from `WTR_TEST_DATA` at replay. Use `${env.COUPAY_PASSWORD}` for secrets and set that environment variable before starting the server. Never put production passwords, tokens, or one-time codes in JSON, source, or recordings.
 
-### Original recording, no-code steps, and exported code
+### Recording snapshot, native replay code, no-code steps, and exports
 
-- Original recording JavaScript is stored read-only by asset, phase, and version after Inspector closes. It is the highest-fidelity replay source for iframe, complex locator, dialog, and multi-window code that cannot always be translated losslessly.
+- The original recording snapshot is stored read-only by asset, phase, and version after Inspector closes. It is permanent audit/recovery evidence and is never overwritten.
+- Native replay JavaScript starts from that snapshot and is editable under Advanced. For example, if record-after-manual-login did not trim correctly, remove the statements before the login boundary. Saving creates a new asset version, changes only that phase's native replay source, and makes native replay its default.
 - No-code steps are a best-effort import for beginners to review, edit, and enrich with waits or assertions. Saving them updates only structured steps and regenerates their JS/Python exports.
-- Exported JavaScript/Python supports CLI execution, review, and advanced development. Saving an export never reverse-syncs into no-code and never overwrites the original recording.
+- Exported JavaScript/Python is generated from no-code steps for CLI execution, review, and development. It remains read-only and never changes no-code, native replay code, or the original snapshot.
 - Historical cases without an original-recording field continue to run their existing no-code steps. A legacy code-only case with no structured steps falls back to its existing JavaScript. Migration never mislabels generated legacy code as an original recording.
-- The ordinary page no longer exposes a Code Editor tab. Advanced shows immutable raw code and read-only downloadable exports. “Copy as custom code case” is the only editable-code path and does not promise bidirectional no-code synchronization.
+- The ordinary page avoids a confusing generic Code Editor tab. Advanced provides the editable native replay source, immutable snapshot, and read-only exports. “Copy as custom code case” is no longer exposed because it could create a confusing extra empty case; existing historical custom-code cases remain editable.
+- Version history shows the default replay mode for every Case Setup/body/Teardown phase (or the matching Suite/shared-flow phase). **Native code** runs that version's `native.<phase>.spec.js` by default. **No-code steps** runs structured steps. **No-code steps (native available)** means no-code is the default, while the replay dialog can still select native code manually.
 
-The UI exposes only two execution sources: **Replay original recording** and **Replay current steps**. JS/Python are file representations of the current no-code version, not a third user-facing business version.
+The UI exposes only two execution sources: **Replay native code** and **Replay current steps**. The recording snapshot is evidence and generated JS/Python is only a file representation of no-code, so neither is a third user-facing business version. Editing no-code never proactively overwrites native replay code.
 
 ### Recording and replaying iframe pages
 
@@ -380,8 +383,8 @@ Idempotency is critical. Auto does not repeat clicks or other potentially side-e
 
 ## 9. Replay cases and plans
 
-- Standalone phase, case, and shared-flow replay: select Stable/Latest/a specific version, then choose Replay original recording or Replay current steps. A historical version without an original recording clearly falls back to current steps.
-- Suite/plan execution: choose per-phase defaults, prefer original recordings, or all current steps. Suite Setup, shared flows, Case Setup/body/Teardown, and Suite Teardown may mix engines while staying in one Browser/Context/Page, one video, and one Trace per Suite.
+- Standalone phase, case, and shared-flow replay: select Stable/Latest/a specific version, then choose Replay native code or Replay current steps. A historical version without native replay code clearly falls back to current steps.
+- Suite/plan execution: choose per-phase defaults, prefer native replay code, or all current steps. Suite Setup, shared flows, Case Setup/body/Teardown, and Suite Teardown may mix engines while staying in one Browser/Context/Page, one video, and one Trace per Suite.
 - Run records: filter by status/scope, open evidence, delete one record, or clear metadata from the Runs page.
 - Dashboard: monitor plan count, case count, run count, pass rate, recent runs, and the latest failure.
 
@@ -440,7 +443,7 @@ Cases, suites, and public flows keep multiple immutable versions. Completing a r
 
 When replaying a case, suite, or public flow, choose Stable for regression, Latest for active debugging, or a specific version to reproduce an old result. A suite version includes Setup, Teardown, configuration, data, and child-case version policies. Run records preserve the versions that were actually resolved.
 
-After version selection, choose the execution source: **Replay original recording** runs that version's read-only Playwright recording, while **Replay current steps** runs its structured steps. Suite/Plan runs can use phase defaults, prefer original recordings, or force current steps; history freezes the source actually used by every phase.
+After version selection, choose the execution source: **Replay native code** runs that version's editable Playwright native replay source, while **Replay current steps** runs its structured steps. Suite/Plan runs can use phase defaults, prefer native replay code, or force current steps; history freezes the source actually used by every phase.
 
 A linked selector on **Test execution** displays `Test Plan → Test Suite → Test Case`. Focusing a plan shows only that plan's suites; focusing a suite shows only that suite's cases. Checking a Plan selects every child Suite and Case by default, and checking a Suite selects every child Case. Clearing a child makes its parent indeterminate. Case-only execution still runs the owning Suite Setup and Teardown in the same browser session, so authentication is preserved.
 
