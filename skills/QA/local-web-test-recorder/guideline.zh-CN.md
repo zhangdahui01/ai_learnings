@@ -250,9 +250,9 @@ socks5://127.0.0.1:1080
 
 - 测试资产采用严格单父级层级：`Test Plan → Test Suite → Test Case`。新建或编辑 Suite 必须选择一个 Plan；新建或编辑 Case 必须选择一个 Suite。移动父级会创建新版本并同步本地文件路径。
 - 测试计划（Plan）是发布/回归目标；按顺序执行多个测试套件。每个 Suite 是独立执行会话，计划记录按 Suite 展开状态、失败步骤、截图、录像和 Trace。
-- 测试套件（Suite）组织同一业务域的用例。运行整个 Suite 时只启动一次 Browser、一个 Browser Context 和一个主 Page，会依次执行 Suite Setup → 其中调用的公共流程 → 每个 Case 的 Setup/主体/Teardown → Suite Teardown。Cookie、localStorage 和页面状态在这个会话中连续保留；Suite Teardown 即使 Setup 或 Case 失败也会尝试执行。整套运行只生成一个主录像和一个 Trace，失败步骤各自保存截图。
+- 测试套件（Suite）组织同一业务域的用例。运行整个 Suite 时只启动一次 Browser、一个 Browser Context 和一个主 Page，严格按 Suite Setup → Case 1（Setup/主体/Teardown）→ Case 2 → … → Suite Teardown 执行，Case 顺序来自所选 Suite 版本的成员顺序。Cookie、localStorage 和页面状态在这个会话中连续保留；Case 主体失败仍执行 Case Teardown，Suite Setup 或任一 Case 失败仍尝试 Suite Teardown。整套运行只生成一个主录像和一个 Trace，失败步骤各自保存截图。运行 Plan 时按 Plan 的 Suite 顺序逐个完成整套 Suite；不同 Suite 使用独立浏览器会话、登录态、录像和 Trace。一个 Plan 可以有多个 Suite，但一个 Suite 只能属于一个 Plan。
 - 在“测试执行”中按 `Test Plan → Test Suite → Test Case` 三列选择范围。点击某个 Plan 后中列只显示该 Plan 的 Suite；点击某个 Suite 后右列只显示该 Suite 的 Case。勾选 Plan 会默认勾选其全部 Suite 和 Case，勾选 Suite 会默认勾选其全部 Case；取消任意子项后父项显示部分选中。只选 Case 时也会自动执行所属 Suite 的 Setup 和 Teardown，不会退化为无登录态的独立 Case 会话。
-- 版本在三列下方的“本次执行版本”配置：Suite 选择 Stable、Latest 或指定 vN，该 vN 同时用于 Suite Setup 和 Suite Teardown；不能分别混用两个 Suite 版本。只选择部分 Case 时，可以为每个 Case 覆盖 Stable、Latest 或指定版本。页面执行前预览版本链，执行记录永久保存实际解析的 Suite、Case 和公共流程版本。
+- 版本在三列下方的“本次执行版本”配置：Suite 选择 Stable、Latest 或指定 vN，该 vN 同时用于 Suite Setup 和 Suite Teardown；不能分别混用两个 Suite 版本。只选择部分 Case 时，可以为每个 Case 覆盖 Stable、Latest 或指定版本。如果 Stable/Latest Suite 快照早于 Case 加入时间，确认弹窗会明确提示并改用“包含全部已选 Case 的最新 Suite 版本”执行 Setup/Teardown，Case 本身仍按所选 Stable/Latest 策略；如果不存在兼容 Suite 版本则禁止执行。历史数据只新增成员修复版本，不改写旧版本，也不会自动改变 Stable。页面执行前预览版本链，执行记录永久保存实际解析的 Suite、Case 和公共流程版本。
 - “手工登录后录制”在点击“登录完成，开始录制业务步骤”时同时记录登录步骤快照和步骤数。正常情况下精确删除登录前缀；Inspector 改写前缀时用点击时的步骤数恢复边界并提示检查第一个业务步骤；若最终脚本无法可靠应用边界，则完整导入而不是报错丢失录制，并用红色提示要求手工删除登录步骤。该规则一致适用于 Suite Setup/Teardown、Case 三阶段和公共流程。
 - 单独回放 Suite Setup/Teardown、Case、Case 某阶段或公共流程时，仍创建独立的全新浏览器会话和独立录像，不会继承其他回放的 Cookie 或缓存。
 - 测试用例（Case）包含 Case Setup、主体步骤/断言和 Case Teardown。单独回放 Case 时使用全新 Browser Context；在 Suite 整体执行中则加入该 Suite 的共享会话。Case Teardown 在主体失败后仍执行。
