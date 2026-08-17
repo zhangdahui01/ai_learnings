@@ -70,6 +70,22 @@ await page.locator('#outer-frame').contentFrame().locator('iframe[name="checkout
   assert.equal(steps[2].locator.primary.value, 'Success');
 });
 
+test('parseCodegen imports Inspector nth contentFrame and filtered locators without dropping following steps', () => {
+  const steps = parseCodegen(`await page.goto('https://testpay.example/order');
+await page.getByRole('button', { name: '支付方式' }).click();
+await page.locator('iframe').nth(1).contentFrame().getByRole('link', { name: '余额支付' }).click();
+await page.locator('iframe').nth(1).contentFrame().locator('div').filter({ hasText: /^本人认证$/ }).nth(1).click();
+await page.locator('iframe').nth(1).contentFrame().getByRole('textbox', { name: '姓名' }).fill('dahui zhang');
+await page.locator('iframe').nth(1).contentFrame().getByPlaceholder('010').fill('12345678');
+await page.locator('iframe').nth(1).contentFrame().getByRole('telecomType').selectOption('SKT');
+await page.locator('iframe').nth(1).contentFrame().getByRole('checkbox', { name: '同意条款' }).check();
+await page.locator('iframe').nth(1).contentFrame().getByRole('button', { name: '请求认证' }).click();`);
+  assert.deepEqual(steps.map(step => step.action), ['goto', 'click', 'switchFrame', 'click', 'click', 'fill', 'fill', 'selectOption', 'check', 'click']);
+  assert.equal(steps[2].value, 'iframe >> nth=1');
+  assert.deepEqual(steps[4].locator.primary, { strategy: 'css', value: 'div', hasText: '^本人认证$', hasTextRegex: true, hasTextFlags: '', position: 'nth', index: 1 });
+  assert.equal(steps[9].locator.primary.name, '请求认证');
+});
+
 test('parseCodegen imports common controls and richer assertions', () => {
   const steps = parseCodegen(`await page.getByLabel('Upload').setInputFiles('/tmp/sample.txt');
 await page.getByRole('button', { name: 'Menu', exact: true }).click({ button: 'right' });

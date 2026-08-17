@@ -52,6 +52,34 @@ function readCall(source, start, method) {
   return null;
 }
 
+function readRefinements(source, start) {
+  const refinements = {}; let cursor = start;
+  while (cursor < source.length) {
+    const nth = readCall(source, cursor, 'nth');
+    if (nth) { const index = Number(nth.args.trim()); if (!Number.isInteger(index)) break; refinements.position = 'nth'; refinements.index = index; cursor = nth.end; continue; }
+    if (source.startsWith('.first()', cursor)) { refinements.position = 'first'; cursor += '.first()'.length; continue; }
+    if (source.startsWith('.last()', cursor)) { refinements.position = 'last'; cursor += '.last()'.length; continue; }
+    const filter = readCall(source, cursor, 'filter');
+    if (filter) {
+      const hasText = filter.args.match(/\bhasText\s*:\s*(\/(?:\\.|[^/])*\/[dgimsuvy]*|"(?:\\.|[^"])*"|'(?:\\.|[^'])*')/s)?.[1];
+      if (!hasText) break;
+      if (hasText.startsWith('/')) { const match = hasText.match(/^\/((?:\\.|[^/])*)\/([dgimsuvy]*)$/s); if (!match) break; refinements.hasText = match[1].replace(/\\\//g, '/'); refinements.hasTextRegex = true; refinements.hasTextFlags = match[2]; }
+      else refinements.hasText = readString(hasText);
+      cursor = filter.end; continue;
+    }
+    break;
+  }
+  return { refinements, end: cursor };
+}
+
+function frameSelector(selector, refinements) {
+  if (refinements.hasText) return null;
+  if (refinements.position === 'nth') return `${selector} >> nth=${refinements.index}`;
+  if (refinements.position === 'first') return `${selector} >> nth=0`;
+  if (refinements.position === 'last') return `${selector} >> nth=-1`;
+  return selector;
+}
+
 function parsePageTarget(expression) {
   const source = String(expression).trim(); if (!source.startsWith('page')) return null;
   const framePath = []; let cursor = 4;
@@ -59,12 +87,12 @@ function parsePageTarget(expression) {
     const frame = readCall(source, cursor, 'frameLocator');
     if (frame) { const selector = readString(frame.args); if (!selector) return null; framePath.push(selector); cursor = frame.end; continue; }
     const locatorFrame = readCall(source, cursor, 'locator');
-    if (locatorFrame && source.startsWith('.contentFrame()', locatorFrame.end)) { const selector = readString(locatorFrame.args); if (!selector) return null; framePath.push(selector); cursor = locatorFrame.end + '.contentFrame()'.length; continue; }
+    if (locatorFrame) { const refined = readRefinements(source, locatorFrame.end); if (source.startsWith('.contentFrame()', refined.end)) { const selector = frameSelector(readString(locatorFrame.args), refined.refinements); if (!selector) return null; framePath.push(selector); cursor = refined.end + '.contentFrame()'.length; continue; } }
     break;
   }
   for (const method of ['getByRole','getByLabel','getByText','getByTestId','getByPlaceholder','getByAltText','getByTitle','locator']) {
     const target = readCall(source, cursor, method);
-    if (target) return { framePath, method, args: target.args, tail: source.slice(target.end) };
+    if (target) { const refined = readRefinements(source, target.end); const locator = parseLocator(method, target.args); Object.assign(locator.primary, refined.refinements); return { framePath, method, args: target.args, locator, tail: source.slice(refined.end) }; }
   }
   return null;
 }
@@ -96,18 +124,18 @@ export function parseCodegen(code) {
     const target = parsePageTarget(line.replace(/^await\s+/, ''));
     if (target && (match = target.tail.match(/^\.(click|dblclick|tap|hover|focus|fill|press|check|uncheck|selectOption|clear|pressSequentially|setInputFiles|selectText)\((.*)\);?$/))) {
       applyFrame(target.framePath);
-      const method = match[1]; const rightClick = method === 'click' && /\bbutton:\s*['"]right['"]/.test(match[2]); const action = rightClick ? 'rightClick' : method === 'pressSequentially' ? 'type' : method; const step = { id: randomUUID(), kind: 'action', action, locator: parseLocator(target.method, target.args), timeoutMs: 10000 };
+      const method = match[1]; const rightClick = method === 'click' && /\bbutton:\s*['"]right['"]/.test(match[2]); const action = rightClick ? 'rightClick' : method === 'pressSequentially' ? 'type' : method; const step = { id: randomUUID(), kind: 'action', action, locator: target.locator, timeoutMs: 10000 };
       if (!['click', 'rightClick', 'dblclick', 'tap', 'hover', 'focus', 'check', 'uncheck', 'clear', 'selectText'].includes(action)) step.value = readValue(match[2]);
       steps.push(step); continue;
     }
-    if (target && (match = target.tail.match(/^\.waitFor\(\{\s*state:\s*['"](visible|hidden)['"]\s*\}\);?$/))) { applyFrame(target.framePath); steps.push({ id: randomUUID(), kind: 'action', action: match[1] === 'visible' ? 'waitForVisible' : 'waitForHidden', locator: parseLocator(target.method, target.args), timeoutMs: 10000 }); continue; }
+    if (target && (match = target.tail.match(/^\.waitFor\(\{\s*state:\s*['"](visible|hidden)['"]\s*\}\);?$/))) { applyFrame(target.framePath); steps.push({ id: randomUUID(), kind: 'action', action: match[1] === 'visible' ? 'waitForVisible' : 'waitForHidden', locator: target.locator, timeoutMs: 10000 }); continue; }
     if ((match = line.match(/expect\(page\)\.toHave(URL|Title)\((.+?)\);?$/))) {
       applyFrame([]);
       steps.push({ id: randomUUID(), kind: 'assertion', assertion: `toHave${match[1]}`, expected: readValue(match[2]), timeoutMs: 10000 }); continue;
     }
     if ((match = line.match(/^await\s+expect\((page.+)\)(\.not)?\.(toBeVisible|toBeHidden|toBeAttached|toBeEnabled|toBeDisabled|toBeEditable|toBeEmpty|toBeFocused|toBeInViewport|toBeChecked|toHaveText|toContainText|toHaveValue|toHaveValues|toHaveCount|toHaveAttribute|toHaveClass|toContainClass|toHaveCSS|toHaveId|toHaveJSProperty|toHaveAccessibleName|toHaveAccessibleDescription|toHaveAccessibleErrorMessage|toHaveRole)\((.*)\);?$/))) {
       const assertionTarget = parsePageTarget(match[1]); if (!assertionTarget) continue; applyFrame(assertionTarget.framePath); const args=splitArguments(match[4]);const named=['toHaveAttribute','toHaveCSS','toHaveJSProperty'].includes(match[3]);
-      steps.push({ id: randomUUID(), kind: 'assertion', assertion: match[3], locator: parseLocator(assertionTarget.method, assertionTarget.args), ...(named?{argumentName:readValue(args[0]),expected:readValue(args[1]||'')}:{expected:readValue(args[0]||'')}), ...(match[2]?{negated:true}:{}), timeoutMs: 10000 });
+      steps.push({ id: randomUUID(), kind: 'assertion', assertion: match[3], locator: assertionTarget.locator, ...(named?{argumentName:readValue(args[0]),expected:readValue(args[1]||'')}:{expected:readValue(args[0]||'')}), ...(match[2]?{negated:true}:{}), timeoutMs: 10000 });
     }
   }
   return steps;

@@ -110,6 +110,10 @@ Assets use a strict single-parent hierarchy. A Suite stores `planId`; a Case sto
 
 A full Suite execution owns exactly one Playwright Browser, Browser Context, primary Page, Trace, and primary video. Run Suite Setup, expanded shared-flow steps, each Case Setup/body/Teardown, and Suite Teardown in that same context so cookies, localStorage, open-page state, downloads, and authenticated state remain continuous. A Case failure must not prevent its Case Teardown or the Suite Teardown from being attempted. Record a single ordered `timeline` plus child stage results that share the Suite `sessionId`. Store the video and Trace once at Suite level; child stages may reference them as `sharedArtifacts`, while failure screenshots remain attached to the failing stage.
 
+Each executable phase supports `native` and `visual` engines when both artifacts exist. `native` executes the immutable Playwright recording body with the Suite runner's existing `page`, `context`, and `expect`; it must never spawn `playwright test`, a browser, or a context for an individual phase inside a Suite. `visual` executes the current structured steps. Standalone phase, flow, or Case replay may create its own isolated session, but all phases of a Suite run remain in the Suite-owned session regardless of engine.
+
+Execution requests carry `executionPolicy: default | prefer-native | visual`. `default` resolves each phase from its saved `defaultExecutionMode`; a recording save sets that phase to `native`, while a later visual-step save sets it to `visual`. `prefer-native` uses an authoritative native recording when present and otherwise falls back visibly to visual. `visual` uses structured steps only. Run records freeze the requested policy plus every phase's `resolvedExecutionMode`; no fallback may be hidden from the execution preview or evidence tree.
+
 A Plan execution starts one independent shared session per Suite and groups its record by `suiteRuns`. Standalone Suite phase, Case, Case phase, or shared-flow replay creates a fresh isolated context and its own artifacts. Never reuse a browser session across different Suites in one Plan.
 
 Hierarchical batch execution accepts Suite-scoped selections. Each selection carries a Suite `versionSelector`, either all cases or explicit `{caseId, versionSelector}` entries, and the canonical parent Plan is derived from `suite.planId`. A case-only selection must call the Suite executor with that case subset; it must never call the standalone Case executor. The selected Suite version supplies both Setup and Teardown, while explicit case selectors may override the Suite snapshot's case bindings. Reject a selected Case that is absent from the resolved Suite version instead of silently changing membership.
@@ -134,6 +138,7 @@ Cases, suites, and public flows share one immutable execution-version model. Kee
 - A public-flow call supports `pinned`, `stable`, and `latest`. The UI resolves versions from a list; users never type raw version numbers.
 - Every run record stores the resolved asset version and resolved dependency versions. Historical records must not be re-resolved after Stable or Latest changes.
 - Existing flat files remain as convenience launchers, while immutable sources are also written under `versions/vN/` folders.
+- `recordedSources` stores immutable, phase-scoped recording evidence separately from editable/generated `sources`. Cases use `setupSteps`, `steps`, and `teardownSteps`; Suites use `setupSteps` and `teardownSteps`; public flows use `steps`. A recorded entry contains the original JavaScript, runnable JavaScript, recording file, capture time, and provenance. Visual saves and generated JS/Python must never overwrite `recordedSources`.
 
 ## Locator bundle
 

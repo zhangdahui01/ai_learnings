@@ -97,10 +97,13 @@ node start-server.mjs
 | `data/auth/suites/<Suite ID>/vN/storage-state.json` | Suite Setup vN 成功录制或回放后保存的 Cookie/localStorage | Case 的 Suite 上下文录制会加载；相当于登录凭据，禁止提交或分享。 |
 | `data/profiles/`、`data/auth/<用例 ID>.json` | 旧版本合规录制的兼容数据 | 新录制入口不再创建；确认无需兼容后可人工清理。 |
 | `recordings/*.spec.js` | Playwright Inspector 生成的原始录制代码 | 录制时输入的账号、搜索词或其他值可能以明文出现。 |
-| `test-suites/<计划名>/<套件名>/*.spec.js` | 可在线编辑、可回放的 Node.js/Playwright 测试 | 一个 Case 一个文件；按 Suite Setup → Case Setup/Steps/Teardown → Suite Teardown 生成。 |
+| `test-suites/<计划名>/<套件名>/*.spec.js` | 从当前无代码步骤生成的 Node.js/Playwright 导出 | 一个 Case 一个文件；可通过本地命令执行，但不是不可变原始录制。 |
 | `test-suites/<计划名>/<套件名>/test_*.py` | 从同一步骤模型生成的 Python/Playwright 测试 | 与 JavaScript 保持同样的 Suite/Case 生命周期；Python 可用 pytest-playwright 独立运行。 |
 | `test-suites/<计划名>/<套件名>/suite.*` | Suite Setup/Teardown 的 JS/Python 源码 | 无代码阶段保存后自动同步；Case 可执行文件中也会嵌入这些阶段。 |
 | `test-suites/_公共流程/` | 公共流程当前版本的 JS/Python | 修改无代码步骤或重新录制后同步更新。 |
+| `test-suites/.../versions/vN/recorded.<phase>.spec.js` | vN 对应阶段的不可变原始录制 JavaScript | `phase` 为 `setupSteps`、`steps` 或 `teardownSteps`；无代码编辑和导出代码编辑都不会覆盖。 |
+| `test-suites/.../versions/vN/steps.json` | vN 的无代码生命周期步骤和默认回放方式 | 可用于审计和迁移；不要手工改历史快照。 |
+| `test-suites/.../versions/vN/generated.spec.js`、`generated.py` | vN 无代码步骤生成的只读导出 | 页面“高级功能”可查看和下载；旧命名文件仍保留兼容。 |
 | `artifacts/<run-id>/failure.png` | 失败页面截图 | 可能显示用户资料、订单、账号或其他页面内容。 |
 | `artifacts/<run-id>/trace.zip` | Playwright Trace、页面快照和网络证据 | 可能包含 URL、DOM、请求信息和输入值。 |
 | `artifacts/<run-id>/*.webm` | 回放视频 | 可能包含操作过程和页面中的敏感内容。 |
@@ -204,14 +207,15 @@ node_modules/
 
 无代码步骤的 URL、输入值和期望值都可写 `${data.searchText}` 或嵌套的 `${data.account.username}`。JS/Python 由系统生成相同引用，回放时通过 `WTR_TEST_DATA` 注入并解析。密码、Token 等机密值使用 `${env.COUPAY_PASSWORD}`，启动服务器前设置对应环境变量；不要把生产密码、Token 或一次性验证码写进 JSON、代码或录制文件。
 
-### 无代码与代码如何同步
+### 原始录制、无代码步骤和导出代码
 
-- 保存无代码步骤：结构化步骤为权威版本，自动重建 JavaScript 和 Python；如果当前用例含手写代码，界面会先确认，避免静默覆盖。
-- 保存 JavaScript：系统识别常见 Playwright `goto/fill/click/press/wait/assertion` 等语句，反向更新无代码步骤，再生成 Python。
-- JavaScript 中无法识别的 helper、循环、条件、frame 等代码会原样保存，并给出“部分步骤无法可视化”的提示，不会假装已完整同步。
-- Python 是导出/派生版本。保存 Python 不反向修改 JS 或无代码步骤，因为任意 JS↔Python↔步骤无法可靠无损转换。
+- 原始录制 JavaScript：Inspector 关闭后按资产、阶段和版本永久保存，只读；它是解决 iframe、复杂 locator、弹窗和窗口等无法完整翻译场景的最高保真回放来源。
+- 无代码步骤：导入器尽力从原始录制生成，供小白查看、修改、增加等待和断言。保存后只更新结构化步骤，并重建对应的 JS/Python 导出。
+- 导出 JavaScript/Python：用于本地命令执行、审阅和二次开发。在线保存导出代码不会反向修改无代码步骤，也不会覆盖原始录制。
+- 普通页面不再显示“代码编辑”标签。进入“高级功能”可查看只读原始代码与只读导出；选择“复制为自定义代码用例”后才可编辑 JavaScript，新用例与无代码步骤彼此独立。
+- 历史用例没有原始录制字段时继续按原来的无代码步骤运行；只有 JavaScript、完全没有结构化步骤的旧代码用例会兼容执行现有 JavaScript。迁移不会把旧的生成代码冒充为原始录制。
 
-因此，普通用户以无代码步骤为主；开发者以 JavaScript 为主。不要同时在两个页面并发修改同一用例。
+界面只让用户在两种“执行来源”之间选择：**按原录制回放**或**按当前步骤回放**，不会展示三个容易混淆的产品版本。JS/Python 导出属于当前无代码版本的文件表达，不是第三套业务版本。
 
 ### 代理
 
@@ -299,7 +303,7 @@ Suite Setup/Teardown、公共流程以及 Case Setup/测试步骤/Teardown 共�
 | 内容和状态 | `toBeVisible`、`toBeEnabled`、`toHaveText`、`toContainText`、`toHaveValue` | 关键业务结果使用硬断言；非关键检查才使用软断言。 |
 | DOM 与可访问性 | `toHaveAttribute`、`toHaveClass`、`toHaveCSS`、`toHaveAccessibleName` | 属性/CSS 断言同时填写属性名和期望值。 |
 
-导入器可自动转换常用 `goto/click/fill/press/check/selectOption/setInputFiles`、常用断言以及 `frameLocator/contentFrame`。`filter/has/hasText/first/last/nth`、变量 Locator、自定义函数、Canvas/地图、闭合 Shadow DOM 和操作系统原生窗口必须在代码编辑器中检查；完整 JavaScript 会保留，但不保证全部可视化。
+导入器可自动转换常用 `goto/click/fill/press/check/selectOption/setInputFiles`、常用断言、`frameLocator/contentFrame`，以及 Inspector 常见的 `filter({hasText})/first/last/nth` 定位链。`filter({has: locator})`、变量 Locator、自定义函数、Canvas/地图、闭合 Shadow DOM 和操作系统原生窗口仍必须在代码编辑器中检查；完整 JavaScript 会保留，但不保证这些特殊结构全部可视化。
 
 ### 手工登录后录制
 
@@ -390,8 +394,8 @@ Suite Setup/Teardown、公共流程以及 Case Setup/测试步骤/Teardown 共�
 
 ## 9. 回放测试用例和计划
 
-- 用例回放：在用例页点击“回放用例”。无代码模式按步骤执行；代码模式执行本地 `.spec.js`。
-- 计划回放：打开测试计划，点击“运行整个计划”，应用会逐个执行计划内用例并汇总通过/失败。
+- 单阶段、用例和公共流程回放：选择 Stable/Latest/指定版本后，再选“按原录制回放”或“按当前步骤回放”。没有原始录制的历史版本会明确提示并回退到当前步骤。
+- Suite/计划执行：选择“各阶段默认”“优先原录制”或“全部当前步骤”。Suite Setup、公共流程、Case Setup/主体/Teardown 和 Suite Teardown 可以混用两种引擎，但始终共享同一个 Browser/Context/Page、一段录像和一个 Trace。
 - 执行记录：在左侧“执行记录”按状态和范围筛选。点击详情可按 Suite 查看 Suite 版本、Setup/Teardown 版本、每个 Case 的版本与通过/失败/跳过状态；展开阶段可查看逐步明细、失败原因、建议和步骤截图，套件顶部提供整段录像与 Trace。可以删除单条或清空元数据。
 - 仪表盘：展示计划、用例、执行次数、通过率、最近执行和最近失败。
 
@@ -449,6 +453,8 @@ PORT=4174 npm start
 测试用例、测试套件和公共流程都会保留多个不可变版本。录制完成、保存无代码步骤、保存代码或应用 AI 修复时，系统创建新版本，不覆盖旧版本。详情页顶部显示“最新版本”和“Stable”，点击“版本历史”进入统一版本管理，可以查看、回放、对比、编辑版本说明或把某个版本标记为 Stable。版本不再设置额外标签；Stable 是唯一的稳定版本标记。测试用例自身的业务标签仍用于资产查询和筛选。
 
 点击 Case、Suite 或公共流程的“回放”后选择：Stable 用于正式回归；Latest 用于调试最新修改；“指定版本”用于重现历史问题。Suite 版本同时保存 Setup、Teardown、配置、数据以及子用例版本策略。执行记录会保存实际解析到的 Suite、Case 和公共流程版本。
+
+版本选择之后还要选择执行来源：“按原录制回放”执行该版本只读的 Playwright 录制；“按当前步骤回放”执行该版本结构化步骤。Suite/Plan 可以统一选择各阶段默认、优先原录制或全部当前步骤，执行记录会冻结每个阶段实际采用的来源。
 
 当前便捷文件仍保留在原位置；不可变源码额外保存在 `test-suites/.../versions/vN/`。不要手工覆盖历史版本目录。
 
