@@ -991,7 +991,42 @@ app.post('/api/recording-sessions/:id/test-complete', async (req, res) => {
 app.post('/api/recording-sessions/:id/test-update', async (req, res) => { if (process.env.RECORD_DRY_RUN !== '1') throw httpError(404, '未找到接口', 'NOT_FOUND'); const session = recordingSessions.get(req.params.id); if (!session) throw httpError(404, '未找到录制会话', 'RECORDING_SESSION_NOT_FOUND'); await writeFile(session.outputPath, String(req.body.code || '')); res.json(publicRecordingSession(session)); });
 app.delete('/api/cases/:id/session-state', async (req, res) => { const db = await store(); const testCase = db.cases.find(item => item.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const paths = compliancePaths(testCase); await Promise.all([rm(paths.profileDir, { recursive: true, force: true }), rm(paths.storagePath, { force: true })]); testCase.compliance.storageStateSaved = false; testCase.updatedAt = now(); await save(db); res.status(204).end(); });
 app.get('/api/recordings', async (_req, res) => { const files = await Promise.all((await readdir(recordingsDir)).filter(x => x.endsWith('.spec.js')).map(async name => { const details = await stat(join(recordingsDir, name)); return { name, modifiedAt: details.mtime.toISOString(), size: details.size }; })); res.json(files.sort((a, b) => b.modifiedAt.localeCompare(a.modifiedAt))); });
-app.post('/api/cases/:id/import-codegen', async (req, res) => { const db = await store(); const testCase = db.cases.find(x => x.id === req.params.id); if (!testCase) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); const filename = String(req.body.filename || ''); if (!/^[a-zA-Z0-9_.-]+\.spec\.js$/.test(filename)) throw httpError(400, '无效录制文件名', 'INVALID_RECORDING'); const code = await readFile(join(recordingsDir, filename), 'utf8'); const steps = parseCodegen(code); if (!steps.length) throw httpError(400, '没有识别到可导入步骤。请确认 Inspector 已保存完整脚本。', 'NO_STEPS_PARSED'); const javascript=code.replaceAll("'@playwright/test'", "'playwright/test'").replaceAll('"@playwright/test"', '"playwright/test"'); testCase.steps = req.body.mode === 'append' ? [...testCase.steps, ...steps] : steps; testCase.sources = { javascript, python: generatePythonAdvanced({ ...testCase, steps }) }; ensureExecutionSources(testCase,'case');testCase.recordedSources.steps={originalJavascript:code,runnableJavascript:javascript,recordingFile:relative(root,join(recordingsDir,filename)),recordedAt:now(),provenance:'manual-codegen-import',immutable:true,immutableOriginal:true};testCase.executionModes.steps='native'; testCase.editorMode = 'code'; testCase.codeLanguage = 'javascript'; testCase.updatedAt = now(); commitAssetVersion(testCase, 'case', db, { source: 'manual-import', description: '手工导入 Playwright 录制' }); await persistSources(db, testCase); updateCurrentVersionSnapshot(testCase, 'case', db); await save(db); res.json(caseSummary(testCase)); });
+async function importCodegenIntoPhase(db, { targetType, targetId, phase, filename, mode = 'replace' }) {
+  if (!/^[a-zA-Z0-9_.-]+\.spec\.js$/.test(String(filename || ''))) throw httpError(400, '无效录制文件名；请选择 recordings 目录中的 .spec.js 文件。', 'INVALID_RECORDING');
+  const code = await readFile(join(recordingsDir, filename), 'utf8');
+  const parsedSteps = parseCodegen(code);
+  if (!parsedSteps.length) throw httpError(400, '没有识别到可导入步骤。请确认 Inspector 已写入完整脚本；可在“录制失败原因”中查看文件路径和技术详情。', 'NO_STEPS_PARSED');
+  const javascript = code.replaceAll("'@playwright/test'", "'playwright/test'").replaceAll('"@playwright/test"', '"playwright/test"');
+  const recordedEntry = { originalJavascript: code, runnableJavascript: javascript, recordingFile: relative(root, join(recordingsDir, filename)), recordedAt: now(), provenance: 'manual-codegen-import', immutable: true, immutableOriginal: true };
+  let owner; let key; let type; let label;
+  if (targetType === 'suite') { owner = db.suites.find(item => item.id === targetId); key = phase; type = 'suite'; label = phase === 'setupSteps' ? 'Suite Setup' : 'Suite Teardown'; if (!owner) throw httpError(404, '未找到测试套件', 'SUITE_NOT_FOUND'); if (!['setupSteps', 'teardownSteps'].includes(key)) throw httpError(400, 'Suite 手工导入仅支持 Setup 或 Teardown。', 'INVALID_IMPORT_PHASE'); }
+  else if (targetType === 'flow') { owner = db.flows.find(item => item.id === targetId); key = 'steps'; type = 'flow'; label = '公共流程'; if (!owner) throw httpError(404, '未找到公共流程', 'FLOW_NOT_FOUND'); }
+  else { owner = db.cases.find(item => item.id === targetId); key = phase || 'steps'; type = 'case'; label = key === 'setupSteps' ? 'Case Setup' : key === 'teardownSteps' ? 'Case Teardown' : '测试步骤'; if (!owner) throw httpError(404, '未找到测试用例', 'CASE_NOT_FOUND'); if (!['setupSteps', 'steps', 'teardownSteps'].includes(key)) throw httpError(400, 'Case 手工导入阶段无效。', 'INVALID_IMPORT_PHASE'); }
+  const previousSteps = owner[key] || [];
+  const steps = mode === 'append' ? [...previousSteps, ...parsedSteps] : parsedSteps;
+  owner[key] = steps;
+  owner.recordedSources ||= {}; owner.executionModes ||= {}; owner.recordedSources[key] = recordedEntry; owner.executionModes[key] = 'native'; owner.updatedAt = now();
+  if (type === 'case') {
+    owner.sources = { javascript: generateJavascriptAdvanced(owner), python: generatePythonAdvanced(owner) };
+    owner.editorMode = 'code'; owner.codeLanguage = 'javascript'; ensureExecutionSources(owner, 'case');
+    commitAssetVersion(owner, 'case', db, { source: 'manual-import', description: `${label} 手工导入 Playwright 录制` });
+    await persistSources(db, owner); updateCurrentVersionSnapshot(owner, 'case', db);
+  } else if (type === 'suite') {
+    owner.sources ||= { setupSteps: {}, teardownSteps: {} }; const virtual = { ...defaultCase(`${owner.name} · ${label}`), defaults: owner.defaults, data: owner.data || {}, steps };
+    owner.sources[key] = { javascript: generateJavascriptAdvanced(virtual), python: generatePythonAdvanced(virtual) }; ensureExecutionSources(owner, 'suite');
+    commitAssetVersion(owner, 'suite', db, { source: 'manual-import', description: `${label} 手工导入 Playwright 录制` });
+    await persistSuiteArtifacts(db, owner); updateCurrentVersionSnapshot(owner, 'suite', db);
+  } else {
+    const virtual = { ...defaultCase(owner.name), defaults: owner.defaults, data: {}, steps }; owner.sources = { javascript: generateJavascriptAdvanced(virtual), python: generatePythonAdvanced(virtual) }; ensureExecutionSources(owner, 'flow');
+    commitAssetVersion(owner, 'flow', db, { source: 'manual-import', description: '公共流程手工导入 Playwright 录制' });
+    await persistFlowArtifacts(db, owner, true); updateCurrentVersionSnapshot(owner, 'flow', db);
+  }
+  await save(db);
+  return { owner, targetType: type, phase: key, importedStepCount: parsedSteps.length, totalStepCount: steps.length, createdVersion: owner.currentVersion, recordingFile: recordedEntry.recordingFile };
+}
+app.post('/api/cases/:id/import-codegen', async (req, res) => { const db = await store(); const result = await importCodegenIntoPhase(db, { targetType: 'case', targetId: req.params.id, phase: req.body.phase || 'steps', filename: req.body.filename, mode: req.body.mode }); res.json(caseSummary(result.owner)); });
+app.post('/api/suites/:id/phases/:phase/import-codegen', async (req, res) => { const phase = req.params.phase === 'setup' ? 'setupSteps' : req.params.phase === 'teardown' ? 'teardownSteps' : null; if (!phase) throw httpError(400, 'Suite 阶段必须是 setup 或 teardown', 'INVALID_IMPORT_PHASE'); const db = await store(); const result = await importCodegenIntoPhase(db, { targetType: 'suite', targetId: req.params.id, phase, filename: req.body.filename, mode: req.body.mode }); res.json({ ...result.owner, import: result }); });
+app.post('/api/flows/:id/import-codegen', async (req, res) => { const db = await store(); const result = await importCodegenIntoPhase(db, { targetType: 'flow', targetId: req.params.id, phase: 'steps', filename: req.body.filename, mode: req.body.mode }); res.json({ ...result.owner, import: result }); });
 
 app.use((error, _req, res, _next) => { console.error(error); res.status(error.status || 500).json({ error: error.message || '服务器错误', code: error.code || 'SERVER_ERROR', details: error.details }); });
 app.listen(port, () => console.log(`Web Test Recorder: http://localhost:${port}`));
