@@ -4,10 +4,12 @@ import { expect as playwrightExpect } from 'playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, readFile, writeFile, readdir, stat, rm } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
-import { basename, join, relative, resolve } from 'node:path';
+import { basename, dirname, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { randomUUID } from 'node:crypto';
 import { parseCodegen, parseCodegenPhases } from './lib/codegen-parser.js';
+import { parseManualCaseWorkbook, refreshBddDerivedFields, upgradeBddCaseSchema } from './lib/bdd-case-factory.js';
+import { buildKnowledgeIndex, createGenerationJob, detectAgentRuntime } from './lib/automation-knowledge.js';
 
 const app = express();
 const port = Number(process.env.PORT || 4173);
@@ -24,9 +26,9 @@ const recordingSessions = new Map();
 let fixtureFlakyHits = 0;
 
 await Promise.all([dataDir, recordingsDir, artifactsDir, suitesDir, profilesDir, authDir].map(dir => mkdir(dir, { recursive: true })));
-if (!existsSync(storePath)) await writeFile(storePath, JSON.stringify({ schemaVersion: 10, plans: [], suites: [], cases: [], flows: [], runs: [] }, null, 2));
+if (!existsSync(storePath)) await writeFile(storePath, JSON.stringify({ schemaVersion: 12, plans: [], suites: [], cases: [], flows: [], runs: [], bddCases: [], bddImports: [], knowledgeSources: [], generationJobs: [] }, null, 2));
 
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ limit: '25mb' }));
 app.use(express.static(join(root, 'public')));
 app.use('/artifacts', express.static(artifactsDir));
 
@@ -37,6 +39,95 @@ function safeSegment(value, fallback = 'untitled') {
   return cleaned || fallback;
 }
 function safeFile(value, fallback = 'test-case') { return safeSegment(value, fallback).replace(/\s+/g, '-').replace(/[^\p{L}\p{N}._-]/gu, '-').slice(0, 80) || fallback; }
+function ensureGenerationJobState(job) {
+  job.validation ||= {};
+  job.validation.replayMode = job.validation.replayMode === 'manual' ? 'manual' : 'auto';
+  job.validation.autoFix = job.validation.autoFix !== false;
+  job.validation.maxAttempts = Math.min(10, Math.max(1, Number(job.validation.maxAttempts) || 5));
+  job.validation.attempts = Array.isArray(job.validation.attempts) ? job.validation.attempts : [];
+  job.validation.attemptCount = Number(job.validation.attemptCount) || job.validation.attempts.length;
+  job.validation.latestStatus ||= job.validation.attempts.at(-1)?.status || 'not-run';
+  job.progress = Array.isArray(job.progress) ? job.progress : [];
+  job.qaSignOff = { status: 'pending', reviewer: '', comments: '', at: null, ...(job.qaSignOff || {}) };
+  return job;
+}
+function addGenerationProgress(job, stage, status, message, extra = {}) {
+  ensureGenerationJobState(job);
+  job.progress.push({ stage, status, message, at: now(), ...extra });
+  job.updatedAt = now();
+}
+function redactGenerationOutput(value) {
+  return String(value || '')
+    .replace(/((?:password|passwd|secret|token|authorization|api[_-]?key)\s*[:=]\s*)[^\s,;}]+/gi, '$1[REDACTED]')
+    .slice(-50000);
+}
+async function listGenerationArtifacts(folder, base = folder, output = []) {
+  if (!existsSync(folder)) return output;
+  for (const entry of await readdir(folder, { withFileTypes: true })) {
+    const path = join(folder, entry.name);
+    if (entry.isDirectory()) await listGenerationArtifacts(path, base, output);
+    else output.push({
+      name: entry.name,
+      type: /trace\.zip$/i.test(entry.name) ? 'trace' : /\.(?:png|jpe?g)$/i.test(entry.name) ? 'screenshot' : /\.(?:webm|mp4)$/i.test(entry.name) ? 'video' : 'file',
+      path,
+      url: `/artifacts/${relative(artifactsDir, path).split('\\').join('/')}`,
+    });
+  }
+  return output;
+}
+async function runGenerationReplay(db, job, { trigger = 'manual' } = {}) {
+  ensureGenerationJobState(job);
+  const testPath = job.outputs?.testPath;
+  const targetRepo = job.outputs?.targetRepoPath;
+  if (!testPath || !targetRepo || !existsSync(testPath)) throw httpError(409, '生成脚本尚未保存，不能回放。', 'GENERATION_TEST_MISSING');
+  if (job.status === 'validating') throw httpError(409, '该任务正在回放，请等待当前回放完成。', 'GENERATION_REPLAY_RUNNING');
+  const attemptNumber = job.validation.attemptCount + 1;
+  const attemptDir = join(artifactsDir, 'generation', safeFile(job.id), `attempt-${attemptNumber}`);
+  await mkdir(attemptDir, { recursive: true });
+  const binaryName = process.platform === 'win32' ? 'playwright.cmd' : 'playwright';
+  const targetBinary = join(targetRepo, 'node_modules', '.bin', binaryName);
+  const platformBinary = join(root, 'node_modules', '.bin', binaryName);
+  const command = existsSync(targetBinary) ? targetBinary : platformBinary;
+  if (!existsSync(command)) throw httpError(409, '没有找到 Playwright CLI。请先在目标 Repo 执行 npm install。', 'PLAYWRIGHT_CLI_MISSING');
+  const relativeTest = relative(targetRepo, testPath);
+  const args = ['test', relativeTest, '--trace=on', `--output=${attemptDir}`];
+  const startedAt = now();
+  job.status = 'validating';
+  addGenerationProgress(job, 'replay', 'running', `第 ${attemptNumber} 次回放已开始`, { attempt: attemptNumber, trigger });
+  await save(db);
+  const timeoutMs = Math.max(30000, Number(process.env.GENERATION_REPLAY_TIMEOUT_MS) || 300000);
+  const result = await new Promise(resolveRun => {
+    const child = spawn(command, args, { cwd: targetRepo, env: processEnvForNetwork(false), stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = ''; let stderr = ''; let timedOut = false;
+    child.stdout.on('data', chunk => { stdout += chunk; });
+    child.stderr.on('data', chunk => { stderr += chunk; });
+    const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, timeoutMs);
+    child.once('error', error => { clearTimeout(timer); resolveRun({ exitCode: null, stdout, stderr: `${stderr}\n${error.message}`, timedOut }); });
+    child.once('exit', code => { clearTimeout(timer); resolveRun({ exitCode: code, stdout, stderr, timedOut }); });
+  });
+  const artifacts = await listGenerationArtifacts(attemptDir);
+  const passed = result.exitCode === 0 && !result.timedOut;
+  const output = redactGenerationOutput(`${result.stderr}\n${result.stdout}`);
+  const errorSummary = passed ? '' : (result.timedOut ? `回放超过 ${timeoutMs}ms，已终止。` : output.trim().split('\n').filter(Boolean).slice(-8).join('\n') || `Playwright 退出码 ${result.exitCode}`);
+  const attempt = { number: attemptNumber, trigger, startedAt, finishedAt: now(), status: passed ? 'passed' : 'failed', exitCode: result.exitCode, command: `${command} ${args.join(' ')}`, stdout: redactGenerationOutput(result.stdout), stderr: redactGenerationOutput(result.stderr), errorSummary, artifacts };
+  job.validation.attempts.push(attempt);
+  job.validation.attemptCount = attemptNumber;
+  job.validation.latestStatus = attempt.status;
+  job.qaSignOff = { status: 'pending', reviewer: '', comments: '', at: null };
+  if (passed) {
+    job.status = 'awaiting-qa';
+    addGenerationProgress(job, 'replay', 'passed', `第 ${attemptNumber} 次回放通过，等待 QA 签署`, { attempt: attemptNumber });
+  } else if (job.validation.autoFix && attemptNumber < job.validation.maxAttempts) {
+    job.status = 'fix-queued';
+    job.fixPrompt = `Repair ${job.outputs.testRelativePath} using replay attempt ${attemptNumber}. Inspect the saved error output and artifacts, make the smallest source-grounded change, then submit the repaired code. Do not weaken assertions just to pass.\n\n${errorSummary}`;
+    addGenerationProgress(job, 'repair', 'queued', `第 ${attemptNumber} 次回放失败，已进入 Agent 自动修复队列`, { attempt: attemptNumber });
+  } else {
+    job.status = 'failed';
+    addGenerationProgress(job, 'replay', 'failed', `第 ${attemptNumber} 次回放失败，已达到修复上限或未启用自动修复`, { attempt: attemptNumber });
+  }
+  await save(db);
+  return job;
+}
 function httpError(status, message, code = 'REQUEST_FAILED', details) { const error = new Error(message); error.status = status; error.code = code; error.details = details; return error; }
 function defaultCompliance() { return { enabled: false, environmentName: '', approvedHosts: '', approvedAccountRefs: '', allowlistStatus: 'not-configured', allowlistNotes: '', humanVerification: true, policyConfirmed: false }; }
 function defaultRuntimeSettings() { return { browser: 'chromium', baseUrl: '', locale: 'zh-CN', session: { mode: 'clean', persistRecordingState: false }, proxy: { mode: 'direct', server: '', username: '', password: '', bypass: '', mappings: [] }, stability: { preset: 'standard', navigationTimeoutMs: 30000, actionTimeoutMs: 10000, assertionTimeoutMs: 10000 }, timeoutMs: 10000 }; }
@@ -71,7 +162,15 @@ function normalizeHierarchy(db) {
 }
 async function store() {
   const db = JSON.parse(await readFile(storePath, 'utf8'));
-  let migrated = Number(db.schemaVersion || 0) < 10; db.schemaVersion = 10; db.plans ||= []; db.suites ||= []; db.cases ||= []; db.flows ||= []; db.runs ||= [];
+  let migrated = Number(db.schemaVersion || 0) < 12; db.schemaVersion = 12; db.plans ||= []; db.suites ||= []; db.cases ||= []; db.flows ||= []; db.runs ||= []; db.bddCases ||= []; db.bddImports ||= []; db.knowledgeSources ||= []; db.generationJobs ||= [];
+  db.generationJobs.forEach(ensureGenerationJobState);
+  db.bddCases = db.bddCases.map(item => upgradeBddCaseSchema(item));
+  for (const item of db.bddCases) {
+    if (Number.isInteger(item.source?.sheetIndex)) continue;
+    const sourceImport = db.bddImports.find(entry => entry.id === item.source?.importId) || db.bddImports.find(entry => entry.fileName === item.source?.fileName);
+    const sheetIndex = sourceImport?.sheets?.findIndex(sheet => sheet.name === item.source?.sheetName);
+    if (sheetIndex >= 0) { item.source.sheetIndex = sheetIndex; migrated = true; }
+  }
   db.plans.forEach(plan => { plan.suiteIds ||= []; if ((plan.caseIds || []).length && !plan.suiteIds.length) { const id = `default-${plan.id}`; if (!db.suites.some(suite => suite.id === id)) db.suites.push({ id, name: '默认套件', description: '由原测试计划中的用例自动迁移', caseIds: [...plan.caseIds], setupSteps: [], teardownSteps: [], sessionPolicy: 'clean-per-case', createdAt: plan.createdAt || now(), updatedAt: now() }); plan.suiteIds = [id]; migrated = true; } });
   migrated = normalizeHierarchy(db) || migrated;
   db.suites.forEach(item => { item.caseIds ||= []; item.setupSteps ||= []; item.teardownSteps ||= []; item.sources ||= { setupSteps: {}, teardownSteps: {} }; item.sources.setupSteps ||= {}; item.sources.teardownSteps ||= {}; item.sessionPolicy ||= 'clean-per-case'; item.accountRef ||= ''; item.data ||= {}; item.defaults = normalizeRuntimeSettings(item.defaults); ensureExecutionSources(item, 'suite'); ensureVersionState(item, 'suite', db); });
@@ -1027,6 +1126,150 @@ async function importCodegenIntoPhase(db, { targetType, targetId, phase, filenam
 app.post('/api/cases/:id/import-codegen', async (req, res) => { const db = await store(); const result = await importCodegenIntoPhase(db, { targetType: 'case', targetId: req.params.id, phase: req.body.phase || 'steps', filename: req.body.filename, mode: req.body.mode }); res.json(caseSummary(result.owner)); });
 app.post('/api/suites/:id/phases/:phase/import-codegen', async (req, res) => { const phase = req.params.phase === 'setup' ? 'setupSteps' : req.params.phase === 'teardown' ? 'teardownSteps' : null; if (!phase) throw httpError(400, 'Suite 阶段必须是 setup 或 teardown', 'INVALID_IMPORT_PHASE'); const db = await store(); const result = await importCodegenIntoPhase(db, { targetType: 'suite', targetId: req.params.id, phase, filename: req.body.filename, mode: req.body.mode }); res.json({ ...result.owner, import: result }); });
 app.post('/api/flows/:id/import-codegen', async (req, res) => { const db = await store(); const result = await importCodegenIntoPhase(db, { targetType: 'flow', targetId: req.params.id, phase: 'steps', filename: req.body.filename, mode: req.body.mode }); res.json({ ...result.owner, import: result }); });
+
+function mergeImportedBddCase(existing, incoming) {
+  if (!existing) return incoming;
+  if (existing.source?.sourceHash === incoming.source?.sourceHash) return { ...existing, source: { ...existing.source, importId: incoming.source.importId, fileName: incoming.source.fileName, sheetName: incoming.source.sheetName, sheetIndex: incoming.source.sheetIndex, rowNumber: incoming.source.rowNumber } };
+  if (existing.review?.status === 'approved' || existing.editRevision > 1) {
+    return {
+      ...existing,
+      source: { ...existing.source, latestImportId: incoming.source.importId, latestSourceHash: incoming.source.sourceHash, latestRaw: incoming.source.raw, sourceChanged: true },
+      validationIssues: [...(existing.validationIssues || []).filter(issue => issue.code !== 'SOURCE_CHANGED'), { code: 'SOURCE_CHANGED', message: '重新导入的源行已变化；为保护 QA 编辑，未自动覆盖 BDD，请人工比较。', severity: 'warning' }],
+      review: { ...existing.review, status: 'needs-review' },
+      updatedAt: now(),
+    };
+  }
+  return { ...incoming, id: existing.id, createdAt: existing.createdAt, editRevision: Number(existing.editRevision || 0) + 1 };
+}
+
+app.post('/api/bdd/imports', async (req, res) => {
+  const fileName = String(req.body.fileName || 'manual-cases.xlsx');
+  if (!/\.xlsx$/i.test(fileName)) throw httpError(400, '当前仅支持 .xlsx 工作簿；请在源电脑另存为未加密的 .xlsx。', 'BDD_XLSX_REQUIRED');
+  const encoded = String(req.body.contentBase64 || '').replace(/^data:.*?;base64,/, '');
+  if (!encoded) throw httpError(400, '请选择包含多个 Sheet 的 Excel 文件', 'BDD_FILE_REQUIRED');
+  const parsed = await parseManualCaseWorkbook(Buffer.from(encoded, 'base64'), { fileName, defaults: req.body.defaults || {} });
+  const db = await store();
+  const bySourceKey = new Map(db.bddCases.map(item => [item.sourceKey, item]));
+  const merged = parsed.cases.map(item => mergeImportedBddCase(bySourceKey.get(item.sourceKey), item));
+  const importedKeys = new Set(merged.map(item => item.sourceKey));
+  db.bddCases = [...db.bddCases.filter(item => !importedKeys.has(item.sourceKey)), ...merged];
+  const record = { id: parsed.importId, fileName, importedAt: now(), sheets: parsed.sheets, summary: parsed.summary };
+  db.bddImports.unshift(record); await save(db);
+  res.status(201).json({ ...record, caseIds: merged.map(item => item.id) });
+});
+
+app.put('/api/bdd-cases/:id', async (req, res) => {
+  const db = await store(); const index = db.bddCases.findIndex(item => item.id === req.params.id);
+  if (index < 0) throw httpError(404, '未找到 BDD Case', 'BDD_CASE_NOT_FOUND');
+  const current = db.bddCases[index];
+  if (Number(req.body.editRevision) !== Number(current.editRevision)) throw httpError(409, '该 BDD Case 已被其他编辑更新，请刷新后重试。', 'BDD_EDIT_CONFLICT', { currentRevision: current.editRevision });
+  const editable = ['title', 'scenarioId', 'functionName', 'featureName', 'priority', 'tenant', 'platform', 'device', 'region', 'category', 'language', 'testData', 'bdd']; const next = structuredClone(current);
+  for (const key of editable) if (req.body[key] !== undefined) next[key] = structuredClone(req.body[key]);
+  next.featureName = next.functionName || next.featureName;
+  next.review = { ...next.review, status: next.review.status === 'approved' ? 'needs-review' : next.review.status };
+  db.bddCases[index] = refreshBddDerivedFields(next); await save(db); res.json(db.bddCases[index]);
+});
+
+app.post('/api/bdd-cases/:id/review', async (req, res) => {
+  const db = await store(); const item = db.bddCases.find(entry => entry.id === req.params.id);
+  if (!item) throw httpError(404, '未找到 BDD Case', 'BDD_CASE_NOT_FOUND');
+  const status = ['approved', 'rejected', 'needs-review'].includes(req.body.status) ? req.body.status : null;
+  if (!status) throw httpError(400, '无效的评审状态', 'BDD_REVIEW_STATUS_INVALID');
+  const errors = (item.validationIssues || []).filter(issue => issue.severity === 'error');
+  if (status === 'approved' && errors.length && req.body.overrideValidation !== true) throw httpError(409, '仍有阻断校验项；请修复，或填写理由后明确覆盖。', 'BDD_REVIEW_BLOCKED', errors);
+  if (status === 'approved' && errors.length && !String(req.body.comments || '').trim()) throw httpError(409, '覆盖阻断校验时必须填写 QA 理由。', 'BDD_OVERRIDE_REASON_REQUIRED', errors);
+  item.review = { status, reviewer: String(req.body.reviewer || ''), comments: String(req.body.comments || ''), reviewedAt: now(), overrideValidation: Boolean(req.body.overrideValidation) };
+  item.updatedAt = now(); item.editRevision += 1; await save(db); res.json(item);
+});
+
+app.delete('/api/bdd-cases/:id', async (req, res) => { const db = await store(); db.bddCases = db.bddCases.filter(item => item.id !== req.params.id); await save(db); res.status(204).end(); });
+
+app.post('/api/knowledge/index', async (req, res) => {
+  const index = await buildKnowledgeIndex(String(req.body.repoPath || ''), { name: String(req.body.name || '') || undefined, provider: String(req.body.provider || 'auto') });
+  const graphFolder = join(dataDir, 'knowledge-graphs', safeFile(index.id)); await mkdir(graphFolder, { recursive: true });
+  const graphPath = index.graph.graphPath || join(graphFolder, 'graph.json');
+  if (!index.graph.graphPath) await writeFile(graphPath, JSON.stringify(index.graph));
+  const stored = { ...index, graph: { provider:index.graph.provider, schemaVersion:index.graph.schemaVersion, status:index.graph.status, nodeCount:index.graph.nodeCount, edgeCount:index.graph.edgeCount, graphPath } };
+  const db = await store(); db.knowledgeSources = db.knowledgeSources.filter(item => item.repoPath !== stored.repoPath); db.knowledgeSources.push(stored); await save(db); res.status(201).json(stored);
+});
+
+app.delete('/api/knowledge/:id', async (req, res) => { const db = await store(); db.knowledgeSources = db.knowledgeSources.filter(item => item.id !== req.params.id); await save(db); res.status(204).end(); });
+
+app.get('/api/agent-runtime', (_req, res) => res.json(detectAgentRuntime()));
+
+app.post('/api/bdd-cases/:id/generation-jobs', async (req, res) => {
+  const db = await store(); const item = db.bddCases.find(entry => entry.id === req.params.id);
+  if (!item) throw httpError(404, '未找到 BDD Case', 'BDD_CASE_NOT_FOUND');
+  if (item.review.status !== 'approved') throw httpError(409, '只有 QA 已批准的 BDD Case 才能进入脚本生成', 'BDD_APPROVAL_REQUIRED');
+  const readyGraphs = db.knowledgeSources.filter(source => source.graphReady && source.graph?.status === 'ready');
+  if (!readyGraphs.length) throw httpError(409, '脚本生成前必须先为自动化 Repo 构建可用的知识图谱。', 'KNOWLEDGE_GRAPH_REQUIRED');
+  const selectedGraph = readyGraphs.find(source => source.id === req.body.knowledgeSourceId) || (readyGraphs.length === 1 ? readyGraphs[0] : null);
+  if (!selectedGraph) throw httpError(409, '存在多个 READY 知识图谱，请明确选择最终脚本所属的目标 Repo。', 'KNOWLEDGE_GRAPH_SELECTION_REQUIRED');
+  const recordings = Array.isArray(req.body.recordings) ? req.body.recordings.filter(Boolean) : [];
+  const useGeneratorAgent = req.body.useGeneratorAgent !== false;
+  if (!useGeneratorAgent && !recordings.length) throw httpError(409, '不使用 Generator Agent 时，至少需要提供一个 Playwright Codegen 原生脚本。', 'GENERATION_SOURCE_REQUIRED');
+  const outputDir = join(dataDir, 'generation-jobs');
+  const job = await createGenerationJob({
+    testCase: item,
+    knowledgeSources: [selectedGraph],
+    recordings,
+    useGeneratorAgent,
+    outputDir,
+    targetRepoPath: process.env.RECORD_DRY_RUN === '1' ? suitesDir : selectedGraph.repoPath,
+    replayMode: req.body.replayMode,
+    autoFix: req.body.autoFix,
+    maxAttempts: req.body.maxAttempts,
+  });
+  db.generationJobs.unshift(job); item.generation.status = 'queued'; item.generation.jobIds.unshift(job.id); await save(db); res.status(201).json(job);
+});
+
+app.put('/api/generation-jobs/:id/result', async (req, res) => {
+  const db = await store(); const job = db.generationJobs.find(item => item.id === req.params.id);
+  if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
+  const code = normalizeNativeSource(req.body.code); const testPath = job.outputs?.testPath;
+  if (!testPath) throw httpError(409, '该历史任务没有目标脚本路径，请重新创建生成任务。', 'GENERATION_OUTPUT_PATH_MISSING');
+  await mkdir(dirname(testPath), { recursive:true }); await writeFile(testPath, code);
+  ensureGenerationJobState(job);
+  job.status = job.validation.replayMode === 'auto' ? 'generated' : 'awaiting-replay';
+  job.result = { code, testPath, notes: String(req.body.notes || ''), savedAt: now() };
+  addGenerationProgress(job, 'generation', 'completed', job.validation.attemptCount ? 'Agent 已提交修复后的脚本' : 'Agent 已提交生成脚本');
+  await save(db);
+  if (job.validation.replayMode === 'auto') await runGenerationReplay(db, job, { trigger: job.validation.attemptCount ? 'auto-fix' : 'auto' });
+  res.json(job);
+});
+
+app.post('/api/generation-jobs/:id/replay', async (req, res) => {
+  const db = await store(); const job = db.generationJobs.find(item => item.id === req.params.id);
+  if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
+  await runGenerationReplay(db, job, { trigger: req.body.trigger === 'auto' ? 'auto' : 'manual' });
+  res.json(job);
+});
+
+app.post('/api/generation-jobs/:id/sign-off', async (req, res) => {
+  const db = await store(); const job = db.generationJobs.find(item => item.id === req.params.id);
+  if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
+  ensureGenerationJobState(job);
+  const decision = req.body.decision;
+  const reviewer = String(req.body.reviewer || '').trim();
+  const comments = String(req.body.comments || '').trim();
+  if (!['approved', 'rejected'].includes(decision)) throw httpError(400, 'QA 签署决定必须是 approved 或 rejected。', 'QA_DECISION_INVALID');
+  if (!reviewer) throw httpError(400, '请填写 QA 签署人。', 'QA_REVIEWER_REQUIRED');
+  if (decision === 'approved' && job.validation.latestStatus !== 'passed') throw httpError(409, '只有最新一次回放通过后才能 QA 签署。', 'QA_REPLAY_REQUIRED');
+  if (decision === 'rejected' && !comments) throw httpError(400, 'QA 退回时必须填写原因。', 'QA_REJECTION_REASON_REQUIRED');
+  job.qaSignOff = { status: decision, reviewer, comments, at: now() };
+  if (decision === 'approved') {
+    job.status = 'signed-off';
+    addGenerationProgress(job, 'qa-sign-off', 'approved', `最终批准人：${reviewer}`);
+  } else if (job.validation.autoFix && job.validation.attemptCount < job.validation.maxAttempts) {
+    job.status = 'fix-queued';
+    job.fixPrompt = `QA rejected ${job.outputs.testRelativePath}. Address the review comments without weakening assertions, then submit a repaired script.\n\nQA comments: ${comments}`;
+    addGenerationProgress(job, 'qa-sign-off', 'rejected', `QA ${reviewer} 已退回，任务进入修复队列`);
+  } else {
+    job.status = 'rejected';
+    addGenerationProgress(job, 'qa-sign-off', 'rejected', `QA ${reviewer} 已退回`);
+  }
+  await save(db); res.json(job);
+});
 
 app.use((error, _req, res, _next) => { console.error(error); res.status(error.status || 500).json({ error: error.message || '服务器错误', code: error.code || 'SERVER_ERROR', details: error.details }); });
 app.listen(port, () => console.log(`Web Test Recorder: http://localhost:${port}`));

@@ -1,5 +1,32 @@
 # Local Web Test Recorder: Beginner Guide
 
+## Convert manual Excel cases to BDD and Playwright jobs
+
+Open **BDD Case Center** and import an unencrypted multi-sheet `.xlsx`. Sheets remain in workbook order and cases remain in original row order. The editor follows the complete Coupay BDD template: scenario metadata, structured Given prerequisites, numbered When actions, concrete Then outcomes, Common Check, and payment-specific checks. An absent prerequisite stays empty.
+
+Build a READY repository knowledge graph from an absolute path before generation. Graphify is recommended, with the built-in local code graph as a zero-dependency fallback. Approved BDD and the graph are mandatory; Codegen recordings are optional evidence. The UI auto-detects the current coding agent instead of asking users to choose Codex, Claude Code, or Devin. The generation trigger persists the Markdown spec, queues an auditable job, and fixes the target TypeScript path. See [BDD Case Factory](references/bdd-case-factory.md) and [Automation Knowledge](references/automation-knowledge.md).
+
+### Complete BDD generation and acceptance workflow
+
+1. In **BDD review center**, review every case by workbook sheet and original Excel row. Verify metadata, Given/When/Then, the suitability score, and blockers. Only QA-approved BDD can enter generation.
+2. In **Repository knowledge graph**, build or refresh a READY graph from the target automation repository’s absolute path. When multiple READY graphs exist, select the repository that will own the final script.
+3. Click **Generate Playwright script** and choose automatic or manual replay, whether failures enter the Agent repair queue, the maximum replay/repair attempts, Generator Agent usage, and optional Codegen scripts.
+4. The current Codex, Claude Code, or Devin Agent reads the `queued` job and generates TypeScript from the approved BDD, graph evidence, and optional recordings. The web server cannot launch the host Agent across process boundaries. Ask the Agent to “use the local-web-test-recorder Skill, process the generation queue, and repair until passing or reaching the limit.”
+5. Automatic mode executes the target test immediately after each Agent submission. Manual mode stops at `awaiting-replay` until QA clicks **Start replay**. Trace is always enabled; screenshots and video are collected when produced by the target repository configuration.
+6. A failed replay exposes the command, exit code, friendly summary, stdout/stderr, and artifacts. With automatic repair enabled and attempts remaining, the job enters `fix-queued`. The Agent inspects the latest evidence, makes the smallest explainable repair, and resubmits; the platform then replays again.
+7. A passing replay enters `awaiting-qa`, not completion. QA reviews the script, assertions, Trace, screenshots/video, and repair history, then supplies a reviewer identity. Only approval changes the status to `signed-off`. Rejection requires a reason and returns the job to repair when attempts remain. An Agent must never sign off for QA.
+
+The primary state flow is `queued → generated → validating → fix-queued → validating → awaiting-qa → signed-off`. Manual replay includes `awaiting-replay`; an exhausted attempt limit ends in `failed`.
+
+The BDD review, repository graph, generation dialog, validation queue, error history, and QA sign-off dialog all follow the top-right locale selector in Chinese, English, and Korean. BDD bodies, immutable Excel source rows, repository paths, code, prompts, and stdout/stderr remain untranslated so audit evidence is never altered.
+
+Local storage used by this workflow:
+
+- `data/store.json`: BDD cases/imports, graph summaries, job state, every replay result, and QA sign-off.
+- `data/generation-jobs/<job-id>/`: frozen BDD spec and job audit pack.
+- Target repository `specs/<tenant>/<region>/<scenarioId>.md` and `tests/<tenant>/<region>/<scenarioId>.spec.ts`: approved spec and final script.
+- `artifacts/generation/<job-id>/attempt-N/`: Trace, screenshots, video, and other Playwright evidence from attempt N.
+
 ## Contents
 
 1. Capabilities

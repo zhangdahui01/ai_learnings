@@ -1,0 +1,84 @@
+import { openGenerationDialog, renderGenerationQueue } from './bdd-generation.js';
+
+const PRECONDITIONS = [
+  ['auth.coupang.loggedIn','Coupang 已登录'],
+  ['auth.coupay.enrolled','已开通 Coupay'],
+  ['payMethod.card.exists','至少已绑定一张卡'],
+  ['payMethod.bankAccount.ensureRegistered','已绑定银行账户'],
+  ['coupayMoney.balance.sufficient','Coupay Money 余额充足'],
+  ['settings.oneTouchPay.enabled','已启用一键支付'],
+];
+let rememberedBddTab = 'cases';
+
+export function renderBddCenter(ctx) {
+  const { $, $$, api, esc, toast, refresh, pageHeading, getState } = ctx;
+  const t = value => window.I18N?.t(value) || value;
+  const state = getState();
+  const cases = [...(state.bddCases || [])].sort((a,b)=>(a.source.sheetIndex??999)-(b.source.sheetIndex??999)||a.source.rowNumber-b.source.rowNumber);
+  const imports = state.bddImports || []; const knowledge = state.knowledgeSources || []; const jobs = state.generationJobs || [];
+  let tab=rememberedBddTab, selectedId=cases[0]?.id, selectedGroup='', runtime={label:'正在检测…'};
+  const groupKey=item=>`${item.source.fileName}::${item.source.sheetName}`;
+  const groups=[...new Map(cases.map(item=>[groupKey(item),{key:groupKey(item),fileName:item.source.fileName,name:item.source.sheetName,index:item.source.sheetIndex??999}])).values()].sort((a,b)=>a.index-b.index||a.name.localeCompare(b.name));
+  selectedGroup=groups[0]?.key||'';
+  pageHeading('BDD Case Center','测试资产 / BDD Case Center');
+  $('#content').innerHTML=`
+    <div class="hero bdd-hero"><div><h2>Manual Case → BDD → Playwright</h2><p>按 Excel Sheet 与原始行号审核；批准后结合 Repo 知识图谱生成 Playwright TypeScript。</p></div><button class="btn primary" id="bddImportButton">导入多 Sheet Excel</button><input id="bddFile" type="file" accept=".xlsx" hidden></div>
+    <div class="bdd-metrics"><div><b>${cases.length}</b><span>BDD Cases</span></div><div><b>${groups.length}</b><span>Excel Sheets</span></div><div><b>${cases.filter(x=>x.review.status==='approved').length}</b><span>已批准</span></div><div><b>${knowledge.filter(x=>x.graphReady).length}</b><span>Ready Graphs</span></div></div>
+    <div class="panel bdd-main-tabs"><button class="tab active" data-bdd-tab="cases">BDD 审核中心</button><button class="tab" data-bdd-tab="graph">Repo 知识图谱</button><button class="tab" data-bdd-tab="jobs">脚本生成队列 <span class="badge">${jobs.length}</span></button></div>
+    <div id="bddWorkspace"></div>`;
+
+  const renderWorkspace=()=>{
+    $$('[data-bdd-tab]').forEach(button=>button.classList.toggle('active',button.dataset.bddTab===tab));
+    if(tab==='graph')return renderGraph(); if(tab==='jobs')return renderJobs(); renderCases();
+  };
+
+  const renderCases=()=>{
+    $('#bddWorkspace').innerHTML=`
+      <section class="panel sheet-review"><div class="panel-head"><div><h2>1 · 选择 Excel Sheet</h2><p>Sheet 按工作簿从左到右排序；用例严格按原始 Excel 行号升序。</p></div><span class="muted">最近导入：${esc(imports[0]?.fileName||'—')}</span></div><div class="sheet-strip">${groups.map((group,index)=>`<button class="sheet-chip ${group.key===selectedGroup?'selected':''}" data-sheet="${esc(group.key)}"><b>${index+1}</b><span>${esc(group.name)}</span><small>${cases.filter(item=>groupKey(item)===group.key).length} cases</small></button>`).join('')||'<p class="muted">尚未导入工作簿</p>'}</div></section>
+      <div class="panel bdd-toolbar"><input id="bddSearch" placeholder="在当前 Sheet 搜索 Case ID、标题或行号"><select id="bddBand"><option value="">全部可行度</option><option value="ui-ready">UI Ready</option><option value="fixture-needed">需要 Fixture</option><option value="hybrid-review">Hybrid Review</option><option value="not-ui-suited">不适合 UI</option></select><select id="bddReview"><option value="">全部评审状态</option><option value="draft">Draft</option><option value="needs-review">Needs Review</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
+      <div class="bdd-review-layout"><section class="panel"><div class="panel-head"><div><h2>2 · 按行审核</h2><p id="sheetCaption"></p></div></div><div class="bdd-case-table-head"><span>Excel 行</span><span>Scenario / 标题</span><span>评分</span><span>状态</span></div><div id="bddList" class="bdd-list"></div></section><aside id="bddDetail" class="panel bdd-detail"></aside></div>`;
+    const current=groups.find(group=>group.key===selectedGroup);$('#sheetCaption').textContent=current?`${current.fileName} → ${current.name}`:'没有 Sheet';
+    const renderList=()=>{
+      const query=$('#bddSearch').value.trim().toLowerCase(),band=$('#bddBand').value,review=$('#bddReview').value;
+      const rows=cases.filter(item=>groupKey(item)===selectedGroup&&(!band||item.automation.band===band)&&(!review||item.review.status===review)&&(!query||`${item.scenarioId} ${item.title} ${item.source.rowNumber}`.toLowerCase().includes(query)));
+      if(!rows.some(item=>item.id===selectedId))selectedId=rows[0]?.id;
+      $('#bddList').innerHTML=rows.map(item=>`<button class="bdd-case-row ${item.id===selectedId?'selected':''}" data-bdd-id="${item.id}"><b>Row ${item.source.rowNumber}</b><span><strong>${esc(item.scenarioId)} · ${esc(item.title)}</strong><small>${esc(item.functionName)}</small></span><span class="score score-${item.automation.band}">${item.automation.score}</span><em>${esc(item.review.status)}</em></button>`).join('')||'<div class="empty"><p>当前 Sheet 没有匹配结果</p></div>';
+      $$('[data-bdd-id]').forEach(button=>button.onclick=()=>{selectedId=button.dataset.bddId;renderList();renderDetail();});
+      renderDetail();
+    };
+    $$('[data-sheet]').forEach(button=>button.onclick=()=>{selectedGroup=button.dataset.sheet;selectedId=cases.find(item=>groupKey(item)===selectedGroup)?.id;renderCases();});
+    ['bddSearch','bddBand','bddReview'].forEach(id=>$('#'+id).oninput=renderList);renderList();
+  };
+
+  const renderDetail=()=>{
+    const item=cases.find(entry=>entry.id===selectedId);if(!item){$('#bddDetail').innerHTML='<div class="empty"><p>请选择一个 Case</p></div>';return;}
+    const bdd=item.bdd||{};
+    $('#bddDetail').innerHTML=`
+      <div class="split"><div><h2>${esc(item.scenarioId)}</h2><p>${esc(item.source.sheetName)} · Excel Row ${item.source.rowNumber} · 修订 ${item.editRevision}</p></div><span class="score score-${item.automation.band}">${item.automation.score}/100</span></div>
+      <div class="editor-section"><h3>BDD Case Format</h3><div class="field-grid three"><div class="field"><label>scenarioId</label><input id="scenarioId" value="${esc(item.scenarioId)}"></div><div class="field"><label>functionName</label><input id="functionName" value="${esc(item.functionName)}"></div><div class="field"><label>priority</label><select id="bddPriority">${['P0','P1','P2'].map(x=>`<option ${x===item.priority?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>tenant</label><select id="tenant">${['coupay','payment','cash','gpayment'].map(x=>`<option ${x===item.tenant?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>platform</label><select id="platform">${['browser','app'].map(x=>`<option ${x===item.platform?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>device（browser 留空）</label><input id="device" value="${esc(item.device||'')}" placeholder="ios | aos"></div><div class="field"><label>region</label><select id="region">${['KR','TW','JP'].map(x=>`<option ${x===item.region?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>category</label><select id="category">${['payment','non-payment'].map(x=>`<option ${x===item.category?'selected':''}>${x}</option>`).join('')}</select></div><div class="field"><label>language</label><select id="language">${['Korean','English','Japanese'].map(x=>`<option ${x===item.language?'selected':''}>${x}</option>`).join('')}</select></div></div></div>
+      <div class="editor-section"><h3>Given · 前置条件</h3><div class="field"><label>上下文句子（没有前置条件就留空）</label><textarea id="givenContext">${esc(bdd.givenContext||'')}</textarea></div><div class="precondition-grid">${PRECONDITIONS.map(([key,label])=>`<label><input type="checkbox" data-precondition="${key}" ${(bdd.preconditionKeys||[]).includes(key)?'checked':''}><span><b>${key}</b><small>${label}</small></span></label>`).join('')}</div><div class="field-grid"><div class="field"><label>AB（每行一个）</label><textarea id="abGroups">${esc((bdd.abGroups||[]).join('\n'))}</textarea></div><div class="field"><label>Account（每行一个）</label><textarea id="accounts">${esc((bdd.accounts||[]).join('\n'))}</textarea></div><div class="field"><label>Product</label><input id="product" value="${esc(bdd.product||'')}"></div><div class="field"><label>Payment</label><input id="payment" value="${esc(bdd.payment||'')}"></div></div></div>
+      <div class="editor-section"><h3>When / Then</h3><div class="field"><label>When（每行一个动作，预览自动编号）</label><textarea id="bddWhen">${esc((bdd.when||[]).join('\n'))}</textarea></div><div class="field"><label>Then（每行一个可验证结果）</label><textarea id="bddThen">${esc((bdd.then||[]).join('\n'))}</textarea></div><p class="muted">Common Check 固定附加；payment 类别额外附加 Specific-Payment Check。</p></div>
+      <details open><summary>BDD specs/*.md 预览</summary><pre>${esc(item.gherkin)}</pre></details><details><summary>不可变原始 Excel 行</summary><pre>${esc(JSON.stringify(item.source.raw,null,2))}</pre></details>
+      <div class="automation-assessment"><strong>${esc(item.automation.target)} · ${item.automation.score}% UI 自动化可行度</strong>${item.automation.blockers.map(x=>`<p><b>${esc(x.label)}</b>：${esc(x.mitigation)}</p>`).join('')||'<p>未检测到特殊阻碍。</p>'}</div>
+      <div class="actions sticky-actions"><button class="btn primary" id="saveBdd">保存修改</button><button class="btn secondary" id="approveBdd">QA 批准</button><button class="btn secondary" id="rejectBdd">退回</button><button class="btn primary" id="openGeneration" ${item.review.status==='approved'?'':'disabled'}>生成 Playwright 脚本</button></div><div id="bddJobResult"></div>`;
+    $('#saveBdd').onclick=async()=>{try{const nextBdd={...bdd,givenContext:$('#givenContext').value.trim(),preconditionKeys:$$('[data-precondition]:checked').map(x=>x.dataset.precondition),abGroups:lines($('#abGroups').value),accounts:lines($('#accounts').value),product:$('#product').value.trim(),payment:$('#payment').value.trim(),when:lines($('#bddWhen').value),then:lines($('#bddThen').value)};await api(`/api/bdd-cases/${item.id}`,{method:'PUT',body:JSON.stringify({editRevision:item.editRevision,scenarioId:$('#scenarioId').value.trim(),functionName:$('#functionName').value.trim(),priority:$('#bddPriority').value,tenant:$('#tenant').value,platform:$('#platform').value,device:$('#device').value.trim(),region:$('#region').value,category:$('#category').value,language:$('#language').value,bdd:nextBdd})});toast('BDD 已保存；Excel 源行未修改');await refresh();}catch(error){toast(error.message,'error');}};
+    $('#approveBdd').onclick=()=>review(item,'approved');$('#rejectBdd').onclick=()=>review(item,'rejected');$('#openGeneration').onclick=()=>openGeneration(item);
+  };
+
+  const renderGraph=()=>{$('#bddWorkspace').innerHTML=`<section class="panel graph-onboarding"><div class="panel-head"><div><h2>Repo 知识图谱（脚本生成必需）</h2><p>BDD 提供业务意图；代码图谱提供登录、支付、Page Object、Fixture、定位器和调用关系。没有 READY 图谱不能生成脚本。</p></div></div><div class="recommendation"><strong>推荐 Graphify</strong><p>适合完整 Repo 知识复用，使用 Tree-sitter AST 生成本地 graph.json；code-review-graph 更偏变更评审和 blast-radius。</p><code>uv tool install graphifyy &amp;&amp; cd /your/e2e-repo &amp;&amp; graphify .</code><small>未安装 Graphify 时，本平台仍可构建内置本地代码图；生成门禁相同。</small></div><div class="field-grid"><div class="field full"><label>本地自动化 Repo 绝对路径</label><input id="kbPath" placeholder="/absolute/path/to/fintech-frontend-e2e"></div><div class="field"><label>图谱名称</label><input id="kbName" placeholder="Coupay frontend E2E"></div><div class="field"><label>图谱提供者</label><select id="kbProvider"><option value="auto">自动：优先读取 Graphify，否则内置图</option><option value="graphify">必须使用 Graphify graph.json</option><option value="builtin">内置本地代码图</option></select></div></div><div class="actions"><button class="btn primary" id="indexKnowledge">构建 / 刷新知识图谱</button></div></section><section class="graph-cards">${knowledge.map(item=>`<article class="panel graph-card"><div class="split"><div><h3>${esc(item.name)}</h3><p data-i18n-skip>${esc(item.repoPath)}</p></div><span class="badge ${item.graphReady?'success':'failure'}">${item.graphReady?'READY':'NOT READY'}</span></div><dl><div><dt>Provider</dt><dd>${esc(item.graph?.provider||'legacy-index')}</dd></div><div><dt>Files</dt><dd>${item.fileCount||0}</dd></div><div><dt>Nodes</dt><dd>${item.graph?.nodeCount||0}</dd></div><div><dt>Edges</dt><dd>${item.graph?.edgeCount||0}</dd></div></dl><div class="actions"><button class="btn small danger" data-kb-delete="${item.id}">删除图谱</button></div></article>`).join('')||'<div class="panel empty"><p>尚未建立知识图谱。</p></div>'}</section>`;
+    $('#indexKnowledge').onclick=async()=>{try{await api('/api/knowledge/index',{method:'POST',body:JSON.stringify({repoPath:$('#kbPath').value.trim(),name:$('#kbName').value.trim(),provider:$('#kbProvider').value})});toast('知识图谱已构建并通过 READY 校验');await refresh();}catch(error){toast(error.message,'error');}};$$('[data-kb-delete]').forEach(button=>button.onclick=async()=>{await api(`/api/knowledge/${button.dataset.kbDelete}`,{method:'DELETE'});await refresh();});};
+
+  const renderJobs=()=>renderGenerationQueue({jobs,cases,runtime,api,esc,toast,refresh});
+
+  const openGeneration=item=>openGenerationDialog({item,knowledge,runtime,api,esc,toast,refresh,lines});
+
+  const review=async(item,status)=>{const hasErrors=item.validationIssues.some(issue=>issue.severity==='error');const comments=prompt(t(status==='approved'?'QA 评审说明':'退回原因'),'')??'';if(status==='approved'&&hasErrors&&!comments.trim())return toast('存在阻断项，请填写覆盖理由','error');try{await api(`/api/bdd-cases/${item.id}/review`,{method:'POST',body:JSON.stringify({status,comments,reviewer:'local-qa',overrideValidation:status==='approved'&&hasErrors})});toast(status==='approved'?'BDD 已批准':'BDD 已退回');await refresh();}catch(error){toast(error.message,'error');}};
+
+  const openImport=()=>{const node=document.createElement('div');node.className='modal-backdrop';node.innerHTML=`<div class="modal"><h2>导入多 Sheet Excel</h2><p class="muted">这些默认值会写入本次导入的每个 BDD Case，之后可逐条修改。</p><div class="field-grid"><div class="field"><label>tenant</label><select id="importTenant"><option>coupay</option><option>payment</option><option>cash</option><option>gpayment</option></select></div><div class="field"><label>region</label><select id="importRegion"><option>KR</option><option>TW</option><option>JP</option></select></div><div class="field"><label>language</label><select id="importLanguage"><option>Korean</option><option>English</option><option>Japanese</option></select></div><div class="field"><label>category</label><select id="importCategory"><option value="auto">自动判断</option><option>payment</option><option>non-payment</option></select></div></div><div class="actions"><button class="btn primary" id="chooseExcel">选择 .xlsx</button><button class="btn secondary" data-close>取消</button></div></div>`;document.body.append(node);$('[data-close]',node).onclick=()=>node.remove();$('#chooseExcel',node).onclick=()=>{$('#bddFile').dataset.defaults=JSON.stringify({tenant:$('#importTenant',node).value,region:$('#importRegion',node).value,language:$('#importLanguage',node).value,category:$('#importCategory',node).value,platform:'auto'});node.remove();$('#bddFile').click();};};
+  const lines=value=>String(value||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);
+  $('#bddImportButton').onclick=openImport;$('#bddFile').onchange=async event=>{const file=event.target.files[0];if(!file)return;try{const contentBase64=await toBase64(file);const result=await api('/api/bdd/imports',{method:'POST',body:JSON.stringify({fileName:file.name,contentBase64,defaults:JSON.parse(event.target.dataset.defaults||'{}')})});toast(`已按 ${result.sheets.length} 个 Sheet 导入 ${result.summary.totalCases} 条 BDD Case`);await refresh();}catch(error){toast(error.message,'error');}};
+  $$('[data-bdd-tab]').forEach(button=>button.onclick=()=>{tab=button.dataset.bddTab;rememberedBddTab=tab;renderWorkspace();});
+  api('/api/agent-runtime').then(value=>{runtime=value;if(tab==='jobs')renderJobs();}).catch(()=>{});renderWorkspace();
+}
+
+function toBase64(file){return new Promise((resolve,reject)=>{const reader=new FileReader();reader.onerror=()=>reject(reader.error);reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.readAsDataURL(file);});}

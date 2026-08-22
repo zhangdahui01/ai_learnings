@@ -1,0 +1,48 @@
+# Automation Knowledge and Script Generation
+
+## 证据职责
+
+最终 TypeScript 不应由单一来源盲目决定：
+
+| 来源 | 主要职责 | 不应承担 |
+| --- | --- | --- |
+| QA 已批准 BDD | 业务意图、前置条件、动作、预期 | 猜测真实 DOM 定位器 |
+| Coupay 现有 E2E Repo | 登录/支付等流程模式、Fixture、Page Object、环境配置和稳定定位器线索 | 未经实时验证直接复制成最终答案 |
+| Playwright Codegen/历史原生录制 | Iframe、弹窗、多窗口等真实复杂操作证据 | 代替业务断言和 QA 审核 |
+| Playwright Generator Agent | 检查实时页面、生成与执行测试、修复定位器和等待 | 改写已批准的业务意图 |
+
+优先级是：BDD 决定“测什么”，Repo/录制帮助“怎么操作”，Generator 验证“现在是否能执行”。
+
+## 知识图谱实现与门禁
+
+页面输入本地 Repo 绝对路径后，平台必须得到一个 `READY` 代码图谱才能生成脚本。图谱记录文件、测试、符号、定位器、流程以及 contains/imports 等节点与边；索引器跳过 `.git`、`node_modules`、`data`、`artifacts`、`recordings`、构建目录和大文件。凭据样式内容会脱敏；产品数据中不保存整个目标 Repo 源码正文。
+
+推荐使用 Graphify：在目标 Repo 执行 `uv tool install graphifyy`、`graphify .`，平台会优先读取 `<repo>/graphify-out/graph.json`。Graphify 不可用时可选择内置本地代码图作为零依赖兜底。`code-review-graph` 很适合 PR 评审、增量索引和 blast-radius，但当前场景需要从整个 E2E Repo 复用业务流程与定位器，因此 Graphify 更匹配。
+
+知识图谱不能跳过。Codegen 只作为复杂 iframe、支付键盘、弹窗或多窗口流程的可选操作证据，不能替代图谱和批准后的 BDD。
+
+## 自动识别 Agent 与触发
+
+页面不再让用户选择 Codex、Claude Code 或 Devin。服务器按环境自动记录当前 Agent；未知环境显示“当前本地 Agent”。点击“生成 Playwright 脚本”后会：
+
+1. 校验 BDD 已批准且至少一个 Repo 图谱为 READY。
+2. 将准确 BDD 落盘到所选目标 Repo 的 `specs/<tenant>/<region>/<scenarioId>.md`。
+3. 建立队列 Job，冻结图谱证据路径、可选 Codegen 引用和 Prompt。
+4. 固定最终输出为所选目标 Repo 的 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；Job 审计包单独保存在平台 `data/generation-jobs/<job-id>/`。
+
+勾选 Playwright Generator Agent 时，Agent 根据 Job 调用官方 Generator 并实时验证页面；关闭 Generator 时必须提供 Codegen 原生脚本。Codex 和 Claude Code 可先用对应的 `npx playwright init-agents --loop=...` 初始化官方 Agent。Devin 没有经过确认的官方专用 loop 参数时，使用相同 Job、Skill 指令和普通 Playwright CLI，不伪造接口。
+
+浏览器页面负责创建并排队 Job，不能跨进程直接控制 Codex、Claude Code 或 Devin。当前 Agent 收到“处理生成队列”请求后读取 `queued` Job，生成 TypeScript，再调用 `PUT /api/generation-jobs/<job-id>/result`；服务器把结果写入 Job 固定的目标 Repo 路径。页面提供两种触发策略：
+
+- 自动回放：Agent 每次提交生成或修复代码后，平台立即真实执行目标测试。
+- 手工回放：脚本进入 `awaiting-replay`，由 QA 在页面点击“开始回放”。
+
+每轮回放使用目标 Repo 的 Playwright CLI，强制开启 Trace，并收集目标配置产生的截图和录像。页面显示命令、退出码、错误摘要、stdout/stderr、附件和完整时间线。失败且开启自动修复时进入 `fix-queued`；当前 Agent 必须读取最新失败证据，按最小修改原则修复并再次提交。自动模式随后继续回放，直到通过或达到最大轮次。这里的“自动修复”是平台与宿主 Agent 的可审计协作，不是浏览器服务器暗中调用未知模型。
+
+每个 Job 记录 BDD 来源、检索到的 Repo 图谱证据路径、录制引用、自动识别的运行环境、明确输出路径、回放策略、每轮结果和最终 QA 签署。回放通过后状态是 `awaiting-qa`，不是完成；QA 查看代码与证据后批准才进入 `signed-off`。QA 退回必须填写原因，并在未超过上限时重新进入修复队列。Agent 不得代替 QA 签署。
+
+状态主流程：
+
+`queued → generated → validating → fix-queued → validating → awaiting-qa → signed-off`
+
+手工回放在 `generated` 后使用 `awaiting-replay`；达到重试上限进入 `failed`。

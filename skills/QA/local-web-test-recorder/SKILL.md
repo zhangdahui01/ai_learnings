@@ -1,11 +1,53 @@
 ---
 name: local-web-test-recorder
-description: Install, configure, use, troubleshoot, build, or extend a self-hosted local web-test recording and replay product across Codex, Claude Code, and Devin. Use when an AI coding agent needs to set up Node.js and Playwright, manage test plans/cases, record browser interactions, add assertions/waits/retries, replay tests, diagnose artifacts, configure browser/locale/proxy/test data, or integrate Playwright, Selenium/WebDriver, or Selenium IDE components.
+description: Install, configure, use, troubleshoot, build, or extend a self-hosted local web-test recording and replay product across Codex, Claude Code, and Devin. Also convert multi-sheet manual-case Excel workbooks into reviewed BDD cases, assess Playwright UI-automation suitability, index an existing automation repository as operational knowledge, and prepare Playwright Generator Agent or Codegen jobs. Use for Node.js/Playwright setup, test assets, recording/replay, BDD conversion, script generation, diagnostics, artifacts, browser/locale/proxy/test data, or Selenium adapters.
 ---
 
 # Local Web Test Recorder
 
 Use this Agent Skill in Codex, Claude Code, or Devin to create and operate a local-first browser test recorder. Keep test plans, cases, data, recordings, and run artifacts in the machine or cloud session that runs the application. Use Playwright for Chromium/Chrome, Firefox, and WebKit. Treat real Apple Safari as a separate Selenium/SafariDriver adapter.
+
+## Manual Case → BDD → Playwright（新增）
+
+此 Skill 现在也提供一条独立于录制回放的短期自动化流水线：
+
+1. 读取一个包含多个 Sheet 的 `.xlsx` 手工用例集合；保持 Sheet 从左到右和原始行号顺序，动态识别表头和继承的功能层级。
+2. 所有源用例都生成 BDD，不因“不适合 UI 自动化”而丢弃；原始 Excel 行作为审计快照保留。
+3. 计算 `0–100` 的 Web UI 自动化可行度，并标记 `web-ui / hybrid / api / app / manual` 目标及阻碍条件。
+4. QA 在 **BDD Case Center** 按准确 Coupay 模板编辑 metadata、Given/When/Then、Common Check 和支付专项检查并批准；BDD 不做版本堆叠，保存即更新当前事实，但保留原始源行和编辑修订号。
+5. 为现有自动化 Repo 建立 READY 知识图谱（推荐 Graphify，内置代码图可兜底）。批准 BDD 与图谱是脚本生成必需项，Codegen 是可选证据；页面自动识别当前 Agent 并把任务固定输出到 `specs/` 与 `tests/`。
+
+当用户要求“生成 Playwright 脚本”或“处理生成队列”时，不要只解释步骤：读取 `GET /api/state` 中 `generationJobs`。对 `queued` Job，按 `prompt`、`outputs.specPath`、图谱证据路径和可选录制引用调用当前环境可用的 Playwright Generator Agent，并把代码提交到 `PUT /api/generation-jobs/<job-id>/result`，请求体为 `{code, notes}`。服务器会把代码写入 Job 固定的目标 Repo `tests/<tenant>/<region>/<scenarioId>.spec.ts`；自动模式随后真实执行该文件，手工模式则进入 `awaiting-replay`，等待 QA 在页面点击回放。
+
+对 `fix-queued` Job，读取 `fixPrompt` 以及 `validation.attempts` 最新一轮的错误摘要、stdout/stderr 和 artifacts；优先使用 Playwright Healer 的检查与修复思路，做最小、可解释的修复，不能删除关键断言或用固定等待掩盖失败。再次调用同一 result API 提交修复代码。自动模式会立即再回放，循环至 `awaiting-qa` 或达到 `validation.maxAttempts` 后进入 `failed`。不要自称 UI 服务器直接调用了宿主 Agent：服务器负责编排、回放和证据，当前 Codex/Claude Code/Devin Agent 负责生成及修复。
+
+回放通过不等于最终完成。`awaiting-qa` 必须由 QA 在生成队列检查脚本、错误历史和 Trace/截图/录像后签署；批准调用 `POST /api/generation-jobs/<job-id>/sign-off` 并提交 `{decision:"approved", reviewer, comments}`，状态才是 `signed-off`。QA 退回必须填写原因，任务进入 `fix-queued`（未超过上限时）。Agent 永远不能替 QA 自动签署。
+
+BDD Case Center 必须把上述闭环作为一个页面级工作流展示，而不是散落的后台状态：审核页负责 Excel Sheet/Row 追溯和 BDD 批准；图谱页负责目标 Repo 门禁；生成弹窗负责回放模式、自动修复和最大轮次；生成队列用“生成脚本 → 真实回放 → 自动修复 → QA 签署”四阶段进度、每轮错误与附件展示实际状态。页面支持自动回放和 QA 手工回放。每个 Job 冻结 `validation.replayMode`、`autoFix`、`maxAttempts`、attempts、progress 和 `qaSignOff`，不能把 queued、机器 PASS 或 Agent 修复冒充最终完成。
+
+BDD Case Center 的审核、Repo 图谱、生成弹窗、任务队列、错误记录和 QA 签署必须跟随全局 `zh-CN`、`en`、`ko` 切换。翻译 UI 标签、帮助和友好错误；不要翻译或改写 BDD 正文、不可变 Excel 源行、Repo 路径、代码、Prompt、命令及 stdout/stderr，因为这些属于可审计证据。
+
+本流水线新增的存储约定：`data/store.json` 保存 Job 状态、每轮结果和 QA 签署；`data/generation-jobs/<job-id>/` 保存冻结输入；目标 Repo 保存 `specs/<tenant>/<region>/<scenarioId>.md` 与 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；`artifacts/generation/<job-id>/attempt-N/` 保存每轮 Trace 及目标配置生成的截图/录像。不得提交这些运行数据、目标 Repo 副本或凭据。
+
+命令行快速转换：
+
+```bash
+node scripts/bdd-case-factory.mjs import \
+  --input /absolute/path/manual-cases.xlsx \
+  --output /absolute/path/bdd-output
+```
+
+输出包含 `manifest.json`、`cases/*.json` 和 Generator 使用的准确 `specs/*.md`。详细字段、评分规则、重复导入策略、UI 和三平台触发方法见 [BDD Case Factory 指南](references/bdd-case-factory.md)。知识图谱边界和脚本生成证据优先级见 [自动化知识与脚本生成](references/automation-knowledge.md)。
+
+三平台显式调用示例：
+
+```text
+Codex: 使用 $local-web-test-recorder，把 /path/manual.xlsx 全部转换成 BDD，并输出自动化可行度报告。
+Claude Code: /local-web-test-recorder import this multi-sheet workbook, review blocked BDD cases, and prepare Playwright Generator jobs.
+Devin: @skills:local-web-test-recorder convert manual.xlsx to BDD, build the repository graph, and process queued Playwright generation jobs.
+```
+
+Web 页面会自动识别当前 Agent，不把 Codex、Claude Code 或 Devin 当成普通用户需要选择的“脚本生成方式”。Codex 和 Claude Code 可在支持 Playwright Test Agents 的环境中继续执行 Generator Loop；Devin 使用相同的 Job、Skill 指令和普通 Playwright CLI，且不得假装存在未被官方支持的 Devin Generator 参数。
 
 ## 中文快速开始
 

@@ -1,5 +1,32 @@
 # 本地 Web 测试录制器：中文新手指南
 
+## 从手工 Excel 用例生成 BDD 与 Playwright
+
+进入左侧 **BDD Case Center**，导入未加密的多 Sheet `.xlsx`。系统按 Excel Sheet 从左到右分类，再按原始行号升序展示；每条 Case 可追溯到文件、Sheet 和 Row。编辑器严格包含 Coupay BDD 模板的 scenarioId、functionName、priority、tenant、platform/device、region、category、language、Given 前置条件注册项、When、Then、Common Check 和支付专项检查。没有前置条件时 Given 为空。
+
+进入“Repo 知识图谱”以绝对路径构建图谱。推荐目标 Repo 先运行 Graphify；未安装时可使用内置代码图。知识图谱和 QA 批准后的 BDD 都是脚本生成必需项，Codegen 是可选证据。页面自动识别 Codex、Claude Code、Devin 或普通本地 Agent，不再要求用户选择宿主。点击“生成 Playwright 脚本”会落盘 Markdown Spec、创建队列 Job，并固定 TypeScript 输出路径。完整操作与 CLI 见 [BDD Case Factory](references/bdd-case-factory.md) 和 [Automation Knowledge](references/automation-knowledge.md)。
+
+### BDD Case Center 的完整生成与验收流程
+
+1. 在“BDD 审核中心”逐 Sheet、逐 Excel 行检查 metadata、Given/When/Then、自动化可行度和阻断项；QA 批准后才可生成脚本。
+2. 在“Repo 知识图谱”选择目标自动化 Repo 的绝对路径，构建或刷新 READY 图谱。存在多个 READY 图谱时，创建任务必须明确选择最终脚本所属 Repo。
+3. 点击“生成 Playwright 脚本”，选择自动回放或手工回放、是否失败后进入 Agent 修复队列、最大回放/修复轮次、是否使用 Generator Agent，以及可选 Codegen 脚本。
+4. 当前 Codex、Claude Code 或 Devin Agent 读取 `queued` Job，使用批准后的 BDD、图谱证据和可选录制脚本生成 TypeScript，并提交结果。网页服务器不能跨进程自行启动宿主 Agent；在对话中可要求“使用 local-web-test-recorder Skill，处理生成队列并自动修复直到通过或达到上限”。
+5. 自动模式在 Agent 提交代码后立即真实执行目标测试；手工模式停在 `awaiting-replay`，由 QA 在“脚本生成队列”点击“开始回放”。回放固定开启 Trace，并收集目标 Repo 配置生成的截图和录像。
+6. 失败时页面展示命令、退出码、错误摘要、stdout/stderr 和附件。启用自动修复且未超过上限时，Job 进入 `fix-queued`；Agent 读取最新失败证据，做最小、可解释的修复并重新提交，平台随后继续回放。
+7. 回放通过只进入 `awaiting-qa`，不代表交付完成。QA 检查脚本、关键断言、Trace、截图/录像和历史修复后填写签署人；批准后状态才是 `signed-off`。退回必须填写原因，并在未超过上限时重新进入修复队列。Agent 不得代替 QA 签署。
+
+状态主流程是：`queued → generated → validating → fix-queued → validating → awaiting-qa → signed-off`。手工回放会经过 `awaiting-replay`；超过轮次上限会进入 `failed`。
+
+BDD Case Center 的审核页、图谱页、生成弹窗、任务队列、错误记录和 QA 签署弹窗均跟随右上角语言切换，支持中文、English 和 한국어。BDD 正文、原始 Excel 行、Repo 路径、代码、Prompt、stdout/stderr 不做机器翻译，避免改变可审计证据。
+
+相关本地数据：
+
+- `data/store.json`：BDD Case、Import、知识图谱摘要、Job 状态、每轮回放结果和 QA 签署。
+- `data/generation-jobs/<job-id>/`：冻结的 BDD Spec 与 Job 审计包。
+- 目标 Repo 的 `specs/<tenant>/<region>/<scenarioId>.md` 与 `tests/<tenant>/<region>/<scenarioId>.spec.ts`：批准后的 Spec 和最终脚本。
+- `artifacts/generation/<job-id>/attempt-N/`：第 N 次回放的 Trace、截图、录像及其他 Playwright 附件。
+
 ## 目录
 
 1. 这个工具能做什么

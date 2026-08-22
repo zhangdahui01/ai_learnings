@@ -1,4 +1,4 @@
 interface:
   display_name: "Local Web Test Recorder"
-  short_description: "Install and run local browser test recording"
-  default_prompt: "Use $local-web-test-recorder to install, configure, record, replay, troubleshoot, or extend a local browser test suite."
+  short_description: "Record tests and generate Playwright from reviewed BDD"
+  default_prompt: "Use $local-web-test-recorder to import multi-sheet Excel cases in sheet/row order, review exact Coupay BDD specs, build a repository knowledge graph, process Playwright generation jobs, or install, record, replay, troubleshoot, and extend the local browser test platform."

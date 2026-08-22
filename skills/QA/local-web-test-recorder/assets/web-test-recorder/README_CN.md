@@ -31,6 +31,8 @@
 - 批量执行测试计划，按 Suite 查询执行结果和证据，并查询或删除执行记录。
 - 通过仪表盘查看计划、用例、执行次数和通过率。
 - 显示失败步骤、原因和建议，并保存截图、视频和 Playwright Trace。
+- 把 QA 批准的 BDD 与 Repo 知识图谱交给当前 AI Agent 生成 Playwright 脚本，并按“生成 → 回放 → Agent 修复 → 再回放 → QA 签署”闭环验收。
+- 生成后的回放可自动触发或由 QA 手工触发；每轮都保留错误输出、Trace，以及目标 Repo 配置产生的截图/录像。机器回放通过后仍必须 QA 签署。
 
 数据默认保存在项目目录：
 
@@ -38,6 +40,8 @@
 - `recordings/`：Playwright Inspector 生成的代码。
 - `test-suites/<计划名>/<套件名>/`：每个用例的 JavaScript 和 Python 文件。
 - `artifacts/`：截图、视频和 Trace。
+- `data/generation-jobs/`：BDD 脚本生成任务的冻结输入与审计包。
+- `artifacts/generation/<job-id>/attempt-N/`：BDD 生成脚本第 N 次回放的 Trace、截图、录像和其他附件。
 
 ## 2. 环境安装
 

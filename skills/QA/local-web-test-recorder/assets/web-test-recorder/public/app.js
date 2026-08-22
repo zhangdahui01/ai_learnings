@@ -1,3 +1,4 @@
+import { renderBddCenter } from './bdd-center.js';
 const $ = (selector, parent = document) => parent.querySelector(selector);
 const $$ = (selector, parent = document) => [...parent.querySelectorAll(selector)];
 const actionGroups = [
@@ -15,7 +16,7 @@ const actions = actionGroups.flatMap(group=>group.values); const assertions = as
 const strategies = ['role', 'label', 'text', 'testId', 'placeholder', 'altText', 'title', 'id', 'name', 'class', 'css', 'xpath'];
 const locatorOperators = ['equals', 'contains', 'notEquals', 'notContains', 'regex'];
 const readinessTypes = ['none', 'elementAuto', 'elementVisible', 'elementHidden', 'elementEnabled', 'elementEditable', 'elementText', 'url', 'loadState'];
-let state = { plans: [], suites: [], cases: [], flows: [], runs: [] };
+let state = { plans: [], suites: [], cases: [], flows: [], runs: [], bddCases: [], bddImports: [], knowledgeSources: [], generationJobs: [] };
 let view = 'dashboard'; let selectedPlanId; let selectedSuiteId; let selectedCaseId; let selectedFlowId; let caseTab = 'visual'; let casePhase = 'steps'; let suitePhase = 'setupSteps'; let codeLanguage = 'javascript'; let executionTab = 'start'; let versionEditContext = null;
 let activeVersionManager = null;
 const executionSelection = { activePlanId:null, activeSuiteId:null, planIds:new Set(), suiteIds:new Set(), caseIds:new Set(), suiteVersions:new Map(), caseVersions:new Map() };
@@ -65,6 +66,7 @@ function render() {
   if (view === 'suites') return selectedSuiteId ? renderSuiteDetail() : renderSuites();
   if (view === 'cases') return selectedCaseId ? renderCaseEditor() : renderCases();
   if (view === 'catalog') return renderCatalog();
+  if (view === 'bdd') return renderBddCenter({$, $$, api, esc, toast, refresh, pageHeading, getState:()=>state});
   if (view === 'executions') return executionTab === 'history' ? renderRuns() : renderExecutionCenter();
   if (view === 'flows') return selectedFlowId ? renderFlowDetail() : renderFlows();
 }
