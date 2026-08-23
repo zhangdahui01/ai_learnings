@@ -15,7 +15,7 @@
 
 ## 知识图谱实现与门禁
 
-页面输入本地 Repo 绝对路径后，平台必须得到一个 `READY` 代码图谱才能生成脚本。图谱记录文件、测试、符号、定位器、流程以及 contains/imports 等节点与边；索引器跳过 `.git`、`node_modules`、`data`、`artifacts`、`recordings`、构建目录和大文件。凭据样式内容会脱敏；产品数据中不保存整个目标 Repo 源码正文。
+页面可为多个本地 Repo 分别输入绝对路径并建立 `READY` 代码图谱。它们可以来自开发代码、组件/Page Object、既有 UI 自动化框架。图谱记录文件、测试、符号、定位器、流程以及 contains/imports 等节点与边；索引器跳过 `.git`、`node_modules`、`data`、`artifacts`、`recordings`、构建目录和大文件。凭据样式内容会脱敏；产品数据中不保存整个目标 Repo 源码正文。
 
 推荐使用 Graphify：在目标 Repo 执行 `uv tool install graphifyy`、`graphify .`，平台会优先读取 `<repo>/graphify-out/graph.json`。Graphify 不可用时可选择内置本地代码图作为零依赖兜底。`code-review-graph` 很适合 PR 评审、增量索引和 blast-radius，但当前场景需要从整个 E2E Repo 复用业务流程与定位器，因此 Graphify 更匹配。
 
@@ -26,9 +26,10 @@
 页面不再让用户选择 Codex、Claude Code 或 Devin。服务器按环境自动记录当前 Agent；未知环境显示“当前本地 Agent”。点击“生成 Playwright 脚本”后会：
 
 1. 校验 BDD 已批准且至少一个 Repo 图谱为 READY。
-2. 将准确 BDD 落盘到所选目标 Repo 的 `specs/<tenant>/<region>/<scenarioId>.md`。
-3. 建立队列 Job，冻结图谱证据路径、可选 Codegen 引用和 Prompt。
-4. 固定最终输出为所选目标 Repo 的 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；Job 审计包单独保存在平台 `data/generation-jobs/<job-id>/`。
+2. 单选最终输出 Repo，同时多选参考图谱；目标 Repo 自动包含在参考集合中。
+3. 将准确 BDD 落盘到目标 Repo 的 `specs/<tenant>/<region>/<scenarioId>.md`。
+4. 建立队列 Job，冻结全部参考图谱 ID/名称/路径、检索证据、目标 Repo、可选 Codegen 引用和 Prompt。
+5. 固定最终输出为目标 Repo 的 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；其他 Repo 始终只读。Job 审计包单独保存在平台 `data/generation-jobs/<job-id>/`。
 
 勾选 Playwright Generator Agent 时，Agent 根据 Job 调用官方 Generator 并实时验证页面；关闭 Generator 时必须提供 Codegen 原生脚本。Codex 和 Claude Code 可先用对应的 `npx playwright init-agents --loop=...` 初始化官方 Agent。Devin 没有经过确认的官方专用 loop 参数时，使用相同 Job、Skill 指令和普通 Playwright CLI，不伪造接口。
 

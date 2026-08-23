@@ -12,10 +12,10 @@ Use this Agent Skill in Codex, Claude Code, or Devin to create and operate a loc
 此 Skill 现在也提供一条独立于录制回放的短期自动化流水线：
 
 1. 读取一个包含多个 Sheet 的 `.xlsx` 手工用例集合；保持 Sheet 从左到右和原始行号顺序，动态识别表头和继承的功能层级。
-2. 所有源用例都生成 BDD，不因“不适合 UI 自动化”而丢弃；原始 Excel 行作为审计快照保留。
+2. 在每个 Sheet 内按有效的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 精确分组；同组多行合并为一个 BDD Case，多个 `No.` 压缩为 `MAIN_001_002` 形式。`Pre-requisite` 原值就是 Given，Excel 每一行的 Step 与 Expected Result 永远作为一对 When/Then 保存、编辑、排序和预览，不能拆成两个互不对应的列表。
 3. 计算 `0–100` 的 Web UI 自动化可行度，并标记 `web-ui / hybrid / api / app / manual` 目标及阻碍条件。
 4. QA 在 **BDD Case Center** 按准确 Coupay 模板编辑 metadata、Given/When/Then、Common Check 和支付专项检查并批准；BDD 不做版本堆叠，保存即更新当前事实，但保留原始源行和编辑修订号。
-5. 为现有自动化 Repo 建立 READY 知识图谱（推荐 Graphify，内置代码图可兜底）。批准 BDD 与图谱是脚本生成必需项，Codegen 是可选证据；页面自动识别当前 Agent 并把任务固定输出到 `specs/` 与 `tests/`。
+5. 可为多个开发 Repo、组件/Page Object Repo 和既有 UI 自动化 Repo 分别建立 READY 知识图谱（推荐 Graphify，内置代码图可兜底）。生成时单选一个目标 Repo 写入 `specs/` 与 `tests/`，同时多选一个或多个图谱作为只读证据；批准 BDD 与至少一个 READY 图谱是必需项，Codegen 是可选证据。
 
 当用户要求“生成 Playwright 脚本”或“处理生成队列”时，不要只解释步骤：读取 `GET /api/state` 中 `generationJobs`。对 `queued` Job，按 `prompt`、`outputs.specPath`、图谱证据路径和可选录制引用调用当前环境可用的 Playwright Generator Agent，并把代码提交到 `PUT /api/generation-jobs/<job-id>/result`，请求体为 `{code, notes}`。服务器会把代码写入 Job 固定的目标 Repo `tests/<tenant>/<region>/<scenarioId>.spec.ts`；自动模式随后真实执行该文件，手工模式则进入 `awaiting-replay`，等待 QA 在页面点击回放。
 
@@ -28,6 +28,8 @@ BDD Case Center 必须把上述闭环作为一个页面级工作流展示，而�
 BDD Case Center 的审核、Repo 图谱、生成弹窗、任务队列、错误记录和 QA 签署必须跟随全局 `zh-CN`、`en`、`ko` 切换。翻译 UI 标签、帮助和友好错误；不要翻译或改写 BDD 正文、不可变 Excel 源行、Repo 路径、代码、Prompt、命令及 stdout/stderr，因为这些属于可审计证据。
 
 本流水线新增的存储约定：`data/store.json` 保存 Job 状态、每轮结果和 QA 签署；`data/generation-jobs/<job-id>/` 保存冻结输入；目标 Repo 保存 `specs/<tenant>/<region>/<scenarioId>.md` 与 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；`artifacts/generation/<job-id>/attempt-N/` 保存每轮 Trace 及目标配置生成的截图/录像。不得提交这些运行数据、目标 Repo 副本或凭据。
+
+跨电脑迁移时只复制或重新安装本 Skill，不复制开发 Repo、账号或 `data/`。在工作电脑重新执行 `npm install`、`npx playwright install`，启动服务后使用工作电脑上的绝对路径分别重建各 Repo 图谱。路径、图谱摘要和 Job 都保存在运行该服务的电脑；代码索引不会把目标 Repo 源文件复制进 Git。Devin 在目标仓库安装 `.agents/skills/local-web-test-recorder` 后，用 `@skills:local-web-test-recorder` 处理 queued/fix-queued Job。完整清单见中英文 guideline 的“跨电脑安装与迁移”。
 
 命令行快速转换：
 

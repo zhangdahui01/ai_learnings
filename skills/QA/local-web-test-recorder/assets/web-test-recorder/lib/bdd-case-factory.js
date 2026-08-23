@@ -8,7 +8,7 @@ const HEADER_ALIASES = {
   depth1: ['depth1', 'depth 1', 'function', 'function name', 'feature'],
   depth2: ['depth2', 'depth 2', 'sub feature'],
   depth3: ['depth3', 'depth 3', 'component'],
-  prerequisite: ['pre-requisite', 'prerequisite', 'precondition', 'preconditions', '前置条件'],
+  prerequisite: ['pre requisite', 'pre-requisite', 'prerequisite', 'precondition', 'preconditions', '前置条件'],
   testData: ['test data', 'data', '测试数据'],
   step: ['step', 'steps', 'test step', 'test steps', '操作步骤'],
   expected: ['expected result', 'expected results', 'expect result', '预期结果'],
@@ -112,6 +112,41 @@ function titleFor(row) {
   return [...hierarchy.slice(-2), action].filter(Boolean).join(' · ') || row.caseId;
 }
 
+function groupKeyFor(row) {
+  return [row.depth1, row.depth2, row.depth3, row.prerequisite || row.inheritedPrerequisite].map(clean).join('\u001f');
+}
+
+function combineScenarioIds(values) {
+  const ids = [...new Set(values.map(clean).filter(Boolean))];
+  if (!ids.length) return '';
+  if (ids.length === 1) return ids[0];
+  const parts = ids.map(id => id.split('_'));
+  const prefix = parts[0].slice(0, -1).join('_');
+  if (prefix && parts.every(tokens => tokens.slice(0, -1).join('_') === prefix && tokens.at(-1))) {
+    return `${prefix}_${parts.map(tokens => tokens.at(-1)).join('_')}`;
+  }
+  return ids.join('_');
+}
+
+function functionNameFor(group) {
+  const firstStep = clean(group.rows[0]?.step).split('\n')[0];
+  return [group.depth1, group.depth2, group.depth3, group.prerequisite, firstStep]
+    .map(clean).filter(Boolean).map(value => `[${value}]`).join('');
+}
+
+function strongestPriority(rows) {
+  return rows.map(row => /^P[012]$/i.test(row.priority) ? row.priority.toUpperCase() : 'P1')
+    .sort((a, b) => Number(a.slice(1)) - Number(b.slice(1)))[0] || 'P1';
+}
+
+function aggregatePlatformStatus(rows, key) {
+  const values = rows.map(row => clean(row[key]).toUpperCase()).filter(Boolean);
+  if (values.includes('PASS')) return 'PASS';
+  if (values.includes('FAIL')) return 'FAIL';
+  if (values.includes('N/A')) return 'N/A';
+  return values[0] || '';
+}
+
 function addIssue(issues, code, message, severity = 'warning') {
   if (!issues.some(item => item.code === code)) issues.push({ code, message, severity });
 }
@@ -186,14 +221,12 @@ export function renderGherkin(input) {
     lines.push(`- [${key}] ${entry?.description || key}`);
   });
   [listLine('AB', bdd.abGroups), listLine('Account', bdd.accounts), listLine('Product', bdd.product), listLine('Payment', bdd.payment)].filter(Boolean).forEach(line => lines.push(line));
-  lines.push('', '**When:**');
-  if (bdd.when.length) bdd.when.forEach((item, index) => lines.push(`${index + 1}. ${item}`));
+  lines.push('', '**When / Then:**');
+  if (bdd.steps.length) bdd.steps.forEach((pair, index) => {
+    lines.push(`${index + 1}. **When:** ${pair.when || ''}`);
+    lines.push(`   **Then:** ${pair.then || ''}`);
+  });
   else lines.push('');
-  lines.push('', '**Then:**');
-  if (bdd.then.length) {
-    lines.push(bdd.then[0]);
-    bdd.then.slice(1).forEach(item => lines.push(`And ${item}`));
-  } else lines.push('');
   lines.push('', '### Common Check');
   bdd.commonChecks.forEach(item => lines.push(`- ${item}`));
   if (testCase.category === 'payment') {
@@ -236,43 +269,55 @@ function autoDevice(row, platform) {
   return devices.join(' | ');
 }
 
-function buildBddCase(row, importId, duplicateCount, defaults = {}) {
-  const sourceKey = `${row.sheetName}::${row.rowNumber}::${row.caseId}`;
+function buildBddCase(group, importId, duplicateCount, defaults = {}) {
+  const rows = group.rows;
+  const first = rows[0];
+  const scenarioId = combineScenarioIds(rows.map(row => row.caseId));
+  const sourceKey = `${first.fileName}::${first.sheetName}::group::${createHash('sha1').update(group.key).digest('hex').slice(0, 16)}`;
   const issues = [];
-  if (!row.step) addIssue(issues, 'MISSING_ACTION', '原手工用例没有 Step，QA 必须补充 When。', 'error');
-  if (!row.expected) addIssue(issues, 'MISSING_EXPECTED', '原手工用例没有 Expected Result。', 'error');
-  if (row.inherited.depth1 || row.inherited.depth2 || row.inherited.depth3 || row.inherited.prerequisite) addIssue(issues, 'INHERITED_CONTEXT', '部分层级或前置条件从上方记录继承，需要 QA 确认。');
-  if (duplicateCount > 1) addIssue(issues, 'DUPLICATE_CASE_ID', `Case ID ${row.caseId} 在工作簿中出现 ${duplicateCount} 次，未自动覆盖。`, 'error');
-  const givenContext = clean(row.prerequisite || row.inheritedPrerequisite);
-  const platform = defaults.platform && defaults.platform !== 'auto' ? defaults.platform : autoPlatform(row);
-  const category = defaults.category && defaults.category !== 'auto' ? defaults.category : autoCategory(row);
+  if (rows.some(row => !row.step)) addIssue(issues, 'MISSING_ACTION', '合并来源中至少一行没有 Step，QA 必须补充对应 When。', 'error');
+  if (rows.some(row => !row.expected)) addIssue(issues, 'MISSING_EXPECTED', '合并来源中至少一行没有 Expected Result。', 'error');
+  if (rows.some(row => Object.values(row.inherited).some(Boolean))) addIssue(issues, 'INHERITED_CONTEXT', '部分层级或前置条件从上方记录继承，需要 QA 确认。');
+  if (duplicateCount > 1) addIssue(issues, 'DUPLICATE_CASE_ID', `合并后的 Scenario ID ${scenarioId} 在工作簿中出现 ${duplicateCount} 次。`, 'error');
+  const givenContext = clean(group.prerequisite);
+  const aggregateRow = {
+    ...first, caseId: scenarioId, depth1: group.depth1, depth2: group.depth2, depth3: group.depth3,
+    prerequisite: givenContext, step: rows.map(row => row.step).join('\n'), expected: rows.map(row => row.expected).join('\n'),
+    notes: rows.map(row => row.notes).filter(Boolean).join('\n'),
+    ios: aggregatePlatformStatus(rows, 'ios'), android: aggregatePlatformStatus(rows, 'android'), web: aggregatePlatformStatus(rows, 'web'),
+  };
+  const platform = defaults.platform && defaults.platform !== 'auto' ? defaults.platform : autoPlatform(aggregateRow);
+  const category = defaults.category && defaults.category !== 'auto' ? defaults.category : autoCategory(aggregateRow);
+  const rawRows = rows.map(row => ({ rowNumber: row.rowNumber, caseId: row.caseId, raw: row.raw }));
+  const sourceHash = createHash('sha256').update(JSON.stringify(rawRows)).digest('hex');
   const testCase = {
     id: stableId(sourceKey),
     sourceKey,
-    source: { importId, fileName: row.fileName, sheetName: row.sheetName, sheetIndex: row.sheetIndex, rowNumber: row.rowNumber, caseId: row.caseId, raw: row.raw, inherited: row.inherited, sourceHash: createHash('sha256').update(JSON.stringify(row.raw)).digest('hex') },
-    scenarioId: row.caseId,
-    functionName: row.depth1 || row.sheetName,
-    featureName: row.depth1 || row.sheetName,
-    hierarchy: { depth1: row.depth1, depth2: row.depth2, depth3: row.depth3 },
-    title: titleFor(row),
-    priority: /^P[012]$/i.test(row.priority) ? row.priority.toUpperCase() : 'P1',
+    source: { importId, fileName: first.fileName, sheetName: first.sheetName, sheetIndex: first.sheetIndex, rowNumber: first.rowNumber, rowNumbers: rows.map(row => row.rowNumber), caseId: scenarioId, caseIds: rows.map(row => row.caseId), raw: first.raw, rawRows, inherited: rows.map(row => row.inherited), sourceHash, groupingVersion: 2, groupingFields: ['depth1', 'depth2', 'depth3', 'prerequisite'] },
+    scenarioId,
+    functionName: functionNameFor(group) || group.depth1 || first.sheetName,
+    featureName: group.depth1 || first.sheetName,
+    hierarchy: { depth1: group.depth1, depth2: group.depth2, depth3: group.depth3 },
+    title: titleFor(aggregateRow),
+    priority: strongestPriority(rows),
     tenant: defaults.tenant || 'coupay',
     platform,
-    device: defaults.device || autoDevice(row, platform),
+    device: defaults.device || autoDevice(aggregateRow, platform),
     region: defaults.region || 'KR',
     category,
     language: defaults.language || 'Korean',
-    platforms: { ios: row.ios, android: row.android, web: row.web },
-    testData: row.testData,
+    platforms: { ios: aggregateRow.ios, android: aggregateRow.android, web: aggregateRow.web },
+    testData: rows.map(row => row.testData).filter(Boolean).join('\n'),
     bdd: {
       givenContext,
       preconditionKeys: inferPreconditions(givenContext),
       abGroups: [], accounts: [], product: '', payment: '',
-      when: splitClauses(row.step), then: splitClauses(row.expected),
+      steps: rows.map(row => ({ id: `row-${row.rowNumber}`, sourceRowNumber: row.rowNumber, sourceCaseId: row.caseId, when: clean(row.step), then: clean(row.expected) })),
+      when: rows.map(row => clean(row.step)).filter(Boolean), then: rows.map(row => clean(row.expected)).filter(Boolean),
       commonChecks: [...COMMON_CHECKS],
       specificPaymentChecks: category === 'payment' ? [...PAYMENT_CHECKS] : [],
     },
-    automation: assessUiAutomation(row),
+    automation: assessUiAutomation(aggregateRow),
     validationIssues: issues,
     review: { status: issues.some(item => item.severity === 'error') ? 'needs-review' : 'draft', reviewer: '', comments: '', reviewedAt: null },
     generation: { status: 'not-generated', jobIds: [], publishedCaseId: null },
@@ -318,12 +363,29 @@ export async function parseManualCaseWorkbook(buffer, { fileName = 'manual-cases
     }
     sheets.push({ name: worksheet.name, sheetIndex, status: 'parsed', headerRow: detected.rowNumber, rowCount: count, columns: Object.keys(detected.columns) });
   }
-  const duplicateCounts = rows.reduce((map, row) => map.set(row.caseId, (map.get(row.caseId) || 0) + 1), new Map());
-  const cases = rows.map(row => buildBddCase(row, importId, duplicateCounts.get(row.caseId), defaults));
+  const grouped = [];
+  const groupedBySheetAndKey = new Map();
+  for (const row of rows) {
+    const key = groupKeyFor(row);
+    const lookupKey = `${row.sheetIndex}\u001e${key}`;
+    let group = groupedBySheetAndKey.get(lookupKey);
+    if (!group) {
+      group = { key, depth1: row.depth1, depth2: row.depth2, depth3: row.depth3, prerequisite: row.prerequisite || row.inheritedPrerequisite, rows: [] };
+      groupedBySheetAndKey.set(lookupKey, group); grouped.push(group);
+    }
+    group.rows.push(row);
+  }
+  const scenarioCounts = grouped.reduce((map, group) => {
+    const scenarioId = combineScenarioIds(group.rows.map(row => row.caseId));
+    return map.set(scenarioId, (map.get(scenarioId) || 0) + 1);
+  }, new Map());
+  const cases = grouped.map(group => buildBddCase(group, importId, scenarioCounts.get(combineScenarioIds(group.rows.map(row => row.caseId))), defaults));
   const summary = {
     totalCases: cases.length,
-    uniqueCaseIds: duplicateCounts.size,
-    duplicateCaseIds: [...duplicateCounts.entries()].filter(([, count]) => count > 1).map(([caseId, count]) => ({ caseId, count })),
+    sourceRows: rows.length,
+    mergedRows: rows.length - cases.length,
+    uniqueCaseIds: new Set(rows.map(row => row.caseId)).size,
+    duplicateCaseIds: [...scenarioCounts.entries()].filter(([, count]) => count > 1).map(([caseId, count]) => ({ caseId, count })),
     missingActions: cases.filter(item => item.validationIssues.some(issue => issue.code === 'MISSING_ACTION')).length,
     webPass: cases.filter(item => item.platforms.web.toUpperCase() === 'PASS').length,
     bands: Object.fromEntries(['ui-ready', 'fixture-needed', 'hybrid-review', 'not-ui-suited'].map(band => [band, cases.filter(item => item.automation.band === band).length])),
@@ -354,6 +416,16 @@ export function upgradeBddCaseSchema(input) {
   next.bdd.preconditionKeys ||= inferPreconditions(next.bdd.givenContext);
   next.bdd.abGroups ||= []; next.bdd.accounts ||= []; next.bdd.product ||= ''; next.bdd.payment ||= '';
   next.bdd.when ||= []; next.bdd.then ||= [];
+  if (!Array.isArray(next.bdd.steps)) {
+    const count = Math.max(next.bdd.when.length, next.bdd.then.length);
+    next.bdd.steps = Array.from({ length: count }, (_, index) => ({ id: `legacy-${index + 1}`, sourceRowNumber: next.source?.rowNumbers?.[index] || next.source?.rowNumber || null, sourceCaseId: next.source?.caseIds?.[index] || next.source?.caseId || '', when: clean(next.bdd.when[index]), then: clean(next.bdd.then[index]) }));
+  }
+  next.bdd.steps = next.bdd.steps.map((step, index) => ({ id: step.id || `step-${index + 1}`, sourceRowNumber: step.sourceRowNumber ?? null, sourceCaseId: clean(step.sourceCaseId), when: clean(step.when), then: clean(step.then) }));
+  next.bdd.when = next.bdd.steps.map(step => step.when).filter(Boolean);
+  next.bdd.then = next.bdd.steps.map(step => step.then).filter(Boolean);
+  next.source ||= {};
+  next.source.rowNumbers ||= next.source.rowNumber != null ? [next.source.rowNumber] : [];
+  next.source.caseIds ||= next.source.caseId ? [next.source.caseId] : [];
   next.bdd.commonChecks ||= [...COMMON_CHECKS];
   next.bdd.specificPaymentChecks ||= next.category === 'payment' ? [...PAYMENT_CHECKS] : [];
   delete next.bdd.given;

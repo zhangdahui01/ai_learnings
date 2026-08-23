@@ -26,7 +26,7 @@ const recordingSessions = new Map();
 let fixtureFlakyHits = 0;
 
 await Promise.all([dataDir, recordingsDir, artifactsDir, suitesDir, profilesDir, authDir].map(dir => mkdir(dir, { recursive: true })));
-if (!existsSync(storePath)) await writeFile(storePath, JSON.stringify({ schemaVersion: 12, plans: [], suites: [], cases: [], flows: [], runs: [], bddCases: [], bddImports: [], knowledgeSources: [], generationJobs: [] }, null, 2));
+if (!existsSync(storePath)) await writeFile(storePath, JSON.stringify({ schemaVersion: 13, plans: [], suites: [], cases: [], flows: [], runs: [], bddCases: [], bddImports: [], knowledgeSources: [], generationJobs: [] }, null, 2));
 
 app.use(express.json({ limit: '25mb' }));
 app.use(express.static(join(root, 'public')));
@@ -162,7 +162,7 @@ function normalizeHierarchy(db) {
 }
 async function store() {
   const db = JSON.parse(await readFile(storePath, 'utf8'));
-  let migrated = Number(db.schemaVersion || 0) < 12; db.schemaVersion = 12; db.plans ||= []; db.suites ||= []; db.cases ||= []; db.flows ||= []; db.runs ||= []; db.bddCases ||= []; db.bddImports ||= []; db.knowledgeSources ||= []; db.generationJobs ||= [];
+  let migrated = Number(db.schemaVersion || 0) < 13; db.schemaVersion = 13; db.plans ||= []; db.suites ||= []; db.cases ||= []; db.flows ||= []; db.runs ||= []; db.bddCases ||= []; db.bddImports ||= []; db.knowledgeSources ||= []; db.generationJobs ||= [];
   db.generationJobs.forEach(ensureGenerationJobState);
   db.bddCases = db.bddCases.map(item => upgradeBddCaseSchema(item));
   for (const item of db.bddCases) {
@@ -1129,7 +1129,7 @@ app.post('/api/flows/:id/import-codegen', async (req, res) => { const db = await
 
 function mergeImportedBddCase(existing, incoming) {
   if (!existing) return incoming;
-  if (existing.source?.sourceHash === incoming.source?.sourceHash) return { ...existing, source: { ...existing.source, importId: incoming.source.importId, fileName: incoming.source.fileName, sheetName: incoming.source.sheetName, sheetIndex: incoming.source.sheetIndex, rowNumber: incoming.source.rowNumber } };
+  if (existing.source?.sourceHash === incoming.source?.sourceHash) return { ...existing, source: { ...existing.source, ...incoming.source } };
   if (existing.review?.status === 'approved' || existing.editRevision > 1) {
     return {
       ...existing,
@@ -1151,8 +1151,10 @@ app.post('/api/bdd/imports', async (req, res) => {
   const db = await store();
   const bySourceKey = new Map(db.bddCases.map(item => [item.sourceKey, item]));
   const merged = parsed.cases.map(item => mergeImportedBddCase(bySourceKey.get(item.sourceKey), item));
-  const importedKeys = new Set(merged.map(item => item.sourceKey));
-  db.bddCases = [...db.bddCases.filter(item => !importedKeys.has(item.sourceKey)), ...merged];
+  // Re-importing the same workbook replaces its old grouping result. This is
+  // required when the grouping algorithm changes from one-row-per-case to a
+  // multi-row BDD scenario; unrelated workbooks and hand-created cases remain.
+  db.bddCases = [...db.bddCases.filter(item => item.source?.fileName !== fileName), ...merged];
   const record = { id: parsed.importId, fileName, importedAt: now(), sheets: parsed.sheets, summary: parsed.summary };
   db.bddImports.unshift(record); await save(db);
   res.status(201).json({ ...record, caseIds: merged.map(item => item.id) });
@@ -1203,19 +1205,27 @@ app.post('/api/bdd-cases/:id/generation-jobs', async (req, res) => {
   if (item.review.status !== 'approved') throw httpError(409, '只有 QA 已批准的 BDD Case 才能进入脚本生成', 'BDD_APPROVAL_REQUIRED');
   const readyGraphs = db.knowledgeSources.filter(source => source.graphReady && source.graph?.status === 'ready');
   if (!readyGraphs.length) throw httpError(409, '脚本生成前必须先为自动化 Repo 构建可用的知识图谱。', 'KNOWLEDGE_GRAPH_REQUIRED');
-  const selectedGraph = readyGraphs.find(source => source.id === req.body.knowledgeSourceId) || (readyGraphs.length === 1 ? readyGraphs[0] : null);
-  if (!selectedGraph) throw httpError(409, '存在多个 READY 知识图谱，请明确选择最终脚本所属的目标 Repo。', 'KNOWLEDGE_GRAPH_SELECTION_REQUIRED');
+  const requestedIds = Array.isArray(req.body.knowledgeSourceIds) ? [...new Set(req.body.knowledgeSourceIds.map(String))] : req.body.knowledgeSourceId ? [String(req.body.knowledgeSourceId)] : [];
+  const targetId = String(req.body.targetKnowledgeSourceId || req.body.knowledgeSourceId || (readyGraphs.length === 1 ? readyGraphs[0].id : ''));
+  const targetGraph = readyGraphs.find(source => source.id === targetId);
+  if (!targetGraph) throw httpError(409, '请明确选择最终脚本写入的目标 Repo。', 'KNOWLEDGE_TARGET_REQUIRED');
+  if (!requestedIds.includes(targetGraph.id)) requestedIds.unshift(targetGraph.id);
+  const selectedGraphs = readyGraphs.filter(source => requestedIds.includes(source.id));
+  const missingIds = requestedIds.filter(id => !selectedGraphs.some(source => source.id === id));
+  if (missingIds.length) throw httpError(409, `以下知识图谱不存在或未 READY：${missingIds.join(', ')}`, 'KNOWLEDGE_GRAPH_NOT_READY');
+  if (!selectedGraphs.length) throw httpError(409, '至少选择一个 READY 知识图谱作为生成证据。', 'KNOWLEDGE_GRAPH_SELECTION_REQUIRED');
   const recordings = Array.isArray(req.body.recordings) ? req.body.recordings.filter(Boolean) : [];
   const useGeneratorAgent = req.body.useGeneratorAgent !== false;
   if (!useGeneratorAgent && !recordings.length) throw httpError(409, '不使用 Generator Agent 时，至少需要提供一个 Playwright Codegen 原生脚本。', 'GENERATION_SOURCE_REQUIRED');
   const outputDir = join(dataDir, 'generation-jobs');
   const job = await createGenerationJob({
     testCase: item,
-    knowledgeSources: [selectedGraph],
+    knowledgeSources: selectedGraphs,
+    targetKnowledgeSource: targetGraph,
     recordings,
     useGeneratorAgent,
     outputDir,
-    targetRepoPath: process.env.RECORD_DRY_RUN === '1' ? suitesDir : selectedGraph.repoPath,
+    targetRepoPath: process.env.RECORD_DRY_RUN === '1' ? suitesDir : targetGraph.repoPath,
     replayMode: req.body.replayMode,
     autoFix: req.body.autoFix,
     maxAttempts: req.body.maxAttempts,

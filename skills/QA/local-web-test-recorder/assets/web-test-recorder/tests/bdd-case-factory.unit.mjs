@@ -1,44 +1,55 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import ExcelJS from 'exceljs';
-import { parseManualCaseWorkbook, refreshBddDerivedFields } from '../lib/bdd-case-factory.js';
+import { parseManualCaseWorkbook, refreshBddDerivedFields, upgradeBddCaseSchema } from '../lib/bdd-case-factory.js';
 
 async function fixture() {
   const workbook = new ExcelJS.Workbook();
   const first = workbook.addWorksheet('Login');
-  first.addRow(['No.', 'Priority', 'Depth1', 'Pre-requisite', 'Step', 'Expected Result', 'Web']);
-  first.addRow(['LOGIN_001', 'P0', 'Login', 'User is logged out', 'Open login page\nEnter valid account', 'Dashboard is visible', 'PASS']);
-  first.addRow(['LOGIN_002', 'P1', '', '', '', 'Error is shown', 'PASS']);
+  first.addRow(['No.', 'Priority', 'Depth1', 'Depth2', 'Depth3', 'Pre-requisite', 'Step', 'Expected Result', 'Web']);
+  first.addRow(['LOGIN_001', 'P0', 'Login', 'Password', 'Happy path', 'User is logged out', 'Open login page', 'Login form is visible', 'PASS']);
+  first.addRow(['LOGIN_002', 'P1', '', '', '', '', 'Enter valid account', 'Dashboard is visible', 'PASS']);
+  first.addRow(['LOGIN_003', 'P1', '', '', '', 'User is locked', 'Enter locked account', 'Locked warning is visible', 'PASS']);
   const second = workbook.addWorksheet('Failure injection');
   second.addRow(['title']); second.addRow([]); second.addRow(['No.', 'Step', 'Expected Result', 'Web']);
   second.addRow(['LOGIN_001', 'Simulate backend timeout', 'Friendly retry is visible', 'N/A']);
   return workbook.xlsx.writeBuffer();
 }
 
-test('imports multiple sheets, offset headers and preserves duplicate IDs', async () => {
+test('groups rows by sheet + Depth1/2/3/Pre-requisite and preserves When/Then pairs', async () => {
   const result = await parseManualCaseWorkbook(await fixture(), { fileName: 'fixture.xlsx' });
+  assert.equal(result.summary.sourceRows, 4);
   assert.equal(result.summary.totalCases, 3);
-  assert.equal(result.summary.uniqueCaseIds, 2);
+  assert.equal(result.summary.mergedRows, 1);
   assert.equal(result.sheets[1].headerRow, 3);
-  assert.equal(result.sheets[0].sheetIndex, 0);
+  const grouped = result.cases[0];
+  assert.equal(grouped.scenarioId, 'LOGIN_001_002');
+  assert.equal(grouped.bdd.givenContext, 'User is logged out');
+  assert.equal(grouped.functionName, '[Login][Password][Happy path][User is logged out][Open login page]');
+  assert.deepEqual(grouped.source.rowNumbers, [2, 3]);
+  assert.deepEqual(grouped.source.caseIds, ['LOGIN_001', 'LOGIN_002']);
+  assert.deepEqual(grouped.bdd.steps.map(step => [step.when, step.then]), [
+    ['Open login page', 'Login form is visible'],
+    ['Enter valid account', 'Dashboard is visible'],
+  ]);
+  assert.match(grouped.gherkin, /1\. \*\*When:\*\* Open login page\n   \*\*Then:\*\* Login form is visible/);
+  assert.match(grouped.gherkin, /2\. \*\*When:\*\* Enter valid account\n   \*\*Then:\*\* Dashboard is visible/);
+  assert.equal(result.cases[1].scenarioId, 'LOGIN_003');
   assert.equal(result.cases[2].source.sheetIndex, 1);
-  assert.equal(result.summary.missingActions, 1);
-  const duplicates = result.cases.filter(item => item.source.caseId === 'LOGIN_001');
-  assert.equal(duplicates.length, 2);
-  assert.notEqual(duplicates[0].id, duplicates[1].id);
-  assert.ok(duplicates.every(item => item.validationIssues.some(issue => issue.code === 'DUPLICATE_CASE_ID')));
-  assert.equal(result.cases[1].hierarchy.depth1, 'Login');
   assert.ok(result.cases[2].automation.blockers.some(item => item.code === 'SERVICE_VIRTUALIZATION'));
-  assert.deepEqual(['scenarioId','functionName','priority','tenant','platform','region','category','language'].filter(key => !(key in result.cases[0])), []);
-  assert.match(result.cases[0].gherkin, /### BDD Steps/);
-  assert.match(result.cases[0].gherkin, /### Common Check/);
-  assert.match(result.cases[0].gherkin, /\*\*When:\*\*/);
 });
 
-test('editing BDD regenerates previews without changing immutable source', async () => {
+test('editing paired BDD steps regenerates preview without changing immutable source', async () => {
   const result = await parseManualCaseWorkbook(await fixture()); const original = result.cases[0];
-  const next = refreshBddDerivedFields({ ...original, bdd: { ...original.bdd, when: ['Use a stable test account'] } });
+  const steps = original.bdd.steps.map((step, index) => index === 0 ? { ...step, when: 'Use a stable test account' } : step);
+  const next = refreshBddDerivedFields({ ...original, bdd: { ...original.bdd, steps } });
   assert.match(next.gherkin, /Use a stable test account/);
   assert.deepEqual(next.source, original.source);
   assert.equal(next.editRevision, original.editRevision + 1);
+});
+
+test('legacy one-row BDD cases remain executable and gain paired steps', () => {
+  const legacy = upgradeBddCaseSchema({ id: 'old', source: { rowNumber: 7, caseId: 'OLD_001' }, bdd: { when: ['Click pay'], then: ['Receipt is visible'] } });
+  assert.deepEqual(legacy.bdd.steps.map(step => [step.when, step.then]), [['Click pay', 'Receipt is visible']]);
+  assert.deepEqual(legacy.source.rowNumbers, [7]);
 });

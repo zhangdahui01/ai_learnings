@@ -2,14 +2,14 @@
 
 ## Convert manual Excel cases to BDD and Playwright jobs
 
-Open **BDD Case Center** and import an unencrypted multi-sheet `.xlsx`. Sheets remain in workbook order and cases remain in original row order. The editor follows the complete Coupay BDD template: scenario metadata, structured Given prerequisites, numbered When actions, concrete Then outcomes, Common Check, and payment-specific checks. An absent prerequisite stays empty.
+Open **BDD Case Center** and import an unencrypted multi-sheet `.xlsx`. Sheets remain in workbook order. Within each sheet, rows are grouped by the effective `Depth1 + Depth2 + Depth3 + Pre-requisite`: matching rows become one BDD case, IDs compact to forms such as `MAIN_001_002`, and every source row remains traceable. The original Pre-requisite is Given. Each Excel Step stays paired with the Expected Result from the same row in an editable When/Then card; pairs can be reordered, added, or removed without separating actions from outcomes. The default functionName is `[Depth1][Depth2][Depth3][Pre-requisite][first Step]`.
 
-Build a READY repository knowledge graph from an absolute path before generation. Graphify is recommended, with the built-in local code graph as a zero-dependency fallback. Approved BDD and the graph are mandatory; Codegen recordings are optional evidence. The UI auto-detects the current coding agent instead of asking users to choose Codex, Claude Code, or Devin. The generation trigger persists the Markdown spec, queues an auditable job, and fixes the target TypeScript path. See [BDD Case Factory](references/bdd-case-factory.md) and [Automation Knowledge](references/automation-knowledge.md).
+Build separate READY graphs for development, component/Page Object, and existing automation repositories. Graphify is recommended, with the built-in local graph as a fallback. In the generation dialog, choose one output repository for `specs/` and `tests/`, then multi-select one or more reference graphs; the output graph is always included and all other repositories remain read-only. Approved BDD and at least one graph are mandatory; Codegen recordings are optional evidence.
 
 ### Complete BDD generation and acceptance workflow
 
-1. In **BDD review center**, review every case by workbook sheet and original Excel row. Verify metadata, Given/When/Then, the suitability score, and blockers. Only QA-approved BDD can enter generation.
-2. In **Repository knowledge graph**, build or refresh a READY graph from the target automation repository’s absolute path. When multiple READY graphs exist, select the repository that will own the final script.
+1. In **BDD review center**, review each grouped case by sheet, all source rows, metadata, Given, paired When/Then steps, suitability score, and blockers. Only QA-approved BDD can enter generation.
+2. In **Repository knowledge graph**, build or refresh a READY graph for every local repository you need. Choose one output repository and multiple reference graphs when creating the job.
 3. Click **Generate Playwright script** and choose automatic or manual replay, whether failures enter the Agent repair queue, the maximum replay/repair attempts, Generator Agent usage, and optional Codegen scripts.
 4. The current Codex, Claude Code, or Devin Agent reads the `queued` job and generates TypeScript from the approved BDD, graph evidence, and optional recordings. The web server cannot launch the host Agent across process boundaries. Ask the Agent to “use the local-web-test-recorder Skill, process the generation queue, and repair until passing or reaching the limit.”
 5. Automatic mode executes the target test immediately after each Agent submission. Manual mode stops at `awaiting-replay` until QA clicks **Start replay**. Trace is always enabled; screenshots and video are collected when produced by the target repository configuration.
@@ -26,6 +26,18 @@ Local storage used by this workflow:
 - `data/generation-jobs/<job-id>/`: frozen BDD spec and job audit pack.
 - Target repository `specs/<tenant>/<region>/<scenarioId>.md` and `tests/<tenant>/<region>/<scenarioId>.spec.ts`: approved spec and final script.
 - `artifacts/generation/<job-id>/attempt-N/`: Trace, screenshots, video, and other Playwright evidence from attempt N.
+
+### Cross-computer installation and migration (personal → work computer / Devin)
+
+The feature has no hard-coded dependency on this computer. Git contains only the Skill, Web application, and reviewed guides; `data/`, target repository source, accounts, and run artifacts are not committed.
+
+1. Clone `ai_learnings` on the work computer, or install `skills/QA/local-web-test-recorder` as `.agents/skills/local-web-test-recorder` in the Devin target repository.
+2. Install Node.js 20+ and Git. In `assets/web-test-recorder`, run `npm install`, `npx playwright install`, then `npm run start` or the bundled startup script.
+3. Re-import the workbook and build each repository graph from its absolute path on the work computer. Never copy development repositories into the Skill.
+4. Approve BDD, select one output repository and multiple reference graphs, then ask Devin: `@skills:local-web-test-recorder process queued Playwright generation jobs, replay, and repair until passing or reaching the limit`.
+5. Work-only sites must be validated on the work computer. Personal-computer tests cover Excel grouping, UI/API behavior, multi-graph selection, and queue state, not the corporate network, real accounts, or target site.
+
+To migrate reviewed state, stop both servers and copy only `data/store.json` plus required `data/generation-jobs/`, after checking for sensitive paths. Rebuild every repository graph because absolute paths usually change. Do not copy `node_modules`, browser profiles, or repository clones.
 
 ## Contents
 

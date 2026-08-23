@@ -84,7 +84,8 @@ export async function buildKnowledgeIndex(repoPath, { name = basename(repoPath),
 }
 
 export function selectKnowledgeEvidence(indexes, testCase, limit = 12) {
-  const query = [testCase.title, testCase.functionName || testCase.featureName, testCase.bdd.givenContext, ...(testCase.bdd.preconditionKeys || []), ...testCase.bdd.when, ...testCase.bdd.then].join(' ').toLowerCase();
+  const pairedSteps = (testCase.bdd.steps || []).flatMap(step => [step.when, step.then]);
+  const query = [testCase.title, testCase.functionName || testCase.featureName, testCase.bdd.givenContext, ...(testCase.bdd.preconditionKeys || []), ...pairedSteps, ...(testCase.bdd.when || []), ...(testCase.bdd.then || [])].join(' ').toLowerCase();
   const terms = unique(query.split(/[^\p{L}\p{N}_-]+/u).filter(term => term.length >= 3));
   return indexes.flatMap(index => index.entries.map(entry => {
     const haystack = `${entry.path} ${entry.tests.join(' ')} ${entry.locators.join(' ')} ${entry.flows.join(' ')} ${entry.symbols.join(' ')}`.toLowerCase();
@@ -100,7 +101,7 @@ export function detectAgentRuntime(env = process.env) {
   return { id: 'local-agent', label: '当前本地 Agent', initCommand: null };
 }
 
-export async function createGenerationJob({ testCase, knowledgeSources = [], recordings = [], useGeneratorAgent = true, outputDir, targetRepoPath, replayMode = 'auto', autoFix = true, maxAttempts = 5 }) {
+export async function createGenerationJob({ testCase, knowledgeSources = [], targetKnowledgeSource = null, recordings = [], useGeneratorAgent = true, outputDir, targetRepoPath, replayMode = 'auto', autoFix = true, maxAttempts = 5 }) {
   const id = randomUUID();
   const evidence = selectKnowledgeEvidence(knowledgeSources, testCase);
   const runtime = detectAgentRuntime();
@@ -110,10 +111,17 @@ export async function createGenerationJob({ testCase, knowledgeSources = [], rec
   const job = {
     id, bddCaseId: testCase.id, status: 'queued', runtime,
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
-    sources: { bdd: testCase.sourceKey, knowledge: evidence.map(item => ({ sourceId: item.knowledgeSourceId, path: item.path, score: item.score })), recordings },
+    sources: {
+      bdd: testCase.sourceKey,
+      knowledgeSourceIds: knowledgeSources.map(source => source.id),
+      knowledgeSources: knowledgeSources.map(source => ({ id: source.id, name: source.name, repoPath: source.repoPath, provider: source.graph?.provider || 'legacy-index' })),
+      targetKnowledgeSourceId: targetKnowledgeSource?.id || knowledgeSources[0]?.id || null,
+      knowledge: evidence.map(item => ({ sourceId: item.knowledgeSourceId, sourceName: item.knowledgeSourceName, path: item.path, score: item.score })),
+      recordings,
+    },
     generator: { useGeneratorAgent, engine: useGeneratorAgent ? 'playwright-test-generator-agent' : 'codegen-assisted', verificationRequired: true },
     outputs: { specRelativePath, testRelativePath },
-    prompt: `Generate ${testRelativePath} from the approved specification at ${specRelativePath}. The approved BDD and repository code graph are mandatory evidence. Reuse relevant repository flows and locators only after checking the graph-backed files. ${recordings.length ? `Optional native Codegen references: ${recordings.join(', ')}.` : ''} Inspect the live UI, prefer role/test-id locators, execute the test, and save the verified TypeScript file at the requested output path.\n\n${testCase.generatorMarkdown}`,
+    prompt: `Generate ${testRelativePath} from the approved specification at ${specRelativePath}. The approved BDD and all selected repository code graphs are mandatory evidence. Selected graphs: ${knowledgeSources.map(source => `${source.name} (${source.repoPath})`).join('; ')}. The output repository is ${targetKnowledgeSource?.name || knowledgeSources[0]?.name || 'the configured target'} at ${targetRepoPath || targetKnowledgeSource?.repoPath || ''}. Reuse relevant repository flows and locators only after checking the graph-backed files. ${recordings.length ? `Optional native Codegen references: ${recordings.join(', ')}.` : ''} Inspect the live UI, prefer role/test-id locators, execute the test, and save the verified TypeScript file at the requested output path.\n\n${testCase.generatorMarkdown}`,
     validation: {
       replayMode: replayMode === 'manual' ? 'manual' : 'auto',
       autoFix: autoFix !== false,

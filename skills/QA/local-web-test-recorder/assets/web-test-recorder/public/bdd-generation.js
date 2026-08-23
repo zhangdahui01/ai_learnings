@@ -18,7 +18,8 @@ export function openGenerationDialog({ item, knowledge, runtime, api, esc, toast
     <h2>生成、回放与 QA 验收</h2>
     <div class="generation-gates"><div class="pass">✓ BDD 已 QA 批准</div><div class="${ready.length ? 'pass' : 'fail'}">${ready.length ? '✓' : '✕'} Repo 知识图谱 ${ready.length ? 'READY' : '缺失'}</div></div>
     <div class="notice"><b>运行环境：</b>${esc(runtime.label)}。平台创建任务，当前 AI Agent 负责生成或修复；平台负责真实回放、错误证据和 QA 门禁。</div>
-    <div class="field"><label>目标 Repo / 知识图谱（必需）</label><select id="generationGraph">${ready.map(source => `<option value="${esc(source.id)}">${esc(source.name)} · ${esc(source.repoPath)}</option>`).join('')}</select></div>
+    <div class="field"><label>最终脚本写入的目标 Repo（单选、必需）</label><select id="generationTargetGraph">${ready.map(source => `<option value="${esc(source.id)}">${esc(source.name)} · ${esc(source.repoPath)}</option>`).join('')}</select><small>specs/ 和 tests/ 只写入这里；其他 Repo 仅作为只读参考证据。</small></div>
+    <div class="field"><label>参考知识图谱（多选、至少一个）</label><div class="knowledge-selector">${ready.map((source,index) => `<label class="${index===0?'target-graph':''}" data-graph-option="${esc(source.id)}"><input type="checkbox" data-generation-graph value="${esc(source.id)}" checked><span><b>${esc(source.name)}</b><small>${esc(source.repoPath)} · ${esc(source.graph?.provider||'local graph')}</small></span></label>`).join('')}</div><small>可以同时参考开发 Repo、Page Object/组件 Repo 和既有 UI 自动化框架。目标 Repo 会始终被选中。</small></div>
     <div class="field"><label>生成后如何回放</label><select id="replayMode"><option value="auto">自动回放（推荐）</option><option value="manual">由 QA 手工点击回放</option></select><small>自动回放失败后可进入 Agent 修复队列；每次修复提交后再次自动回放。</small></div>
     <div class="field-grid"><label class="check-row"><input type="checkbox" id="autoFix" checked> 失败后进入自动修复队列</label><div class="field"><label>最大回放 / 修复轮次</label><select id="maxAttempts">${[1,2,3,4,5,6,8,10].map(value => `<option ${value === 5 ? 'selected' : ''}>${value}</option>`).join('')}</select></div></div>
     <label class="check-row"><input type="checkbox" id="useGenerator" checked> 使用 Playwright Generator Agent</label>
@@ -29,10 +30,21 @@ export function openGenerationDialog({ item, knowledge, runtime, api, esc, toast
   </div>`;
   document.body.append(node);
   node.querySelector('[data-close]').onclick = () => node.remove();
+  const syncTargetGraph = () => {
+    const targetId = node.querySelector('#generationTargetGraph').value;
+    node.querySelectorAll('[data-graph-option]').forEach(option => option.classList.toggle('target-graph', option.dataset.graphOption === targetId));
+    const targetCheckbox = [...node.querySelectorAll('[data-generation-graph]')].find(input => input.value === targetId);
+    if (targetCheckbox) { targetCheckbox.checked = true; targetCheckbox.disabled = true; }
+    node.querySelectorAll('[data-generation-graph]').forEach(input => { if (input.value !== targetId) input.disabled = false; });
+  };
+  node.querySelector('#generationTargetGraph')?.addEventListener('change', syncTargetGraph); syncTargetGraph();
   node.querySelector('#triggerGeneration').onclick = async () => {
     try {
+      const knowledgeSourceIds = [...node.querySelectorAll('[data-generation-graph]:checked')].map(input => input.value);
+      if (!knowledgeSourceIds.length) throw new Error('至少选择一个 READY 知识图谱');
       const job = await api(`/api/bdd-cases/${item.id}/generation-jobs`, { method: 'POST', body: JSON.stringify({
-        knowledgeSourceId: node.querySelector('#generationGraph').value,
+        targetKnowledgeSourceId: node.querySelector('#generationTargetGraph').value,
+        knowledgeSourceIds,
         replayMode: node.querySelector('#replayMode').value,
         autoFix: node.querySelector('#autoFix').checked,
         maxAttempts: Number(node.querySelector('#maxAttempts').value),

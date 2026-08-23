@@ -7,20 +7,22 @@
 - 支持未加密的 `.xlsx`，一个工作簿可包含多个 Sheet。
 - 每个 Sheet 可代表一个功能；表头不要求在第一行，系统会在前 40 行寻找 `No.`、`Step`、`Expected Result`。
 - 支持 `Priority`、`Depth1/2/3`、`Pre-requisite`、`Test Data`、`iOS/Android/Web`、`BTS No.` 和 `Notes`。
-- 合并单元格和空单元格不会中断导入。缺少 Step/Expected 时仍创建 BDD，但进入 `needs-review`，不凭空补写业务行为。
-- 同一个 Case ID 在不同 Sheet/行出现时全部保留；唯一来源键是 `Sheet + Row + Case ID`。
+- 合并单元格和空单元格不会中断导入。系统先解析有效层级，再按同一 Sheet 内的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 分组。缺少 Step/Expected 时仍创建 BDD，但进入 `needs-review`，不凭空补写业务行为。
+- 同组的多个 `No.` 合并成一个 scenarioId；共同前缀只保留一次，例如 `MAIN_001 + MAIN_002 → MAIN_001_002`。来源同时保存全部 `rowNumbers`、`caseIds` 和不可变 `rawRows`。
+- `functionName` 使用 `[Depth1][Depth2][Depth3][Pre-requisite][第一条 Step]`；空字段跳过。
+- `Pre-requisite` 原值直接作为 Given。每个源行形成一条 `{when: Step, then: Expected Result}` 成对记录，顺序与 Excel 一致；Expected Result 即使包含多行也不会与对应 Step 拆开。
 
 ### UI 工作流
 
 1. 启动产品，进入 **BDD Case Center**。
 2. 选择 `.xlsx`，并设置本批次 `tenant / region / language / category` 默认值。
-3. 第一层按工作簿中 Sheet 从左到右排列，第二层严格按 Excel 原始行号升序；每条 Case 永久显示 `文件 → Sheet → Row`。
+3. 第一层按工作簿中 Sheet 从左到右排列，第二层按每组首个 Excel 行号升序；每条 Case 显示全部来源行，例如 `Rows 2, 3`。
 4. 按 Case ID、标题、行号、可行度或评审状态筛选，查看不可变原始 Excel 行和评分阻碍。
-5. 按模板编辑 `scenarioId / functionName / priority / tenant / platform / device / region / category / language`，以及 Given 前置条件、When、Then。
+5. 按模板编辑 metadata 与 Given；When/Then 使用成对卡片，可增加、删除和上下移动，移动时动作与预期一起移动。
 6. 保存后 `specs/*.md` 预览自动更新。没有前置条件时 Given 保持空白，不生成虚假占位文本；Common Check 始终存在，payment Case 追加 Specific-Payment Check。
 7. QA 批准且 Repo 知识图谱为 READY 后，才可触发 Script Generation Job。
 
-重新导入同一文件时，以来源键匹配：未人工编辑的 Draft 可以刷新；已批准或已编辑 Case 不会被静默覆盖。源行变化时标记 `SOURCE_CHANGED`，要求 QA 比较。
+重新导入同名文件时会用本次分组结果替换该文件的旧结果，其他工作簿和平台资产不受影响。同一分组且源 Hash 未变化时保留 QA 编辑；分组或源行发生变化时按新规则重建，必须重新 QA 审核。升级前先备份 `data/store.json`。
 
 ### 评分含义
 
@@ -43,6 +45,6 @@ node scripts/bdd-case-factory.mjs generation-job --case bdd-output/cases/example
 
 ## English
 
-The factory imports every row from an unencrypted multi-sheet `.xlsx`, preserves workbook sheet order and original row order, detects offset headers, preserves duplicate IDs by source location, and never fabricates missing actions or prerequisites. Each case stores the exact Coupay BDD metadata and sections, an immutable source snapshot, validation issues, a Playwright UI-suitability assessment, QA review state, and the final `specs/*.md` preview.
+The factory imports every row from an unencrypted multi-sheet `.xlsx`, then groups rows within each sheet by the effective `Depth1 + Depth2 + Depth3 + Pre-requisite`. A group becomes one BDD case: IDs are compacted (for example `MAIN_001_002`), the prerequisite becomes Given, and every source row remains an ordered When/Then pair. All row numbers, IDs, and immutable raw rows remain traceable. Missing actions or outcomes are never fabricated.
 
 Use the BDD Case Center for review, or the CLI for Codex, Claude Code, and Devin. Approval is a required gate before script-generation jobs. Reimport never silently overwrites an approved or edited BDD case.

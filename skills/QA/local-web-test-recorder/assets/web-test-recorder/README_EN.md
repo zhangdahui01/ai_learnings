@@ -31,7 +31,8 @@ The recorder runs on your computer and can:
 - Run complete plans, inspect results and evidence by Suite, query/delete run records, and monitor the dashboard.
 - Show the failed step, cause, and remediation before raw technical details.
 - Preserve screenshots, videos, and Playwright traces on failure.
-- Generate Playwright scripts from QA-approved BDD plus a repository knowledge graph, then enforce a `generate → replay → Agent repair → replay → QA sign-off` validation loop.
+- Group Excel rows by `Depth1 + Depth2 + Depth3 + Pre-requisite`; Step/Expected Result always remain paired.
+- Generate Playwright scripts from QA-approved BDD plus multiple selected repository graphs into one output repository, then enforce a `generate → replay → Agent repair → replay → QA sign-off` validation loop.
 - Trigger generated-test replay automatically or manually; preserve output, Trace, and any screenshots/videos produced by the target repository. A machine pass still requires QA sign-off.
 
 Local data is stored under the project directory:
