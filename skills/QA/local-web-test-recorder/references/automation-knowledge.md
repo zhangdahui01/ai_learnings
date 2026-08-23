@@ -17,7 +17,7 @@
 
 页面可为多个本地 Repo 分别输入绝对路径并建立 `READY` 代码图谱。它们可以来自开发代码、组件/Page Object、既有 UI 自动化框架。图谱记录文件、测试、符号、定位器、流程以及 contains/imports 等节点与边；索引器跳过 `.git`、`node_modules`、`data`、`artifacts`、`recordings`、构建目录和大文件。凭据样式内容会脱敏；产品数据中不保存整个目标 Repo 源码正文。
 
-推荐使用 Graphify：在目标 Repo 执行 `uv tool install graphifyy`、`graphify .`，平台会优先读取 `<repo>/graphify-out/graph.json`。Graphify 不可用时可选择内置本地代码图作为零依赖兜底。`code-review-graph` 很适合 PR 评审、增量索引和 blast-radius，但当前场景需要从整个 E2E Repo 复用业务流程与定位器，因此 Graphify 更匹配。
+推荐使用 Graphify：官方最低要求 Python 3.10+，PyPI 包名为 `graphifyy`，CLI 名为 `graphify`。`node start-server.mjs` 默认在 `data/tools/graphify/` 建隔离 venv 并自动安装核心包；也可手工执行 `uv tool install graphifyy` 或 `pipx install graphifyy`。对每个目标 Repo 分别执行 `graphify .`，平台会优先读取 `<repo>/graphify-out/graph.json`；`graph.html` 供人工浏览，`GRAPH_REPORT.md` 供审核。纯代码图谱本地构建不需要模型/API Key；Office、PDF、云端语义后端是可选 extras，凭据不得写入平台。Graphify 不可用时可选择内置本地代码图作为零依赖兜底。`code-review-graph` 很适合 PR 评审、增量索引和 blast-radius，但当前场景需要从整个 E2E Repo 复用业务流程与定位器，因此 Graphify 更匹配。
 
 知识图谱不能跳过。Codegen 只作为复杂 iframe、支付键盘、弹窗或多窗口流程的可选操作证据，不能替代图谱和批准后的 BDD。
 
@@ -31,7 +31,14 @@
 4. 建立队列 Job，冻结全部参考图谱 ID/名称/路径、检索证据、目标 Repo、可选 Codegen 引用和 Prompt。
 5. 固定最终输出为目标 Repo 的 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；其他 Repo 始终只读。Job 审计包单独保存在平台 `data/generation-jobs/<job-id>/`。
 
-勾选 Playwright Generator Agent 时，Agent 根据 Job 调用官方 Generator 并实时验证页面；关闭 Generator 时必须提供 Codegen 原生脚本。Codex 和 Claude Code 可先用对应的 `npx playwright init-agents --loop=...` 初始化官方 Agent。Devin 没有经过确认的官方专用 loop 参数时，使用相同 Job、Skill 指令和普通 Playwright CLI，不伪造接口。
+勾选 Playwright Generator Agent 时，Agent 根据 Job 调用官方 Generator 并实时验证页面；关闭 Generator 时必须提供 Codegen 原生脚本。Planner、Generator、Healer 都随 Playwright 提供，不是三个额外 npm 包。启动器完成锁定的 `npm ci` 后，用 `--agent-target /absolute/repo --agent-loop codex|claude|copilot|vscode|vscode-legacy|opencode` 才会在明确 Repo 中执行 `playwright init-agents`；升级 Playwright 后应重新生成。没有显式目标时禁止写入任何业务 Repo。Devin 没有经过确认的官方专用 loop 参数时，使用相同 Job、Skill 指令和普通 Playwright CLI，不伪造接口。
+
+启动门禁与可迁移性：
+
+- `node start-server.mjs` 默认自动补齐 npm 依赖、三个 Playwright 浏览器和项目内 Graphify；`npm run bootstrap` 只准备环境不启动。
+- `data/logs/dependency-bootstrap.json` 是可审计的依赖状态；`data/tools/` 与 `data/logs/` 都是本机可重建数据，不提交 Git。
+- `--offline` 禁止下载；`--without-graphify` 明确使用内置图；Linux 只有显式 `--install-system-deps` 才尝试系统库安装。
+- Node.js、Git、Python 属于系统级前置，不能由项目静默获取管理员权限安装；新机器缺失时启动器必须给出明确提示。
 
 浏览器页面负责创建并排队 Job，不能跨进程直接控制 Codex、Claude Code 或 Devin。当前 Agent 收到“处理生成队列”请求后读取 `queued` Job，生成 TypeScript，再调用 `PUT /api/generation-jobs/<job-id>/result`；服务器把结果写入 Job 固定的目标 Repo 路径。页面提供两种触发策略：
 

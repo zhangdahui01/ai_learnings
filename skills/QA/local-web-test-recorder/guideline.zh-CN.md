@@ -34,12 +34,74 @@ BDD Case Center 的审核页、图谱页、生成弹窗、任务队列、错误�
 这个功能没有依赖当前电脑的固定路径。Git 中只保存 Skill、Web 应用和指南；`data/`、目标 Repo 源码、账号、生成附件不提交。
 
 1. 在工作电脑克隆 `ai_learnings`，或把 `skills/QA/local-web-test-recorder` 安装到 Devin 目标仓库的 `.agents/skills/local-web-test-recorder`。
-2. 安装 Node.js 20+ 与 Git；进入 `assets/web-test-recorder` 后运行 `npm install`、`npx playwright install`，再用 `npm run start` 或同级启动脚本启动。
+2. 安装 Node.js 20+ 与 Git；如要使用 Graphify，再安装 Python 3.10+。进入 `assets/web-test-recorder` 后直接运行 `node start-server.mjs`，启动器会自动补齐 npm 包、Playwright 浏览器和隔离的 Graphify。
 3. 在工作电脑重新导入原始 `.xlsx`，并用工作电脑上的绝对路径为每个开发/自动化 Repo 分别构建图谱。不要把开发 Repo 复制进 Skill。
 4. QA 批准 BDD 后，在生成弹窗选择一个输出 Repo 和多个参考图谱。Devin 对话中执行：`@skills:local-web-test-recorder 处理 queued Playwright 生成任务，回放并修复直到通过或达到上限`。
 5. 工作内网站只能在工作电脑验证。本机自测覆盖 Excel 分组、UI、API、图谱多选和队列状态，但不能替代工作网络、真实账号和目标站点验收。
 
 若确实要迁移已审核状态，只在两台服务均停止时复制 `data/store.json` 和必要的 `data/generation-jobs/`，复制前检查敏感路径与数据。到新电脑后必须重建全部 Repo 图谱，因为绝对路径通常不同。不要复制 `node_modules`、浏览器 Profile 或开发 Repo 副本。
+
+### 启动时自动安装依赖（新电脑必读）
+
+启动器把依赖分为三层：
+
+| 层次 | 是否自动安装 | 内容与位置 |
+|---|---|---|
+| 系统前置 | 不能安全自动安装 | Node.js 20+ 必需；Git 用于克隆/提交；Graphify 需要 Python 3.10+。这些工具涉及系统权限，需由用户或企业软件中心安装。 |
+| 产品运行依赖 | 自动 | 缺少 `node_modules` 时执行锁文件驱动的 `npm ci`；检查并下载 Chromium、Firefox、WebKit。 |
+| 知识图谱与 Agent | 自动/显式 | 默认把 PyPI 官方包 `graphifyy` 安装到 `data/tools/graphify/` 隔离环境；Agent 定义仅在用户明确给出目标 Repo 和 loop 后初始化。 |
+
+最简单的新机器命令：
+
+```bash
+cd /absolute/path/to/ai_learnings/skills/QA/local-web-test-recorder/assets/web-test-recorder
+node start-server.mjs
+```
+
+常用开关：
+
+```bash
+npm run bootstrap                          # 只安装和检查，不启动服务器
+node start-server.mjs --offline            # 禁止下载，只复用已有依赖/缓存
+node start-server.mjs --without-graphify   # 使用平台内置本地代码图
+node start-server.mjs --install-system-deps # Linux 系统库，可能需要 sudo
+```
+
+每次结果写入 `data/logs/dependency-bootstrap.json`，分别展示 npm、浏览器、Graphify、Test Agents 的 `ready/degraded/skipped` 状态；服务日志在 `data/logs/server.log`。Graphify 安装失败不会阻止服务器启动，因为仍可用内置图。npm 或浏览器缺失且无法安装会终止启动，避免录制时才出现模糊错误。
+
+#### Graphify 完整依赖与手工安装
+
+Graphify 官方最低要求是 Python 3.10+，推荐用 `uv` 或 `pipx` 隔离安装。官方 PyPI 包名是 **`graphifyy`（双 y）**，安装后的命令才叫 `graphify`。启动器不依赖全局 PATH，而是在本项目 `data/tools/graphify/` 建 venv 并用 `pip install graphifyy`；这个目录属于可重建缓存，不应提交 Git。
+
+如需自己管理全局工具，可任选一种官方方式：
+
+```bash
+uv tool install graphifyy
+# 或：pipx install graphifyy
+graphify install --project --platform codex  # 可选：为当前 Repo 注册 Graphify Skill
+cd /absolute/path/to/reference-repo
+graphify .
+```
+
+每个 Repo 单独生成 `<repo>/graphify-out/graph.json`、`graph.html` 和 `GRAPH_REPORT.md`。BDD 页面可添加多个 Repo 并多选图谱；构建代码 Repo 不需要 LLM 或 API Key。只有索引 Office/PDF、调用云端语义后端等扩展场景才安装 `graphifyy[office]`、`graphifyy[pdf]`、`graphifyy[openai]` 等额外依赖。不要把 API Key 写进平台或 Git。
+
+#### Playwright Generator 与 Healer 安装
+
+Playwright Planner、Generator、Healer 是当前 Playwright 包自带的 Agent 定义，不存在要单独安装的 Generator/Healer npm 包。当前产品的 `package-lock.json` 已锁定 Playwright；启动器完成 `npm ci` 后就具备 `init-agents` 命令。Agent 定义会写入业务自动化 Repo，所以必须明确指定目标：
+
+```bash
+# Codex
+node start-server.mjs --bootstrap-only \
+  --agent-target /absolute/path/to/e2e-repo \
+  --agent-loop codex
+
+# Claude Code
+node start-server.mjs --bootstrap-only \
+  --agent-target /absolute/path/to/e2e-repo \
+  --agent-loop claude
+```
+
+官方还支持 `copilot`、`vscode`、`vscode-legacy`、`opencode`。每次升级 Playwright 后要重新生成定义。官方目前没有 `--loop=devin`，因此 Devin 通过 `.agents/skills/local-web-test-recorder`、页面产生的 `agentInstruction`、Job API 和 `npx playwright test` 完成生成/修复；不得冒充不存在的官方接口。Healer 只负责读取失败证据、提出并提交最小修复，平台负责真实回放与轮次控制，QA 仍必须最终签署。
 
 ## 目录
 
@@ -95,17 +157,16 @@ npm --version
 
 如果提示“command not found”，说明 Node.js 尚未正确安装或终端需要重新打开。
 
-### 安装项目依赖和浏览器
+### 自动安装项目依赖、浏览器和 Graphify
 
 进入项目目录：
 
 ```bash
 cd /absolute/path/to/web-test-recorder
-npm install
-npx playwright install chromium firefox webkit
+node start-server.mjs --bootstrap-only
 ```
 
-这些命令第一次运行需要联网，浏览器文件可能需要几分钟下载。
+启动器会执行可复现的 `npm ci`、下载缺少的三个浏览器，并在 Python 3.10+ 可用时隔离安装 Graphify。第一次运行需要联网，可能需要几分钟；详细状态见 `data/logs/dependency-bootstrap.json`。
 
 ## 3. 创建应用
 
@@ -119,12 +180,10 @@ node scripts/create_mvp.js /absolute/path/to/web-test-recorder
 
 ```bash
 cd /absolute/path/to/web-test-recorder
-npm install
-npx playwright install chromium firefox webkit
 node start-server.mjs
 ```
 
-打开 <http://localhost:4173>。停止服务时，在运行服务的终端按 `Ctrl+C`。一键脚本会检查 Node.js、npm 依赖、Playwright Chromium 和端口，并把服务输出追加到 `data/logs/server.log`。首次没有 `node_modules` 时使用 `node start-server.mjs --install`；换端口使用 `node start-server.mjs --port 4174`。`npm start` 仍可作为最简备用命令。
+打开 <http://localhost:4173>。停止服务时，在运行服务的终端按 `Ctrl+C`。一键脚本自动检查并补齐依赖，把依赖报告写入 `data/logs/dependency-bootstrap.json`，服务输出追加到 `data/logs/server.log`。换端口使用 `node start-server.mjs --port 4174`；`--install` 仅为旧命令兼容别名。`npm start` 会绕过自动门禁，只适合已确认环境完整时的备用启动。
 
 ## 4. 数据存储、备份和删除
 

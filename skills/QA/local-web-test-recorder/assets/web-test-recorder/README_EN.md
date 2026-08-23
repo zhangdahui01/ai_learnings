@@ -83,12 +83,10 @@ Install and start it:
 
 ```bash
 cd /absolute/path/to/web-test-recorder
-npm install
-npx playwright install chromium firefox webkit
 node start-server.mjs
 ```
 
-Open <http://localhost:4173>. Press `Ctrl+C` in the server terminal to stop it. The launcher validates the environment and writes output to `data/logs/server.log`. Use `node start-server.mjs --install` when dependencies are missing, or `node start-server.mjs --port 4174` to change the port. `npm start` remains available as a fallback.
+Open <http://localhost:4173>. Press `Ctrl+C` in the server terminal to stop it. The launcher automatically runs missing `npm ci`, installs Chromium/Firefox/WebKit, and installs `graphifyy` into `data/tools/graphify/` when Python 3.10+ is available. Read `data/logs/dependency-bootstrap.json` for dependency status and `data/logs/server.log` for server output. Use `npm run bootstrap` to prepare without starting; initialize official Playwright Generator/Healer definitions with `--agent-target /absolute/repo --agent-loop codex|claude`. See the Skill-level `guideline.en.md` for complete instructions.
 
 ## 4. Data storage, backup, and deletion
 

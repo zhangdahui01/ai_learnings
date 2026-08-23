@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "start:easy": "node start-server.mjs",
+    "bootstrap": "node start-server.mjs --bootstrap-only",
     "dev": "node --watch server.js",
     "test:unit": "node --test tests/*.unit.mjs",
     "test:e2e": "node tests/e2e.mjs",

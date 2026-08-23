@@ -34,12 +34,74 @@ Local storage used by this workflow:
 The feature has no hard-coded dependency on this computer. Git contains only the Skill, Web application, and reviewed guides; `data/`, target repository source, accounts, and run artifacts are not committed.
 
 1. Clone `ai_learnings` on the work computer, or install `skills/QA/local-web-test-recorder` as `.agents/skills/local-web-test-recorder` in the Devin target repository.
-2. Install Node.js 20+ and Git. In `assets/web-test-recorder`, run `npm install`, `npx playwright install`, then `npm run start` or the bundled startup script.
+2. Install Node.js 20+ and Git; install Python 3.10+ when Graphify is required. In `assets/web-test-recorder`, run `node start-server.mjs`; the launcher installs npm packages, Playwright browsers, and isolated Graphify automatically.
 3. Re-import the workbook and build each repository graph from its absolute path on the work computer. Never copy development repositories into the Skill.
 4. Approve BDD, select one output repository and multiple reference graphs, then ask Devin: `@skills:local-web-test-recorder process queued Playwright generation jobs, replay, and repair until passing or reaching the limit`.
 5. Work-only sites must be validated on the work computer. Personal-computer tests cover Excel grouping, UI/API behavior, multi-graph selection, and queue state, not the corporate network, real accounts, or target site.
 
 To migrate reviewed state, stop both servers and copy only `data/store.json` plus required `data/generation-jobs/`, after checking for sensitive paths. Rebuild every repository graph because absolute paths usually change. Do not copy `node_modules`, browser profiles, or repository clones.
+
+### Automatic dependency bootstrap on startup (new machines)
+
+The launcher separates dependencies into three layers:
+
+| Layer | Automatic | Contents and location |
+|---|---|---|
+| System prerequisites | Cannot be installed safely | Node.js 20+ is required; Git supports clone/commit; Graphify needs Python 3.10+. Install these through the user or corporate software center because they require system policy/permissions. |
+| Product runtime | Yes | Runs lockfile-based `npm ci` when `node_modules` is missing and downloads missing Chromium, Firefox, and WebKit. |
+| Knowledge graph and agents | Automatic/explicit | Installs official PyPI `graphifyy` into `data/tools/graphify/` by default; initializes Agent definitions only when an explicit target repository and loop are supplied. |
+
+The minimal new-machine command is:
+
+```bash
+cd /absolute/path/to/ai_learnings/skills/QA/local-web-test-recorder/assets/web-test-recorder
+node start-server.mjs
+```
+
+Useful controls:
+
+```bash
+npm run bootstrap                           # prepare/check without starting
+node start-server.mjs --offline             # prohibit downloads
+node start-server.mjs --without-graphify    # use only the built-in graph
+node start-server.mjs --install-system-deps # Linux OS libraries; may need sudo
+```
+
+Every run writes `data/logs/dependency-bootstrap.json` with npm, browser, Graphify, and Test Agent status, and writes server output to `data/logs/server.log`. A Graphify failure is degraded rather than fatal because the built-in graph remains available. Missing npm/browser runtime that cannot be installed is fatal, so users see the cause before recording.
+
+#### Complete Graphify dependencies and manual installation
+
+Graphify requires Python 3.10+. Its official PyPI package is **`graphifyy` (double y)** while the executable is `graphify`. The launcher does not rely on a global PATH: it creates a venv under `data/tools/graphify/` and installs `graphifyy` there. This directory is a rebuildable cache and must not be committed.
+
+To manage Graphify globally, use either official isolated method:
+
+```bash
+uv tool install graphifyy
+# or: pipx install graphifyy
+graphify install --project --platform codex  # optional assistant Skill registration
+cd /absolute/path/to/reference-repo
+graphify .
+```
+
+Each repository gets its own `graphify-out/graph.json`, `graph.html`, and `GRAPH_REPORT.md`. The BDD UI can register multiple repositories and select multiple graphs. Code-only graph construction is local and needs no LLM/API key. Install extras such as `graphifyy[office]`, `graphifyy[pdf]`, or `graphifyy[openai]` only for Office/PDF/cloud-semantic use cases; never save API keys in the platform or Git.
+
+#### Installing Playwright Generator and Healer
+
+Playwright Planner, Generator, and Healer are Agent definitions bundled with Playwright; there are no separate Generator/Healer npm packages. The locked application Playwright provides `init-agents` after `npm ci`. Definitions write into the automation repository, so initialize only an explicit target:
+
+```bash
+# Codex
+node start-server.mjs --bootstrap-only \
+  --agent-target /absolute/path/to/e2e-repo \
+  --agent-loop codex
+
+# Claude Code
+node start-server.mjs --bootstrap-only \
+  --agent-target /absolute/path/to/e2e-repo \
+  --agent-loop claude
+```
+
+Official loops also include `copilot`, `vscode`, `vscode-legacy`, and `opencode`. Regenerate after upgrading Playwright. There is currently no official `--loop=devin`; Devin uses `.agents/skills/local-web-test-recorder`, the page-generated `agentInstruction`, Job APIs, and normal `npx playwright test`. The Healer consumes failure evidence and submits minimal repairs; the platform performs actual replay/attempt control, and QA still signs off.
 
 ## Contents
 
@@ -94,17 +156,16 @@ npm --version
 
 If either command is missing, reinstall Node.js or reopen the terminal.
 
-### Install dependencies and browsers
+### Automatically install dependencies, browsers, and Graphify
 
 Enter the generated project directory:
 
 ```bash
 cd /absolute/path/to/web-test-recorder
-npm install
-npx playwright install chromium firefox webkit
+node start-server.mjs --bootstrap-only
 ```
 
-The first installation requires internet access and may take several minutes.
+The launcher runs reproducible `npm ci`, downloads all missing browser binaries, and installs Graphify in isolation when Python 3.10+ is available. The first run needs internet access and may take several minutes; inspect `data/logs/dependency-bootstrap.json` for exact status.
 
 ## 3. Create the application
 
@@ -118,12 +179,10 @@ Install and start it:
 
 ```bash
 cd /absolute/path/to/web-test-recorder
-npm install
-npx playwright install chromium firefox webkit
 node start-server.mjs
 ```
 
-Open <http://localhost:4173>. Press `Ctrl+C` in the server terminal to stop it. The launcher checks Node.js, npm dependencies, Playwright Chromium, and the port, and appends server output to `data/logs/server.log`. Use `node start-server.mjs --install` when `node_modules` is missing, or `node start-server.mjs --port 4174` to change the port. `npm start` remains the minimal fallback.
+Open <http://localhost:4173>. Press `Ctrl+C` in the server terminal to stop it. The launcher automatically checks/repairs dependencies, writes `data/logs/dependency-bootstrap.json`, and appends server output to `data/logs/server.log`. Use `node start-server.mjs --port 4174` to change the port; `--install` is now only a compatibility alias. `npm start` bypasses bootstrap and is only a fallback after the environment is known to be complete.
 
 ## 4. Data storage, backup, and deletion
 

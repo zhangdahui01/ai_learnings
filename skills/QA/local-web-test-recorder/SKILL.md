@@ -31,7 +31,7 @@ BDD Case Center 的审核、Repo 图谱、生成弹窗、任务队列、错误�
 
 本流水线新增的存储约定：`data/store.json` 保存 Job 状态、每轮结果和 QA 签署；`data/generation-jobs/<job-id>/` 保存冻结输入；目标 Repo 保存 `specs/<tenant>/<region>/<scenarioId>.md` 与 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；`artifacts/generation/<job-id>/attempt-N/` 保存每轮 Trace 及目标配置生成的截图/录像。不得提交这些运行数据、目标 Repo 副本或凭据。
 
-跨电脑迁移时只复制或重新安装本 Skill，不复制开发 Repo、账号或 `data/`。在工作电脑重新执行 `npm install`、`npx playwright install`，启动服务后使用工作电脑上的绝对路径分别重建各 Repo 图谱。路径、图谱摘要和 Job 都保存在运行该服务的电脑；代码索引不会把目标 Repo 源文件复制进 Git。Devin 在目标仓库安装 `.agents/skills/local-web-test-recorder` 后，用 `@skills:local-web-test-recorder` 处理 queued/fix-queued Job。完整清单见中英文 guideline 的“跨电脑安装与迁移”。
+跨电脑迁移时只复制或重新安装本 Skill，不复制开发 Repo、账号或 `data/`。新机器只需预装 Node.js 20+、Git，以及启用 Graphify 时所需的 Python 3.10+；`node start-server.mjs` 默认自动执行 `npm ci`、补齐 Chromium/Firefox/WebKit，并把官方 `graphifyy` 隔离安装到 `data/tools/graphify/`。启动器不能猜测并修改业务 Repo；需要官方 Playwright Planner/Generator/Healer 时，显式传入 `--agent-target /absolute/repo --agent-loop codex|claude|vscode|opencode`，启动器才在该 Repo 执行 `playwright init-agents`。路径、图谱摘要和 Job 都保存在运行该服务的电脑；代码索引不会把目标 Repo 源文件复制进 Git。Devin 没有官方专用 loop 参数，仍用 `@skills:local-web-test-recorder`、Job API 和普通 Playwright CLI。完整清单见中英文 guideline 的“自动依赖安装”和“跨电脑安装与迁移”。
 
 命令行快速转换：
 
@@ -78,11 +78,11 @@ Devin: @skills:local-web-test-recorder 分析这次回放失败的 Trace。
 | npm、npx | 必需但无需单独安装 | 随 Node.js 一起安装；npm 安装依赖，npx 安装和运行 Playwright。 |
 | Playwright 浏览器 | 必需 | 使用命令下载 Chromium、Firefox 和 WebKit；不是操作系统里已有的普通浏览器。 |
 | Git | 按安装方式 | Claude Code/Devin 仓库安装和手工克隆时需要；Codex 使用 `$skill-installer` 时无需用户手工运行 Git。 |
-| Python 3 | 可选 | 仅运行 `scripts/validate_case.py` 时需要；录制器服务器不依赖 Python。 |
+| Python 3.10+ | Graphify 需要 | Web 服务器本身不依赖 Python；启动器用它在项目内创建隔离环境并安装官方 `graphifyy`。未安装时内置本地代码图仍可用。 |
 | Google Chrome | 可选 | 产品录制使用 Playwright 浏览器；仅在其他本地调试工作流明确需要正式 Chrome 时安装。 |
 | Firefox、Safari | 可选 | Firefox 可由 Playwright 安装；WebKit 用于 Safari 兼容性测试，但不等于真实 Apple Safari。 |
 
-准备至少约 2 GB 可用磁盘空间存放 Node 依赖、三个 Playwright 浏览器和运行产物。Linux 安装浏览器系统库可能需要 `sudo` 权限。本应用不需要 Java、Docker、数据库、Selenium Server 或浏览器扩展。
+准备至少约 3 GB 可用磁盘空间存放 Node 依赖、三个 Playwright 浏览器、Graphify 隔离环境和运行产物。Linux 安装浏览器系统库可能需要 `sudo` 权限。本应用不需要 Java、Docker、数据库、Selenium Server 或浏览器扩展。
 
 ### 第一步：为目标 Agent 安装 Skill
 
@@ -90,7 +90,7 @@ Devin: @skills:local-web-test-recorder 分析这次回放失败的 Trace。
 
 ```bash
 git clone https://github.com/zhangdahui01/ai_learnings.git
-cd ai_learnings/skills/local-web-test-recorder
+cd ai_learnings/skills/QA/local-web-test-recorder
 ```
 
 按使用平台选择一条命令：
@@ -157,7 +157,17 @@ npm run test:e2e
 node start-server.mjs
 ```
 
-看到服务器地址后打开 <http://localhost:4173>。保持启动终端不关闭；用 `Ctrl+C` 停止服务器。脚本会检查运行环境并把服务日志写入 `data/logs/server.log`。依赖缺失时使用 `node start-server.mjs --install`；端口被占用时使用 `node start-server.mjs --port 4174`。`npm start` 仍是备用启动方式。
+看到服务器地址后打开 <http://localhost:4173>。保持启动终端不关闭；用 `Ctrl+C` 停止服务器。启动器默认自动安装/检查锁定的 npm 依赖、三个 Playwright 浏览器和本地 Graphify，并把机器可读结果写到 `data/logs/dependency-bootstrap.json`，服务日志写到 `data/logs/server.log`。`--install` 为旧命令兼容别名，不再是首次安装所必需。只预装不启动用 `npm run bootstrap`；离线复用已有缓存用 `--offline`；不需要 Graphify 用 `--without-graphify`；Linux 允许安装系统库时用 `--install-system-deps`；换端口用 `--port 4174`。
+
+Playwright Generator/Healer 不是额外 npm 包：它们与 Planner 一起随当前 Playwright 提供。要在明确的自动化 Repo 中生成最新 Agent 定义，使用：
+
+```bash
+node start-server.mjs \
+  --agent-target /absolute/path/to/e2e-repo \
+  --agent-loop codex
+```
+
+Claude Code 把 loop 改为 `claude`。每次升级 Playwright 后重新运行。启动器绝不在没有 `--agent-target` 时写入未知 Repo；Devin 没有官方 `devin` loop，不能伪造。完整安装、Graphify 手工替代命令、Windows/Linux 差异和故障排查见 [中文指南](guideline.zh-CN.md) 与 [自动化知识与脚本生成](references/automation-knowledge.md)。
 
 ### 环境变量与代理
 
@@ -260,11 +270,11 @@ Treat installation as two layers: the Agent Skill teaches the selected coding ag
 | npm and npx | Yes, bundled | Installed with Node.js; do not install them separately. |
 | Playwright browsers | Yes | Download Chromium, Firefox, and WebKit with the commands below. |
 | Git | Depends on installation | Needed for Claude Code/Devin repository installation and manual cloning; Codex `$skill-installer` does not require manual Git commands. |
-| Python 3 | Optional | Needed only for `scripts/validate_case.py`, not for the recorder server. |
+| Python 3.10+ | Required for Graphify | The Web server itself does not require Python. The launcher uses it to install official `graphifyy` in a project-local isolated environment. The built-in graph remains available without it. |
 | Google Chrome | Optional | Product recording uses Playwright browsers; install stable Chrome only for separate local debugging workflows that explicitly need it. |
 | Firefox or Safari | Optional | Firefox can be installed by Playwright. WebKit approximates Safari compatibility but is not the Apple Safari application. |
 
-Allow roughly 2 GB of free disk space for dependencies, browser binaries, and artifacts. Linux system dependencies may require `sudo`. Java, Docker, a database, Selenium Server, and browser extensions are not required.
+Allow roughly 3 GB of free disk space for dependencies, browser binaries, the isolated Graphify environment, and artifacts. Linux system dependencies may require `sudo`. Java, Docker, a database, Selenium Server, and browser extensions are not required.
 
 ### Step 1: install the Skill for the target agent
 
@@ -272,7 +282,7 @@ Clone the repository and enter the canonical Skill directory:
 
 ```bash
 git clone https://github.com/zhangdahui01/ai_learnings.git
-cd ai_learnings/skills/local-web-test-recorder
+cd ai_learnings/skills/QA/local-web-test-recorder
 ```
 
 Choose one host command:
@@ -337,7 +347,17 @@ npm run test:e2e
 node start-server.mjs
 ```
 
-Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to stop. The launcher validates the environment and appends server output to `data/logs/server.log`. Use `node start-server.mjs --install` when dependencies are missing, or `node start-server.mjs --port 4174` when the default port is occupied. `npm start` remains a fallback.
+Open <http://localhost:4173> and keep the terminal running. Press `Ctrl+C` to stop. By default, the launcher installs/checks locked npm dependencies, all three Playwright browsers, and a local isolated Graphify environment. It writes a machine-readable report to `data/logs/dependency-bootstrap.json` and server output to `data/logs/server.log`. `--install` remains only as a compatibility alias. Use `npm run bootstrap` to prepare without starting, `--offline` to prohibit downloads, `--without-graphify` to use only the built-in graph, `--install-system-deps` on Linux when OS package installation is allowed, or `--port 4174` to change the port.
+
+Playwright Generator and Healer are not separate npm packages; Planner, Generator, and Healer definitions ship with Playwright. Initialize the current definitions only inside an explicit target repository:
+
+```bash
+node start-server.mjs \
+  --agent-target /absolute/path/to/e2e-repo \
+  --agent-loop codex
+```
+
+Use `claude` for Claude Code. Regenerate after upgrading Playwright. The launcher never mutates an unknown repository without `--agent-target`; there is no official `devin` loop, so Devin uses this Skill, the Job API, and normal Playwright CLI instead. See the English guide and [automation knowledge](references/automation-knowledge.md) for all commands and troubleshooting.
 
 ### Environment variables and proxies
 
