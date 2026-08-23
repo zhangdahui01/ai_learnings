@@ -252,6 +252,19 @@ function inferPreconditions(text) {
   return [...new Set(keys)];
 }
 
+function inferAbGroups(text) {
+  const values = [];
+  for (const rawLine of String(text || '').split(/[\n;]+/)) {
+    const line = clean(rawLine);
+    if (!/(?:\bA\/?B\b|\bAB\b)/i.test(line)) continue;
+    const match = line.match(/(?:A\/?B|AB)\s*(?:Key|ID)?\s*\[([^\]]+)\]\s*(?:is|=|:)\s*([^,;]+)/i)
+      || line.match(/\[([^\]]+)\]\s*(?:is|=|:)\s*([^,;]+)/i)
+      || line.match(/(?:A\/?B|AB)\s*(?:Key|ID)\s+([A-Za-z0-9_.-]+)\s*(?:is|=|:)\s*([^,;]+)/i);
+    values.push(match ? `[${clean(match[1])}] = ${clean(match[2])}` : line);
+  }
+  return [...new Set(values.filter(Boolean))];
+}
+
 function autoCategory(row) {
   return /pay|payment|card|cash|coupay|결제/i.test([row.sheetName, row.depth1, row.depth2, row.step, row.expected].join(' ')) ? 'payment' : 'non-payment';
 }
@@ -293,7 +306,7 @@ function buildBddCase(group, importId, duplicateCount, defaults = {}) {
   const testCase = {
     id: stableId(sourceKey),
     sourceKey,
-    source: { importId, fileName: first.fileName, sheetName: first.sheetName, sheetIndex: first.sheetIndex, rowNumber: first.rowNumber, rowNumbers: rows.map(row => row.rowNumber), caseId: scenarioId, caseIds: rows.map(row => row.caseId), raw: first.raw, rawRows, inherited: rows.map(row => row.inherited), sourceHash, groupingVersion: 2, groupingFields: ['depth1', 'depth2', 'depth3', 'prerequisite'] },
+    source: { importId, fileName: first.fileName, sheetName: first.sheetName, sheetIndex: first.sheetIndex, rowNumber: first.rowNumber, rowNumbers: rows.map(row => row.rowNumber), caseId: scenarioId, caseIds: rows.map(row => row.caseId), raw: first.raw, rawRows, inherited: rows.map(row => row.inherited), sourceHash, groupingVersion: 2, abExtractionVersion: 2, groupingFields: ['depth1', 'depth2', 'depth3', 'prerequisite'] },
     scenarioId,
     functionName: functionNameFor(group) || group.depth1 || first.sheetName,
     featureName: group.depth1 || first.sheetName,
@@ -311,7 +324,7 @@ function buildBddCase(group, importId, duplicateCount, defaults = {}) {
     bdd: {
       givenContext,
       preconditionKeys: inferPreconditions(givenContext),
-      abGroups: [], accounts: [], product: '', payment: '',
+      abGroups: inferAbGroups(givenContext), accounts: [], product: '', payment: '',
       steps: rows.map(row => ({ id: `row-${row.rowNumber}`, sourceRowNumber: row.rowNumber, sourceCaseId: row.caseId, when: clean(row.step), then: clean(row.expected) })),
       when: rows.map(row => clean(row.step)).filter(Boolean), then: rows.map(row => clean(row.expected)).filter(Boolean),
       commonChecks: [...COMMON_CHECKS],
@@ -414,7 +427,13 @@ export function upgradeBddCaseSchema(input) {
   const legacyGiven = Array.isArray(next.bdd.given) ? next.bdd.given : [];
   next.bdd.givenContext ??= legacyGiven.join('; ');
   next.bdd.preconditionKeys ||= inferPreconditions(next.bdd.givenContext);
-  next.bdd.abGroups ||= []; next.bdd.accounts ||= []; next.bdd.product ||= ''; next.bdd.payment ||= '';
+  next.source ||= {};
+  if (Number(next.source.abExtractionVersion || 0) < 2) {
+    const preserved = (Array.isArray(next.bdd.abGroups) ? next.bdd.abGroups : []).filter(value => !/(?:A\/?B|AB)\s*(?:Key|ID)/i.test(value));
+    next.bdd.abGroups = [...new Set([...preserved, ...inferAbGroups(next.bdd.givenContext)])];
+    next.source.abExtractionVersion = 2;
+  } else if (!Array.isArray(next.bdd.abGroups)) next.bdd.abGroups = inferAbGroups(next.bdd.givenContext);
+  next.bdd.accounts ||= []; next.bdd.product ||= ''; next.bdd.payment ||= '';
   next.bdd.when ||= []; next.bdd.then ||= [];
   if (!Array.isArray(next.bdd.steps)) {
     const count = Math.max(next.bdd.when.length, next.bdd.then.length);
@@ -423,7 +442,6 @@ export function upgradeBddCaseSchema(input) {
   next.bdd.steps = next.bdd.steps.map((step, index) => ({ id: step.id || `step-${index + 1}`, sourceRowNumber: step.sourceRowNumber ?? null, sourceCaseId: clean(step.sourceCaseId), when: clean(step.when), then: clean(step.then) }));
   next.bdd.when = next.bdd.steps.map(step => step.when).filter(Boolean);
   next.bdd.then = next.bdd.steps.map(step => step.then).filter(Boolean);
-  next.source ||= {};
   next.source.rowNumbers ||= next.source.rowNumber != null ? [next.source.rowNumber] : [];
   next.source.caseIds ||= next.source.caseId ? [next.source.caseId] : [];
   next.bdd.commonChecks ||= [...COMMON_CHECKS];

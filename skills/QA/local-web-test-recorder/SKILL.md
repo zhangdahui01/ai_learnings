@@ -12,14 +12,16 @@ Use this Agent Skill in Codex, Claude Code, or Devin to create and operate a loc
 此 Skill 现在也提供一条独立于录制回放的短期自动化流水线：
 
 1. 读取一个包含多个 Sheet 的 `.xlsx` 手工用例集合；保持 Sheet 从左到右和原始行号顺序，动态识别表头和继承的功能层级。
-2. 在每个 Sheet 内按有效的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 精确分组；同组多行合并为一个 BDD Case，多个 `No.` 压缩为 `MAIN_001_002` 形式。`Pre-requisite` 原值就是 Given，Excel 每一行的 Step 与 Expected Result 永远作为一对 When/Then 保存、编辑、排序和预览，不能拆成两个互不对应的列表。
+2. 在每个 Sheet 内按有效的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 精确分组；同组多行合并为一个 BDD Case，多个 `No.` 压缩为 `MAIN_001_002` 形式。`Pre-requisite` 原值就是 Given；其中 `AB Key [AB ID] is A/B` 会同时结构化为 Given 的 `- AB: [AB ID] = A/B`，不能丢失。Excel 每一行的 Step 与 Expected Result 永远作为一对 When/Then 保存、编辑、排序和预览，不能拆成两个互不对应的列表。
 3. 计算 `0–100` 的 Web UI 自动化可行度，并标记 `web-ui / hybrid / api / app / manual` 目标及阻碍条件。
-4. QA 在 **BDD Case Center** 按准确 Coupay 模板编辑 metadata、Given/When/Then、Common Check 和支付专项检查并批准；BDD 不做版本堆叠，保存即更新当前事实，但保留原始源行和编辑修订号。
+4. QA 在 **BDD Case Center** 按准确 Coupay 模板编辑 metadata、Given/When/Then、Common Check 和支付专项检查并批准；评审使用页面内弹窗，退回必须填写原因，批准后页面保留当前 Sheet/Case 并立即解除生成按钮门禁。BDD 不做版本堆叠，保存即更新当前事实，但保留原始源行和编辑修订号。
 5. 可为多个开发 Repo、组件/Page Object Repo 和既有 UI 自动化 Repo 分别建立 READY 知识图谱（推荐 Graphify，内置代码图可兜底）。生成时单选一个目标 Repo 写入 `specs/` 与 `tests/`，同时多选一个或多个图谱作为只读证据；批准 BDD 与至少一个 READY 图谱是必需项，Codegen 是可选证据。
 
-当用户要求“生成 Playwright 脚本”或“处理生成队列”时，不要只解释步骤：读取 `GET /api/state` 中 `generationJobs`。对 `queued` Job，按 `prompt`、`outputs.specPath`、图谱证据路径和可选录制引用调用当前环境可用的 Playwright Generator Agent，并把代码提交到 `PUT /api/generation-jobs/<job-id>/result`，请求体为 `{code, notes}`。服务器会把代码写入 Job 固定的目标 Repo `tests/<tenant>/<region>/<scenarioId>.spec.ts`；自动模式随后真实执行该文件，手工模式则进入 `awaiting-replay`，等待 QA 在页面点击回放。
+当用户要求“生成 Playwright 脚本”或“处理生成队列”时，不要只解释步骤：读取 `GET /api/state` 中 `generationJobs`，或用 `GET /api/generation-jobs/<job-id>` 读取弹窗创建的特定任务。对 `queued` Job，按 `agentInstruction`、`prompt`、`outputs.specPath`、每个已选图谱的命中文件/关键词和可选录制引用调用当前环境可用的 Playwright Generator Agent。既有 P0 自动化 Repo 是重要证据源：必须打开检索命中的测试/Page Object/Fixture 文件复用真实登录、支付和定位模式，但不能仅因名称相似直接复制。把代码提交到 `PUT /api/generation-jobs/<job-id>/result`，请求体为 `{code, notes}`。服务器会把代码写入 Job 固定的目标 Repo `tests/<tenant>/<region>/<scenarioId>.spec.ts`；自动模式随后真实执行该文件，手工模式则进入 `awaiting-replay`，等待 QA 在页面点击回放。
 
 对 `fix-queued` Job，读取 `fixPrompt` 以及 `validation.attempts` 最新一轮的错误摘要、stdout/stderr 和 artifacts；优先使用 Playwright Healer 的检查与修复思路，做最小、可解释的修复，不能删除关键断言或用固定等待掩盖失败。再次调用同一 result API 提交修复代码。自动模式会立即再回放，循环至 `awaiting-qa` 或达到 `validation.maxAttempts` 后进入 `failed`。不要自称 UI 服务器直接调用了宿主 Agent：服务器负责编排、回放和证据，当前 Codex/Claude Code/Devin Agent 负责生成及修复。
+
+第一次生成不准确时，QA/开发可以在生成队列直接编辑 `job.result.code` 并重新提交回放，也可以用 `POST /api/generation-jobs/<job-id>/recordings` 追加 `{recordings:["/absolute/path/codegen.spec.js"]}`。追加证据会进入冻结 Job 的 Prompt/fixPrompt，下一轮生成或修复必须结合它；已最终签署的 Job 不允许静默修改，应创建新 Job。
 
 回放通过不等于最终完成。`awaiting-qa` 必须由 QA 在生成队列检查脚本、错误历史和 Trace/截图/录像后签署；批准调用 `POST /api/generation-jobs/<job-id>/sign-off` 并提交 `{decision:"approved", reviewer, comments}`，状态才是 `signed-off`。QA 退回必须填写原因，任务进入 `fix-queued`（未超过上限时）。Agent 永远不能替 QA 自动签署。
 

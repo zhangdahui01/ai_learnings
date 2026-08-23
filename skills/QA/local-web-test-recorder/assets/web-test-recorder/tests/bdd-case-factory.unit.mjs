@@ -53,3 +53,23 @@ test('legacy one-row BDD cases remain executable and gain paired steps', () => {
   assert.deepEqual(legacy.bdd.steps.map(step => [step.when, step.then]), [['Click pay', 'Receipt is visible']]);
   assert.deepEqual(legacy.source.rowNumbers, [7]);
 });
+
+test('extracts AB Key from Pre-requisite into the Given AB section and migrates historical cases', async () => {
+  const workbook = new ExcelJS.Workbook();
+  const sheet = workbook.addWorksheet('AB payment');
+  sheet.addRow(['No.', 'Depth1', 'Pre-requisite', 'Step', 'Expected Result', 'Web']);
+  sheet.addRow(['AB_001', 'Payment', 'Entered payment window; AB Key [AB ID] is A/B', 'Open payment methods', 'Methods are visible', 'PASS']);
+  const imported = await parseManualCaseWorkbook(await workbook.xlsx.writeBuffer(), { fileName: 'ab.xlsx' });
+  assert.deepEqual(imported.cases[0].bdd.abGroups, ['[AB ID] = A/B']);
+  assert.match(imported.cases[0].gherkin, /- AB: \[AB ID\] = A\/B/);
+
+  const migrated = upgradeBddCaseSchema({
+    id: 'historical-ab', source: { caseId: 'AB_OLD' },
+    bdd: { givenContext: 'AB Key [experiment.payment] is control/test', when: [], then: [] },
+  });
+  assert.deepEqual(migrated.bdd.abGroups, ['[experiment.payment] = control/test']);
+  assert.equal(migrated.source.abExtractionVersion, 2);
+
+  const numbered = upgradeBddCaseSchema({ id: 'numbered-ab', source: { caseId: 'AB_NUMBERED', abExtractionVersion: 1 }, bdd: { givenContext: '3. AB Key 103680 is B', abGroups: ['3. AB Key 103680 is B'], when: [], then: [] } });
+  assert.deepEqual(numbered.bdd.abGroups, ['[103680] = B']);
+});

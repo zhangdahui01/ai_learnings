@@ -9,6 +9,10 @@ const STATUS_LABELS = {
 function activeStatus(status) { return ['queued', 'generating', 'generated', 'validating', 'fix-queued'].includes(status); }
 function statusClass(status) { return ['signed-off', 'awaiting-qa'].includes(status) ? 'success' : ['failed', 'rejected'].includes(status) ? 'failure' : ''; }
 function artifactLabel(type) { return { trace: 'Trace', screenshot: '截图', video: '录像', file: '文件' }[type] || '文件'; }
+async function copyText(value, toast) {
+  try { await navigator.clipboard.writeText(String(value || '')); toast('已复制，可粘贴给当前 AI Agent'); }
+  catch { toast('复制失败，请手工选择文本复制', 'error'); }
+}
 
 export function openGenerationDialog({ item, knowledge, runtime, api, esc, toast, refresh, lines }) {
   const ready = knowledge.filter(source => source.graphReady && source.graph?.status === 'ready');
@@ -16,13 +20,13 @@ export function openGenerationDialog({ item, knowledge, runtime, api, esc, toast
   node.className = 'modal-backdrop';
   node.innerHTML = `<div class="modal bdd-generation-modal">
     <h2>生成、回放与 QA 验收</h2>
-    <div class="generation-gates"><div class="pass">✓ BDD 已 QA 批准</div><div class="${ready.length ? 'pass' : 'fail'}">${ready.length ? '✓' : '✕'} Repo 知识图谱 ${ready.length ? 'READY' : '缺失'}</div></div>
+    <div class="generation-gates"><div class="pass">✓ 1. BDD 已 QA 批准（必需）</div><div class="${ready.length ? 'pass' : 'fail'}">${ready.length ? '✓' : '✕'} 2. Repo 知识图谱 ${ready.length ? 'READY（必需）' : '缺失'}</div><div class="pass">✓ 3. Generator Agent（推荐）</div><div>○ Codegen 录制（可选补充）</div></div>
     <div class="notice"><b>运行环境：</b>${esc(runtime.label)}。平台创建任务，当前 AI Agent 负责生成或修复；平台负责真实回放、错误证据和 QA 门禁。</div>
     <div class="field"><label>最终脚本写入的目标 Repo（单选、必需）</label><select id="generationTargetGraph">${ready.map(source => `<option value="${esc(source.id)}">${esc(source.name)} · ${esc(source.repoPath)}</option>`).join('')}</select><small>specs/ 和 tests/ 只写入这里；其他 Repo 仅作为只读参考证据。</small></div>
     <div class="field"><label>参考知识图谱（多选、至少一个）</label><div class="knowledge-selector">${ready.map((source,index) => `<label class="${index===0?'target-graph':''}" data-graph-option="${esc(source.id)}"><input type="checkbox" data-generation-graph value="${esc(source.id)}" checked><span><b>${esc(source.name)}</b><small>${esc(source.repoPath)} · ${esc(source.graph?.provider||'local graph')}</small></span></label>`).join('')}</div><small>可以同时参考开发 Repo、Page Object/组件 Repo 和既有 UI 自动化框架。目标 Repo 会始终被选中。</small></div>
     <div class="field"><label>生成后如何回放</label><select id="replayMode"><option value="auto">自动回放（推荐）</option><option value="manual">由 QA 手工点击回放</option></select><small>自动回放失败后可进入 Agent 修复队列；每次修复提交后再次自动回放。</small></div>
     <div class="field-grid"><label class="check-row"><input type="checkbox" id="autoFix" checked> 失败后进入自动修复队列</label><div class="field"><label>最大回放 / 修复轮次</label><select id="maxAttempts">${[1,2,3,4,5,6,8,10].map(value => `<option ${value === 5 ? 'selected' : ''}>${value}</option>`).join('')}</select></div></div>
-    <label class="check-row"><input type="checkbox" id="useGenerator" checked> 使用 Playwright Generator Agent</label>
+    <label class="check-row"><input type="checkbox" id="useGenerator" checked> 使用当前 ${esc(runtime.label)} 调用 Playwright Generator Agent（推荐）</label>
     <div class="field"><label>可选：Playwright Codegen 原生脚本（每行一个绝对路径）</label><textarea id="generatorRecordings" placeholder="/repo/recordings/coupay-login.spec.js"></textarea><small>复杂 iframe、支付键盘和弹窗可以用录制脚本补充证据。</small></div>
     <div class="qa-gate-copy"><b>最终门禁</b><span>回放通过 ≠ 正式通过。任务会停在“等待 QA 签署”，必须由 QA 填写签署人并批准。</span></div>
     <div class="output-preview"><b>输出约定</b><code>specs/${esc(item.tenant.toLowerCase())}/${esc(item.region.toLowerCase())}/${esc(item.scenarioId)}.md</code><code>tests/${esc(item.tenant.toLowerCase())}/${esc(item.region.toLowerCase())}/${esc(item.scenarioId)}.spec.ts</code></div>
@@ -51,7 +55,8 @@ export function openGenerationDialog({ item, knowledge, runtime, api, esc, toast
         useGeneratorAgent: node.querySelector('#useGenerator').checked,
         recordings: lines(node.querySelector('#generatorRecordings').value),
       }) });
-      node.querySelector('#generationResult').innerHTML = `<div class="notice success"><strong>任务已创建</strong><p>${esc(STATUS_LABELS[job.status] || job.status)}</p><p>目标脚本：${esc(job.outputs.testPath || job.outputs.testRelativePath)}</p></div>`;
+      node.querySelector('#generationResult').innerHTML = `<div class="notice success"><strong>任务已创建：${esc(job.id)}</strong><p>${esc(STATUS_LABELS[job.status] || job.status)}</p><p>目标脚本：${esc(job.outputs.testPath || job.outputs.testRelativePath)}</p><p>下一步：把下面指令交给当前 AI Agent；Agent 会读取任务、图谱证据并提交脚本，平台随后回放和循环修复。</p><pre id="newAgentInstruction">${esc(job.agentInstruction||'')}</pre><button class="btn small secondary" id="copyNewAgentInstruction">复制 Agent 指令</button></div>`;
+      node.querySelector('#copyNewAgentInstruction').onclick=()=>copyText(job.agentInstruction,toast);
       toast('生成、回放与 QA 验收任务已创建');
       await refresh(true);
     } catch (error) { toast(error.message, 'error'); }
@@ -75,11 +80,17 @@ export function renderGenerationQueue({ jobs, cases, runtime, api, esc, toast, r
       const validation = job.validation || {}; const qa = job.qaSignOff || {};
       const caseItem = cases.find(item => item.id === job.bddCaseId);
       const canReplay = ['generated', 'awaiting-replay', 'failed', 'fix-queued', 'awaiting-qa'].includes(job.status);
+      const instruction=job.agentInstruction||`使用 local-web-test-recorder Skill 处理 Playwright 生成任务 ${job.id}，生成或修复后提交 result API，回放通过后等待 QA 签署。`;
+      const graphSummary=(job.sources?.retrievalSummary||[]).map(source=>`${source.sourceName}: ${source.matchedFiles} files`).join(' · ');
       return `<article class="job-row" data-generation-job="${esc(job.id)}"><div class="split"><div><h3>${esc(caseItem?.scenarioId || job.bddCaseId)}</h3><p>${esc(job.generator?.engine || '历史任务')} · ${esc(job.runtime?.label || '历史任务')}</p><small>${esc(job.outputs?.testRelativePath || '历史任务未记录输出路径')}</small></div><span class="badge ${statusClass(job.status)}">${esc(STATUS_LABELS[job.status] || job.status)}</span></div>
         ${pipeline(job)}
         <div class="job-policy"><span>${validation.replayMode === 'manual' ? '手工回放' : '自动回放'}</span><span>${validation.autoFix === false ? '不自动修复' : '自动修复'}</span><span>${validation.attemptCount || 0} / ${validation.maxAttempts || 5} 次</span><span>QA：${esc(qa.status || 'pending')}</span></div>
+        <div class="job-evidence"><b>本任务冻结的输入</b><span>目标 Repo：${esc(job.sources?.knowledgeSources?.find(source=>source.id===job.sources?.targetKnowledgeSourceId)?.name||'历史任务未记录')}</span><span>图谱检索：${esc(graphSummary||'历史任务未记录命中文件')}</span><span>Codegen：${esc((job.sources?.recordings||[]).join(', ')||'未提供')}</span></div>
+        ${['queued','fix-queued'].includes(job.status)?`<div class="notice"><b>交给当前 AI Agent</b><pre>${esc(instruction)}</pre><button class="btn small secondary" data-copy-agent="${esc(job.id)}">复制 Agent 指令</button></div>`:''}
         ${job.status === 'fix-queued' ? `<div class="notice warning"><b>等待当前 AI Agent 修复</b><p>Agent 应读取最新错误、Trace/截图/录像，最小化修改脚本并重新提交；平台随后继续回放。</p><details><summary>修复 Prompt</summary><pre>${esc(job.fixPrompt || '')}</pre></details></div>` : ''}
         <div class="actions"><button class="btn small primary" data-replay="${esc(job.id)}" ${canReplay ? '' : 'disabled'}>▶ 开始回放</button><button class="btn small secondary" data-sign="${esc(job.id)}" ${job.status === 'awaiting-qa' ? '' : 'disabled'}>QA 签署</button></div>
+        ${job.result?.code?`<details><summary>生成脚本（可由 QA/开发修正后重新回放）</summary><div class="field"><textarea class="generation-code-editor" data-job-code="${esc(job.id)}">${esc(job.result.code)}</textarea></div><div class="actions"><button class="btn small primary" data-save-job-code="${esc(job.id)}">保存代码并重新回放</button></div></details>`:''}
+        ${job.status!=='signed-off'?`<details><summary>追加 Codegen 录制证据</summary><p class="muted">第一次生成不准确时，可录制复杂 iframe、支付键盘或弹窗流程并追加绝对路径；Agent 下一轮会同时参考。</p><div class="field"><textarea data-job-recordings="${esc(job.id)}" placeholder="/absolute/path/to/recording.spec.js"></textarea></div><button class="btn small secondary" data-add-recordings="${esc(job.id)}">追加证据</button></details>`:''}
         <details ${validation.attempts?.length ? 'open' : ''}><summary>回放记录与错误 (${validation.attempts?.length || 0})</summary><div class="attempt-list">${(validation.attempts || []).slice().reverse().map(attemptHtml).join('') || '<p class="muted">尚未回放。</p>'}</div></details>
         <details><summary>全流程进度</summary><ol class="progress-log">${(job.progress || []).map(step => `<li><b>${esc(step.stage)}</b> · ${esc(step.status)}<span>${esc(step.message)}</span><time>${esc(step.at)}</time></li>`).join('')}</ol></details>
         <details><summary>生成 Prompt / 证据</summary><pre>${esc(job.prompt || '')}</pre></details>
@@ -92,6 +103,9 @@ export function renderGenerationQueue({ jobs, cases, runtime, api, esc, toast, r
     catch (error) { toast(error.message, 'error'); button.disabled = false; button.textContent = '▶ 开始回放'; }
   });
   document.querySelectorAll('[data-sign]').forEach(button => button.onclick = () => openSignOff(button.dataset.sign, { api, esc, toast, refresh }));
+  document.querySelectorAll('[data-copy-agent]').forEach(button=>button.onclick=()=>{const job=jobs.find(item=>item.id===button.dataset.copyAgent);return copyText(job?.agentInstruction||`使用 local-web-test-recorder Skill 处理 Playwright 生成任务 ${button.dataset.copyAgent}`,toast);});
+  document.querySelectorAll('[data-save-job-code]').forEach(button=>button.onclick=async()=>{const jobId=button.dataset.saveJobCode,code=document.querySelector(`[data-job-code="${jobId}"]`).value;button.disabled=true;try{await api(`/api/generation-jobs/${jobId}/result`,{method:'PUT',body:JSON.stringify({code,notes:'QA/开发在线修正后重新提交'})});toast('代码已保存，并按本任务策略进入回放');await refresh(true);}catch(error){toast(error.message,'error');button.disabled=false;}});
+  document.querySelectorAll('[data-add-recordings]').forEach(button=>button.onclick=async()=>{const jobId=button.dataset.addRecordings,recordings=document.querySelector(`[data-job-recordings="${jobId}"]`).value.split(/\n+/).map(value=>value.trim()).filter(Boolean);button.disabled=true;try{await api(`/api/generation-jobs/${jobId}/recordings`,{method:'POST',body:JSON.stringify({recordings})});toast('Codegen 证据已追加，下一轮生成或修复会使用');await refresh(true);}catch(error){toast(error.message,'error');button.disabled=false;}});
   if (jobs.some(job => activeStatus(job.status))) window.setTimeout(() => refresh(true), 3000);
 }
 

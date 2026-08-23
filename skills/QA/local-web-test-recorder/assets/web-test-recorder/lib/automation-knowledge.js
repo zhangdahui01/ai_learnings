@@ -87,11 +87,22 @@ export function selectKnowledgeEvidence(indexes, testCase, limit = 12) {
   const pairedSteps = (testCase.bdd.steps || []).flatMap(step => [step.when, step.then]);
   const query = [testCase.title, testCase.functionName || testCase.featureName, testCase.bdd.givenContext, ...(testCase.bdd.preconditionKeys || []), ...pairedSteps, ...(testCase.bdd.when || []), ...(testCase.bdd.then || [])].join(' ').toLowerCase();
   const terms = unique(query.split(/[^\p{L}\p{N}_-]+/u).filter(term => term.length >= 3));
-  return indexes.flatMap(index => index.entries.map(entry => {
-    const haystack = `${entry.path} ${entry.tests.join(' ')} ${entry.locators.join(' ')} ${entry.flows.join(' ')} ${entry.symbols.join(' ')}`.toLowerCase();
-    const score = terms.reduce((total, term) => total + (haystack.includes(term) ? 1 : 0), 0);
-    return { knowledgeSourceId: index.id, knowledgeSourceName: index.name, ...entry, score };
-  })).filter(item => item.score > 0).sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)).slice(0, limit);
+  const rankedBySource = indexes.map(index => (index.entries || []).map(entry => {
+    const haystack = `${entry.path} ${(entry.tests || []).join(' ')} ${(entry.locators || []).join(' ')} ${(entry.flows || []).join(' ')} ${(entry.symbols || []).join(' ')}`.toLowerCase();
+    const matchedTerms = terms.filter(term => haystack.includes(term));
+    const pathBoost = matchedTerms.filter(term => entry.path.toLowerCase().includes(term)).length * 2;
+    const testBoost = matchedTerms.filter(term => (entry.tests || []).some(name => name.toLowerCase().includes(term))).length * 2;
+    const score = matchedTerms.length + pathBoost + testBoost;
+    return { knowledgeSourceId: index.id, knowledgeSourceName: index.name, ...entry, score, matchedTerms };
+  }).filter(item => item.score > 0).sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)));
+  const selected = [];
+  // Keep every selected repository represented so an existing P0 automation
+  // suite cannot be hidden by a larger application repository.
+  for (const ranked of rankedBySource) selected.push(...ranked.slice(0, 1));
+  const selectedKeys = new Set(selected.map(item => `${item.knowledgeSourceId}:${item.path}`));
+  const remaining = rankedBySource.flat().filter(item => !selectedKeys.has(`${item.knowledgeSourceId}:${item.path}`)).sort((a, b) => b.score - a.score || a.path.localeCompare(b.path));
+  selected.push(...remaining.slice(0, Math.max(0, limit - selected.length)));
+  return selected.sort((a, b) => b.score - a.score || a.path.localeCompare(b.path)).slice(0, limit);
 }
 
 export function detectAgentRuntime(env = process.env) {
@@ -99,6 +110,14 @@ export function detectAgentRuntime(env = process.env) {
   if (env.CLAUDE_CODE || env.CLAUDECODE) return { id: 'claude-code', label: 'Claude Code', initCommand: 'npx playwright init-agents --loop=claude' };
   if (env.DEVIN || env.DEVIN_SESSION_ID) return { id: 'devin', label: 'Devin', initCommand: null };
   return { id: 'local-agent', label: '当前本地 Agent', initCommand: null };
+}
+
+function agentInstruction(runtime, jobId) {
+  const task = `处理 Playwright 生成任务 ${jobId}：读取已批准 BDD、多 Repo 知识图谱证据和可选 Codegen；生成脚本后调用 result API，真实回放失败则读取 fixPrompt 和附件做最小修复，循环到 awaiting-qa 或达到上限，不替 QA 签署。`;
+  if (runtime.id === 'codex') return `使用 $local-web-test-recorder，${task}`;
+  if (runtime.id === 'claude-code') return `/local-web-test-recorder ${task}`;
+  if (runtime.id === 'devin') return `@skills:local-web-test-recorder ${task}`;
+  return `使用 local-web-test-recorder Skill，${task}`;
 }
 
 export async function createGenerationJob({ testCase, knowledgeSources = [], targetKnowledgeSource = null, recordings = [], useGeneratorAgent = true, outputDir, targetRepoPath, replayMode = 'auto', autoFix = true, maxAttempts = 5 }) {
@@ -116,12 +135,13 @@ export async function createGenerationJob({ testCase, knowledgeSources = [], tar
       knowledgeSourceIds: knowledgeSources.map(source => source.id),
       knowledgeSources: knowledgeSources.map(source => ({ id: source.id, name: source.name, repoPath: source.repoPath, provider: source.graph?.provider || 'legacy-index' })),
       targetKnowledgeSourceId: targetKnowledgeSource?.id || knowledgeSources[0]?.id || null,
-      knowledge: evidence.map(item => ({ sourceId: item.knowledgeSourceId, sourceName: item.knowledgeSourceName, path: item.path, score: item.score })),
+      knowledge: evidence.map(item => ({ sourceId: item.knowledgeSourceId, sourceName: item.knowledgeSourceName, path: item.path, score: item.score, matchedTerms: item.matchedTerms })),
+      retrievalSummary: knowledgeSources.map(source => ({ sourceId: source.id, sourceName: source.name, matchedFiles: evidence.filter(item => item.knowledgeSourceId === source.id).length })),
       recordings,
     },
     generator: { useGeneratorAgent, engine: useGeneratorAgent ? 'playwright-test-generator-agent' : 'codegen-assisted', verificationRequired: true },
     outputs: { specRelativePath, testRelativePath },
-    prompt: `Generate ${testRelativePath} from the approved specification at ${specRelativePath}. The approved BDD and all selected repository code graphs are mandatory evidence. Selected graphs: ${knowledgeSources.map(source => `${source.name} (${source.repoPath})`).join('; ')}. The output repository is ${targetKnowledgeSource?.name || knowledgeSources[0]?.name || 'the configured target'} at ${targetRepoPath || targetKnowledgeSource?.repoPath || ''}. Reuse relevant repository flows and locators only after checking the graph-backed files. ${recordings.length ? `Optional native Codegen references: ${recordings.join(', ')}.` : ''} Inspect the live UI, prefer role/test-id locators, execute the test, and save the verified TypeScript file at the requested output path.\n\n${testCase.generatorMarkdown}`,
+    prompt: `Generate ${testRelativePath} from the approved specification at ${specRelativePath}. The approved BDD and all selected repository code graphs are mandatory evidence. Selected graphs: ${knowledgeSources.map(source => `${source.name} (${source.repoPath})`).join('; ')}. Retrieved graph-backed files: ${evidence.map(item => `${item.knowledgeSourceName}:${item.path} [score=${item.score}]`).join('; ') || 'no lexical match; inspect the selected graphs manually'}. The output repository is ${targetKnowledgeSource?.name || knowledgeSources[0]?.name || 'the configured target'} at ${targetRepoPath || targetKnowledgeSource?.repoPath || ''}. Reuse relevant repository flows and locators only after opening and checking those source files; do not copy a case only because its name is similar. ${recordings.length ? `Optional native Codegen references: ${recordings.join(', ')}.` : ''} Inspect the live UI, prefer role/test-id locators, execute the test, and save the verified TypeScript file at the requested output path.\n\n${testCase.generatorMarkdown}`,
     validation: {
       replayMode: replayMode === 'manual' ? 'manual' : 'auto',
       autoFix: autoFix !== false,
@@ -134,6 +154,7 @@ export async function createGenerationJob({ testCase, knowledgeSources = [], tar
     qaSignOff: { status: 'pending', reviewer: '', comments: '', at: null },
     result: null,
   };
+  job.agentInstruction = agentInstruction(runtime, id);
   if (outputDir) {
     const folder = join(outputDir, id);
     await mkdir(folder, { recursive: true });

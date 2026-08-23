@@ -9,6 +9,8 @@ const PRECONDITIONS = [
   ['settings.oneTouchPay.enabled','已启用一键支付'],
 ];
 let rememberedBddTab = 'cases';
+let rememberedBddSelectedId = '';
+let rememberedBddGroup = '';
 
 export function renderBddCenter(ctx) {
   const { $, $$, api, esc, toast, refresh, pageHeading, getState } = ctx;
@@ -16,10 +18,10 @@ export function renderBddCenter(ctx) {
   const state = getState();
   const cases = [...(state.bddCases || [])].sort((a,b)=>(a.source.sheetIndex??999)-(b.source.sheetIndex??999)||a.source.rowNumber-b.source.rowNumber);
   const imports = state.bddImports || []; const knowledge = state.knowledgeSources || []; const jobs = state.generationJobs || [];
-  let tab=rememberedBddTab, selectedId=cases[0]?.id, selectedGroup='', runtime={label:'正在检测…'};
+  let tab=rememberedBddTab, selectedId=cases.some(item=>item.id===rememberedBddSelectedId)?rememberedBddSelectedId:cases[0]?.id, selectedGroup='', runtime={label:'正在检测…'};
   const groupKey=item=>`${item.source.fileName}::${item.source.sheetName}`;
   const groups=[...new Map(cases.map(item=>[groupKey(item),{key:groupKey(item),fileName:item.source.fileName,name:item.source.sheetName,index:item.source.sheetIndex??999}])).values()].sort((a,b)=>a.index-b.index||a.name.localeCompare(b.name));
-  selectedGroup=groups[0]?.key||'';
+  selectedGroup=groups.some(group=>group.key===rememberedBddGroup)?rememberedBddGroup:(groups.find(group=>cases.some(item=>item.id===selectedId&&groupKey(item)===group.key))?.key||groups[0]?.key||'');
   pageHeading('BDD Case Center','测试资产 / BDD Case Center');
   $('#content').innerHTML=`
     <div class="hero bdd-hero"><div><h2>Manual Case → BDD → Playwright</h2><p>按 Excel Sheet 与原始行号审核；批准后结合 Repo 知识图谱生成 Playwright TypeScript。</p></div><button class="btn primary" id="bddImportButton">导入多 Sheet Excel</button><input id="bddFile" type="file" accept=".xlsx" hidden></div>
@@ -43,10 +45,10 @@ export function renderBddCenter(ctx) {
       const rows=cases.filter(item=>groupKey(item)===selectedGroup&&(!band||item.automation.band===band)&&(!review||item.review.status===review)&&(!query||`${item.scenarioId} ${item.title} ${(item.source.rowNumbers||[item.source.rowNumber]).join(' ')}`.toLowerCase().includes(query)));
       if(!rows.some(item=>item.id===selectedId))selectedId=rows[0]?.id;
       $('#bddList').innerHTML=rows.map(item=>`<button class="bdd-case-row ${item.id===selectedId?'selected':''}" data-bdd-id="${item.id}"><b>Excel ${(item.source.rowNumbers||[item.source.rowNumber]).join(', ')} 行</b><span><strong>${esc(item.scenarioId)} · ${esc(item.title)}</strong><small>${esc(item.functionName)}</small></span><span class="score score-${item.automation.band}">${item.automation.score}</span><em>${esc(item.review.status)}</em></button>`).join('')||'<div class="empty"><p>当前 Sheet 没有匹配结果</p></div>';
-      $$('[data-bdd-id]').forEach(button=>button.onclick=()=>{selectedId=button.dataset.bddId;renderList();renderDetail();});
+      $$('[data-bdd-id]').forEach(button=>button.onclick=()=>{selectedId=button.dataset.bddId;rememberedBddSelectedId=selectedId;renderList();renderDetail();});
       renderDetail();
     };
-    $$('[data-sheet]').forEach(button=>button.onclick=()=>{selectedGroup=button.dataset.sheet;selectedId=cases.find(item=>groupKey(item)===selectedGroup)?.id;renderCases();});
+    $$('[data-sheet]').forEach(button=>button.onclick=()=>{selectedGroup=button.dataset.sheet;rememberedBddGroup=selectedGroup;selectedId=cases.find(item=>groupKey(item)===selectedGroup)?.id;rememberedBddSelectedId=selectedId||'';renderCases();});
     ['bddSearch','bddBand','bddReview'].forEach(id=>$('#'+id).oninput=renderList);renderList();
   };
 
@@ -63,7 +65,8 @@ export function renderBddCenter(ctx) {
       <div class="editor-section"><div class="split"><div><h3>When / Then 成对步骤</h3><p class="muted">每个 Excel Step 只和同一行 Expected Result 配对；调整顺序时二者一起移动。</p></div><button class="btn small secondary" id="addBddPair" type="button">+ 增加一对</button></div><div id="bddPairs" class="when-then-list">${pairs.map(pairHtml).join('')}</div><p class="muted">Common Check 固定附加；payment 类别额外附加 Specific-Payment Check。</p></div>
       <details open><summary>BDD specs/*.md 预览</summary><pre>${esc(item.gherkin)}</pre></details><details><summary>不可变原始 Excel 行（${sourceRows.length} 行）</summary><pre>${esc(JSON.stringify(item.source.rawRows||[{rowNumber:item.source.rowNumber,caseId:item.source.caseId,raw:item.source.raw}],null,2))}</pre></details>
       <div class="automation-assessment"><strong>${esc(item.automation.target)} · ${item.automation.score}% UI 自动化可行度</strong>${item.automation.blockers.map(x=>`<p><b>${esc(x.label)}</b>：${esc(x.mitigation)}</p>`).join('')||'<p>未检测到特殊阻碍。</p>'}</div>
-      <div class="actions sticky-actions"><button class="btn primary" id="saveBdd">保存修改</button><button class="btn secondary" id="approveBdd">QA 批准</button><button class="btn secondary" id="rejectBdd">退回</button><button class="btn primary" id="openGeneration" ${item.review.status==='approved'?'':'disabled'}>生成 Playwright 脚本</button></div><div id="bddJobResult"></div>`;
+      <div class="review-status-card ${item.review.status==='approved'?'approved':item.review.status==='rejected'?'rejected':''}"><div><strong>当前 QA 状态：${esc(item.review.status)}</strong><span>${item.review.reviewedAt?`${esc(item.review.reviewer||'QA')} · ${esc(item.review.reviewedAt)}`:'尚未评审'}</span></div><p>${item.review.status==='approved'?'已满足脚本生成的 BDD 审批门禁。':'生成 Playwright 脚本前必须先完成 QA 批准。'}</p>${item.review.comments?`<blockquote>${esc(item.review.comments)}</blockquote>`:''}</div>
+      <div class="actions sticky-actions"><button class="btn primary" id="saveBdd">保存修改</button><button class="btn secondary" id="approveBdd">QA 批准</button><button class="btn secondary" id="rejectBdd">退回</button><button class="btn primary" id="openGeneration" ${item.review.status==='approved'?'':'disabled'} title="${item.review.status==='approved'?'选择知识图谱和生成/回放策略':'请先完成 QA 批准'}">生成 Playwright 脚本</button></div><div id="bddJobResult"></div>`;
     const bindPairActions=()=>{$$('[data-bdd-pair]').forEach(card=>{card.querySelector('[data-pair-up]').onclick=()=>{const prev=card.previousElementSibling;if(prev)card.parentElement.insertBefore(card,prev);};card.querySelector('[data-pair-down]').onclick=()=>{const next=card.nextElementSibling;if(next)card.parentElement.insertBefore(next,card);};card.querySelector('[data-pair-delete]').onclick=()=>card.remove();});};
     bindPairActions();
     $('#addBddPair').onclick=()=>{const holder=$('#bddPairs');holder.insertAdjacentHTML('beforeend',pairHtml({id:`qa-${Date.now()}`,when:'',then:''},holder.children.length));bindPairActions();};
@@ -78,7 +81,13 @@ export function renderBddCenter(ctx) {
 
   const openGeneration=item=>openGenerationDialog({item,knowledge,runtime,api,esc,toast,refresh,lines});
 
-  const review=async(item,status)=>{const hasErrors=item.validationIssues.some(issue=>issue.severity==='error');const comments=prompt(t(status==='approved'?'QA 评审说明':'退回原因'),'')??'';if(status==='approved'&&hasErrors&&!comments.trim())return toast('存在阻断项，请填写覆盖理由','error');try{await api(`/api/bdd-cases/${item.id}/review`,{method:'POST',body:JSON.stringify({status,comments,reviewer:'local-qa',overrideValidation:status==='approved'&&hasErrors})});toast(status==='approved'?'BDD 已批准':'BDD 已退回');await refresh();}catch(error){toast(error.message,'error');}};
+  const review=(item,status)=>{
+    const hasErrors=(item.validationIssues||[]).some(issue=>issue.severity==='error');
+    const node=document.createElement('div');node.className='modal-backdrop';
+    node.innerHTML=`<div class="modal qa-review-modal"><h2>${status==='approved'?'QA 批准 BDD Case':'退回 BDD Case'}</h2><p class="muted">${esc(item.scenarioId)} · ${esc(item.functionName)}</p>${hasErrors?`<div class="notice warning"><b>存在阻断校验项</b><p>批准时必须明确勾选覆盖并填写理由；推荐先修复 BDD。</p>${(item.validationIssues||[]).filter(issue=>issue.severity==='error').map(issue=>`<div>${esc(issue.message)}</div>`).join('')}</div>`:''}<div class="field"><label>QA 评审人</label><input id="bddReviewer" value="local-qa" placeholder="姓名或团队账号"></div><div class="field"><label>${status==='approved'?'QA 评审说明':'退回原因（必填）'}</label><textarea id="bddReviewComments" placeholder="${status==='approved'?'说明核对范围；覆盖阻断项时必填':'说明需要修改的字段和原因'}"></textarea></div>${status==='approved'&&hasErrors?'<label class="check-row"><input id="bddOverrideValidation" type="checkbox"> 我已检查并明确覆盖上述阻断项</label>':''}<div id="bddReviewError"></div><div class="actions"><button class="btn ${status==='approved'?'primary':'danger'}" id="confirmBddReview">${status==='approved'?'确认批准':'确认退回'}</button><button class="btn secondary" data-close>取消</button></div></div>`;
+    document.body.append(node);node.querySelector('[data-close]').onclick=()=>node.remove();
+    node.querySelector('#confirmBddReview').onclick=async()=>{const button=node.querySelector('#confirmBddReview'),reviewer=node.querySelector('#bddReviewer').value.trim(),comments=node.querySelector('#bddReviewComments').value.trim(),overrideValidation=Boolean(node.querySelector('#bddOverrideValidation')?.checked);const error=node.querySelector('#bddReviewError');error.innerHTML='';if(!reviewer)return error.innerHTML='<div class="notice danger-text">请填写 QA 评审人。</div>';if(status==='rejected'&&!comments)return error.innerHTML='<div class="notice danger-text">退回时必须填写原因。</div>';if(status==='approved'&&hasErrors&&(!overrideValidation||!comments))return error.innerHTML='<div class="notice danger-text">覆盖阻断项必须勾选确认并填写理由。</div>';button.disabled=true;button.textContent='提交中…';try{await api(`/api/bdd-cases/${item.id}/review`,{method:'POST',body:JSON.stringify({status,comments,reviewer,overrideValidation})});rememberedBddSelectedId=item.id;rememberedBddGroup=groupKey(item);toast(status==='approved'?'BDD 已批准，可生成 Playwright 脚本':'BDD 已退回');node.remove();await refresh();}catch(requestError){error.innerHTML=`<div class="notice danger-text">${esc(requestError.message)}</div>`;button.disabled=false;button.textContent=status==='approved'?'确认批准':'确认退回';}};
+  };
 
   const openImport=()=>{const node=document.createElement('div');node.className='modal-backdrop';node.innerHTML=`<div class="modal"><h2>导入多 Sheet Excel</h2><p class="muted">这些默认值会写入本次导入的每个 BDD Case，之后可逐条修改。</p><div class="field-grid"><div class="field"><label>tenant</label><select id="importTenant"><option>coupay</option><option>payment</option><option>cash</option><option>gpayment</option></select></div><div class="field"><label>region</label><select id="importRegion"><option>KR</option><option>TW</option><option>JP</option></select></div><div class="field"><label>language</label><select id="importLanguage"><option>Korean</option><option>English</option><option>Japanese</option></select></div><div class="field"><label>category</label><select id="importCategory"><option value="auto">自动判断</option><option>payment</option><option>non-payment</option></select></div></div><div class="actions"><button class="btn primary" id="chooseExcel">选择 .xlsx</button><button class="btn secondary" data-close>取消</button></div></div>`;document.body.append(node);$('[data-close]',node).onclick=()=>node.remove();$('#chooseExcel',node).onclick=()=>{$('#bddFile').dataset.defaults=JSON.stringify({tenant:$('#importTenant',node).value,region:$('#importRegion',node).value,language:$('#importLanguage',node).value,category:$('#importCategory',node).value,platform:'auto'});node.remove();$('#bddFile').click();};};
   const lines=value=>String(value||'').split(/\n+/).map(x=>x.trim()).filter(Boolean);

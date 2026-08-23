@@ -26,7 +26,7 @@ const recordingSessions = new Map();
 let fixtureFlakyHits = 0;
 
 await Promise.all([dataDir, recordingsDir, artifactsDir, suitesDir, profilesDir, authDir].map(dir => mkdir(dir, { recursive: true })));
-if (!existsSync(storePath)) await writeFile(storePath, JSON.stringify({ schemaVersion: 13, plans: [], suites: [], cases: [], flows: [], runs: [], bddCases: [], bddImports: [], knowledgeSources: [], generationJobs: [] }, null, 2));
+if (!existsSync(storePath)) await writeFile(storePath, JSON.stringify({ schemaVersion: 15, plans: [], suites: [], cases: [], flows: [], runs: [], bddCases: [], bddImports: [], knowledgeSources: [], generationJobs: [] }, null, 2));
 
 app.use(express.json({ limit: '25mb' }));
 app.use(express.static(join(root, 'public')));
@@ -55,6 +55,11 @@ function addGenerationProgress(job, stage, status, message, extra = {}) {
   ensureGenerationJobState(job);
   job.progress.push({ stage, status, message, at: now(), ...extra });
   job.updatedAt = now();
+}
+async function persistGenerationJobSnapshot(job) {
+  if (!job.jobFolder) return;
+  await mkdir(job.jobFolder, { recursive: true });
+  await writeFile(join(job.jobFolder, 'job.json'), JSON.stringify(job, null, 2));
 }
 function redactGenerationOutput(value) {
   return String(value || '')
@@ -162,7 +167,7 @@ function normalizeHierarchy(db) {
 }
 async function store() {
   const db = JSON.parse(await readFile(storePath, 'utf8'));
-  let migrated = Number(db.schemaVersion || 0) < 13; db.schemaVersion = 13; db.plans ||= []; db.suites ||= []; db.cases ||= []; db.flows ||= []; db.runs ||= []; db.bddCases ||= []; db.bddImports ||= []; db.knowledgeSources ||= []; db.generationJobs ||= [];
+  let migrated = Number(db.schemaVersion || 0) < 15; db.schemaVersion = 15; db.plans ||= []; db.suites ||= []; db.cases ||= []; db.flows ||= []; db.runs ||= []; db.bddCases ||= []; db.bddImports ||= []; db.knowledgeSources ||= []; db.generationJobs ||= [];
   db.generationJobs.forEach(ensureGenerationJobState);
   db.bddCases = db.bddCases.map(item => upgradeBddCaseSchema(item));
   for (const item of db.bddCases) {
@@ -1180,6 +1185,8 @@ app.post('/api/bdd-cases/:id/review', async (req, res) => {
   const errors = (item.validationIssues || []).filter(issue => issue.severity === 'error');
   if (status === 'approved' && errors.length && req.body.overrideValidation !== true) throw httpError(409, '仍有阻断校验项；请修复，或填写理由后明确覆盖。', 'BDD_REVIEW_BLOCKED', errors);
   if (status === 'approved' && errors.length && !String(req.body.comments || '').trim()) throw httpError(409, '覆盖阻断校验时必须填写 QA 理由。', 'BDD_OVERRIDE_REASON_REQUIRED', errors);
+  if (status === 'rejected' && !String(req.body.comments || '').trim()) throw httpError(400, 'QA 退回时必须填写原因。', 'BDD_REJECTION_REASON_REQUIRED');
+  if (!String(req.body.reviewer || '').trim()) throw httpError(400, '请填写 QA 评审人。', 'BDD_REVIEWER_REQUIRED');
   item.review = { status, reviewer: String(req.body.reviewer || ''), comments: String(req.body.comments || ''), reviewedAt: now(), overrideValidation: Boolean(req.body.overrideValidation) };
   item.updatedAt = now(); item.editRevision += 1; await save(db); res.json(item);
 });
@@ -1233,6 +1240,25 @@ app.post('/api/bdd-cases/:id/generation-jobs', async (req, res) => {
   db.generationJobs.unshift(job); item.generation.status = 'queued'; item.generation.jobIds.unshift(job.id); await save(db); res.status(201).json(job);
 });
 
+app.get('/api/generation-jobs/:id', async (req, res) => {
+  const db = await store(); const job = db.generationJobs.find(item => item.id === req.params.id);
+  if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
+  res.json(job);
+});
+
+app.post('/api/generation-jobs/:id/recordings', async (req, res) => {
+  const db = await store(); const job = db.generationJobs.find(item => item.id === req.params.id);
+  if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
+  if (job.status === 'signed-off') throw httpError(409, '已完成 QA 签署的任务不可追加证据；请从 BDD Case 创建新任务。', 'GENERATION_JOB_SIGNED_OFF');
+  const additions = (Array.isArray(req.body.recordings) ? req.body.recordings : []).map(value => String(value || '').trim()).filter(Boolean);
+  if (!additions.length) throw httpError(400, '请至少填写一个 Codegen 脚本绝对路径。', 'CODEGEN_RECORDING_REQUIRED');
+  job.sources ||= {}; job.sources.recordings = [...new Set([...(job.sources.recordings || []), ...additions])];
+  job.prompt = `${job.prompt || ''}\n\nAdditional native Codegen evidence supplied by QA: ${additions.join(', ')}. Open and validate these files before the next generation or repair.`;
+  if (job.fixPrompt) job.fixPrompt = `${job.fixPrompt}\n\nAdditional native Codegen evidence: ${additions.join(', ')}`;
+  addGenerationProgress(job, 'evidence', 'updated', `QA 追加了 ${additions.length} 个 Codegen 参考脚本`);
+  await persistGenerationJobSnapshot(job); await save(db); res.json(job);
+});
+
 app.put('/api/generation-jobs/:id/result', async (req, res) => {
   const db = await store(); const job = db.generationJobs.find(item => item.id === req.params.id);
   if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
@@ -1242,9 +1268,11 @@ app.put('/api/generation-jobs/:id/result', async (req, res) => {
   ensureGenerationJobState(job);
   job.status = job.validation.replayMode === 'auto' ? 'generated' : 'awaiting-replay';
   job.result = { code, testPath, notes: String(req.body.notes || ''), savedAt: now() };
+  job.qaSignOff = { status: 'pending', reviewer: '', comments: '', at: null };
   addGenerationProgress(job, 'generation', 'completed', job.validation.attemptCount ? 'Agent 已提交修复后的脚本' : 'Agent 已提交生成脚本');
-  await save(db);
+  await persistGenerationJobSnapshot(job); await save(db);
   if (job.validation.replayMode === 'auto') await runGenerationReplay(db, job, { trigger: job.validation.attemptCount ? 'auto-fix' : 'auto' });
+  await persistGenerationJobSnapshot(job);
   res.json(job);
 });
 
@@ -1252,6 +1280,7 @@ app.post('/api/generation-jobs/:id/replay', async (req, res) => {
   const db = await store(); const job = db.generationJobs.find(item => item.id === req.params.id);
   if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
   await runGenerationReplay(db, job, { trigger: req.body.trigger === 'auto' ? 'auto' : 'manual' });
+  await persistGenerationJobSnapshot(job);
   res.json(job);
 });
 
@@ -1278,7 +1307,7 @@ app.post('/api/generation-jobs/:id/sign-off', async (req, res) => {
     job.status = 'rejected';
     addGenerationProgress(job, 'qa-sign-off', 'rejected', `QA ${reviewer} 已退回`);
   }
-  await save(db); res.json(job);
+  await persistGenerationJobSnapshot(job); await save(db); res.json(job);
 });
 
 app.use((error, _req, res, _next) => { console.error(error); res.status(error.status || 500).json({ error: error.message || '服务器错误', code: error.code || 'SERVER_ERROR', details: error.details }); });

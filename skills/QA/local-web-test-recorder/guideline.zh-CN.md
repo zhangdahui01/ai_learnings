@@ -2,19 +2,21 @@
 
 ## 从手工 Excel 用例生成 BDD 与 Playwright
 
-进入左侧 **BDD Case Center**，导入未加密的多 Sheet `.xlsx`。系统按 Excel Sheet 从左到右分类，在同一 Sheet 内按有效的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 聚合：相同组合的多行成为一个 BDD Case，多个 `No.` 合并为 `MAIN_001_002` 形式，全部来源行号仍可追溯。`Pre-requisite` 原值就是 Given；Excel 每一行的 Step 与 Expected Result 保存为一张成对 When/Then 卡片，可一起排序、增加或删除，不会把全部 When 和全部 Then 分开。`functionName` 默认由 `[Depth1][Depth2][Depth3][Pre-requisite][第一条 Step]` 组成。
+进入左侧 **BDD Case Center**，导入未加密的多 Sheet `.xlsx`。系统按 Excel Sheet 从左到右分类，在同一 Sheet 内按有效的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 聚合：相同组合的多行成为一个 BDD Case，多个 `No.` 合并为 `MAIN_001_002` 形式，全部来源行号仍可追溯。`Pre-requisite` 原值就是 Given；例如 `AB Key [AB ID] is A/B` 还会自动写入 Spec 的 `- AB: [AB ID] = A/B`。Excel 每一行的 Step 与 Expected Result 保存为一张成对 When/Then 卡片，可一起排序、增加或删除，不会把全部 When 和全部 Then 分开。`functionName` 默认由 `[Depth1][Depth2][Depth3][Pre-requisite][第一条 Step]` 组成。
 
 进入“Repo 知识图谱”可为开发 Repo、组件/Page Object Repo、既有自动化框架分别构建图谱。推荐先运行 Graphify；未安装时可使用内置代码图。生成弹窗中单选最终写入 `specs/`、`tests/` 的目标 Repo，同时多选参考图谱；目标 Repo 自动进入参考集合，其余 Repo 只读。知识图谱和 QA 批准后的 BDD 都是必需项，Codegen 是可选证据。页面自动识别 Codex、Claude Code、Devin 或普通本地 Agent。
 
 ### BDD Case Center 的完整生成与验收流程
 
-1. 在“BDD 审核中心”逐 Sheet、逐聚合 Case 检查全部来源行、metadata、Given 和成对 When/Then、自动化可行度及阻断项；QA 批准后才可生成脚本。
+1. 在“BDD 审核中心”逐 Sheet、逐聚合 Case 检查全部来源行、metadata、Given 和成对 When/Then、自动化可行度及阻断项。点击“QA 批准”或“退回”会打开页面内评审弹窗；退回原因必填，阻断项覆盖必须勾选并说明。成功后保留当前 Sheet/Case，状态卡立即更新；只有 `approved` 才启用“生成 Playwright 脚本”。
 2. 在“Repo 知识图谱”为每个需要参考的本地 Repo 构建或刷新 READY 图谱。创建任务时单选输出 Repo，并多选参考图谱。
 3. 点击“生成 Playwright 脚本”，选择自动回放或手工回放、是否失败后进入 Agent 修复队列、最大回放/修复轮次、是否使用 Generator Agent，以及可选 Codegen 脚本。
-4. 当前 Codex、Claude Code 或 Devin Agent 读取 `queued` Job，使用批准后的 BDD、图谱证据和可选录制脚本生成 TypeScript，并提交结果。网页服务器不能跨进程自行启动宿主 Agent；在对话中可要求“使用 local-web-test-recorder Skill，处理生成队列并自动修复直到通过或达到上限”。
+4. 创建后页面显示并可复制适配当前 Codex、Claude Code 或 Devin 的 `agentInstruction`。Agent 用 Job ID 读取批准后的 BDD、每个 Repo 实际命中的文件/关键词及可选录制脚本，打开源文件复用真实测试模式，生成 TypeScript 并提交结果。网页服务器不能跨进程自行启动宿主 Agent；把复制的指令粘贴给当前 Agent 即可。
 5. 自动模式在 Agent 提交代码后立即真实执行目标测试；手工模式停在 `awaiting-replay`，由 QA 在“脚本生成队列”点击“开始回放”。回放固定开启 Trace，并收集目标 Repo 配置生成的截图和录像。
 6. 失败时页面展示命令、退出码、错误摘要、stdout/stderr 和附件。启用自动修复且未超过上限时，Job 进入 `fix-queued`；Agent 读取最新失败证据，做最小、可解释的修复并重新提交，平台随后继续回放。
 7. 回放通过只进入 `awaiting-qa`，不代表交付完成。QA 检查脚本、关键断言、Trace、截图/录像和历史修复后填写签署人；批准后状态才是 `signed-off`。退回必须填写原因，并在未超过上限时重新进入修复队列。Agent 不得代替 QA 签署。
+
+如果第一次生成不准确，可在任务卡展开“生成脚本”直接修改并“保存代码并重新回放”；也可在失败后录制复杂流程，把 Codegen 脚本绝对路径追加到同一个 Job。平台会把新增证据加入 Prompt/fixPrompt，下一轮 Agent 修复会使用。已 `signed-off` 的任务保持不可变，需要修改时从 BDD Case 新建任务。
 
 状态主流程是：`queued → generated → validating → fix-queued → validating → awaiting-qa → signed-off`。手工回放会经过 `awaiting-replay`；超过轮次上限会进入 `failed`。
 

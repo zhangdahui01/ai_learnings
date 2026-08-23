@@ -7,7 +7,7 @@
 - 支持未加密的 `.xlsx`，一个工作簿可包含多个 Sheet。
 - 每个 Sheet 可代表一个功能；表头不要求在第一行，系统会在前 40 行寻找 `No.`、`Step`、`Expected Result`。
 - 支持 `Priority`、`Depth1/2/3`、`Pre-requisite`、`Test Data`、`iOS/Android/Web`、`BTS No.` 和 `Notes`。
-- 合并单元格和空单元格不会中断导入。系统先解析有效层级，再按同一 Sheet 内的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 分组。缺少 Step/Expected 时仍创建 BDD，但进入 `needs-review`，不凭空补写业务行为。
+- 合并单元格和空单元格不会中断导入。系统先解析有效层级，再按同一 Sheet 内的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 分组。缺少 Step/Expected 时仍创建 BDD，但进入 `needs-review`，不凭空补写业务行为。Pre-requisite 中形如 `AB Key [AB ID] is A/B` 或 `AB Key 103680 is A` 的内容会额外进入 Given 的结构化 AB 列表，历史数据在 Schema 15 自动补齐并规范化。
 - 同组的多个 `No.` 合并成一个 scenarioId；共同前缀只保留一次，例如 `MAIN_001 + MAIN_002 → MAIN_001_002`。来源同时保存全部 `rowNumbers`、`caseIds` 和不可变 `rawRows`。
 - `functionName` 使用 `[Depth1][Depth2][Depth3][Pre-requisite][第一条 Step]`；空字段跳过。
 - `Pre-requisite` 原值直接作为 Given。每个源行形成一条 `{when: Step, then: Expected Result}` 成对记录，顺序与 Excel 一致；Expected Result 即使包含多行也不会与对应 Step 拆开。
