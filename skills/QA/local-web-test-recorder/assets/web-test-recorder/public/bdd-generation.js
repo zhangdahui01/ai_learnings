@@ -14,48 +14,53 @@ async function copyText(value, toast) {
   catch { toast('复制失败，请手工选择文本复制', 'error'); }
 }
 
-export function openGenerationDialog({ item, knowledge, runtime, api, esc, toast, refresh, lines }) {
+export function openGenerationDialog({ item, knowledge, plans = [], suites = [], testCases = [], runtime, api, esc, toast, refresh, lines, openKnowledgeManager }) {
   const ready = knowledge.filter(source => source.graphReady && source.graph?.status === 'ready');
+  const usablePlans = plans.filter(plan => suites.some(suite => suite.planId === plan.id));
   const node = document.createElement('div');
   node.className = 'modal-backdrop';
   node.innerHTML = `<div class="modal bdd-generation-modal">
     <h2>生成、回放与 QA 验收</h2>
     <div class="generation-gates"><div class="pass">✓ 1. BDD 已 QA 批准（必需）</div><div class="${ready.length ? 'pass' : 'fail'}">${ready.length ? '✓' : '✕'} 2. Repo 知识图谱 ${ready.length ? 'READY（必需）' : '缺失'}</div><div class="pass">✓ 3. Generator Agent（推荐）</div><div>○ Codegen 录制（可选补充）</div></div>
     <div class="notice"><b>运行环境：</b>${esc(runtime.label)}。平台创建任务，当前 AI Agent 负责生成或修复；平台负责真实回放、错误证据和 QA 门禁。</div>
-    <div class="field"><label>最终脚本写入的目标 Repo（单选、必需）</label><select id="generationTargetGraph">${ready.map(source => `<option value="${esc(source.id)}">${esc(source.name)} · ${esc(source.repoPath)}</option>`).join('')}</select><small>specs/ 和 tests/ 只写入这里；其他 Repo 仅作为只读参考证据。</small></div>
-    <div class="field"><label>参考知识图谱（多选、至少一个）</label><div class="knowledge-selector">${ready.map((source,index) => `<label class="${index===0?'target-graph':''}" data-graph-option="${esc(source.id)}"><input type="checkbox" data-generation-graph value="${esc(source.id)}" checked><span><b>${esc(source.name)}</b><small>${esc(source.repoPath)} · ${esc(source.graph?.provider||'local graph')}</small></span></label>`).join('')}</div><small>可以同时参考开发 Repo、Page Object/组件 Repo 和既有 UI 自动化框架。目标 Repo 会始终被选中。</small></div>
+    <div class="field-grid"><div class="field"><label>生成后归属 Test Plan（必需）</label><select id="generationPlan"><option value="">请选择 Test Plan</option>${usablePlans.map(plan => `<option value="${esc(plan.id)}">${esc(plan.name)}</option>`).join('')}</select></div><div class="field"><label>生成后归属 Test Suite（必需）</label><select id="generationSuite" disabled><option value="">请先选择 Test Plan</option></select></div></div>
+    <div class="field"><label>重复生成时如何保存</label><select id="generationExistingCase" disabled><option value="">新建一个 BDD 生成 Test Case</option></select><small>若该 BDD 已在所选 Suite 生成过 Case，可选择“覆盖并创建新版本”。原生代码、回放记录和历史版本都会保留；不会覆盖其他人工 Test Case。</small></div>
+    <div class="generation-target-copy"><b>脚本会保存在哪里？</b><span>不会写入知识图谱 Repo。生成成功后，平台会在所选 <em>Test Plan → Test Suite</em> 下创建一个“BDD 生成”的 Test Case，把原生 Playwright 脚本作为该 Case 的原生代码并纳入版本、回放、截图、Trace 和 QA 验收。选择覆盖时，更新同一个 Test Case 并创建新版本。</span></div>
+    <div class="field"><div class="split"><label>参考知识图谱（多选、至少一个）</label><button type="button" class="btn small secondary" id="openKnowledgeManager">管理 / 新建知识图谱</button></div><div class="knowledge-selector">${ready.map(source => `<label data-graph-option="${esc(source.id)}"><input type="checkbox" data-generation-graph value="${esc(source.id)}" checked><span><b>${esc(source.name)}</b><small>${esc(source.repoPath)} · ${esc(source.graph?.provider||'local graph')}</small></span></label>`).join('')}</div><small>知识图谱是只读参考：可同时勾选开发 Repo、Page Object/组件 Repo 和已有 UI 自动化 Repo。它们不会成为脚本写入位置。</small></div>
     <div class="field"><label>生成后如何回放</label><select id="replayMode"><option value="auto">自动回放（推荐）</option><option value="manual">由 QA 手工点击回放</option></select><small>自动回放失败后可进入 Agent 修复队列；每次修复提交后再次自动回放。</small></div>
     <div class="field-grid"><label class="check-row"><input type="checkbox" id="autoFix" checked> 失败后进入自动修复队列</label><div class="field"><label>最大回放 / 修复轮次</label><select id="maxAttempts">${[1,2,3,4,5,6,8,10].map(value => `<option ${value === 5 ? 'selected' : ''}>${value}</option>`).join('')}</select></div></div>
     <label class="check-row"><input type="checkbox" id="useGenerator" checked> 使用当前 ${esc(runtime.label)} 调用 Playwright Generator Agent（推荐）</label>
-    <div class="field"><label>可选：Playwright Codegen 原生脚本（每行一个绝对路径）</label><textarea id="generatorRecordings" placeholder="/repo/recordings/coupay-login.spec.js"></textarea><small>复杂 iframe、支付键盘和弹窗可以用录制脚本补充证据。</small></div>
+    <div class="field"><label>可选：直接粘贴 Playwright Inspector / Codegen 原生脚本</label><textarea id="generatorCodegenScript" class="generation-codegen-editor" spellcheck="false" placeholder="从 Playwright Inspector 复制完整脚本后，直接粘贴到这里。\n\nimport { test, expect } from 'playwright/test';\ntest('payment', async ({ page }) => {\n  await page.goto('https://...');\n});"></textarea><small>适用于 iframe、支付键盘、弹窗等复杂流程。平台会把它保存到此生成任务的本地证据目录，供 Agent 只读参考；不会覆盖 BDD，也不会写入目标 Repo。请勿粘贴真实密码、Token 或生产敏感数据。</small></div>
+    <details class="codegen-path-details"><summary>已有 Codegen 文件路径（可选）</summary><div class="field"><label>每行一个绝对路径</label><textarea id="generatorRecordings" placeholder="/repo/recordings/coupay-login.spec.js"></textarea><small>若脚本已经保存为本地文件，可在这里附加；会与上方粘贴的脚本一起作为证据。</small></div></details>
     <div class="qa-gate-copy"><b>最终门禁</b><span>回放通过 ≠ 正式通过。任务会停在“等待 QA 签署”，必须由 QA 填写签署人并批准。</span></div>
     <div class="output-preview"><b>输出约定</b><code>specs/${esc(item.tenant.toLowerCase())}/${esc(item.region.toLowerCase())}/${esc(item.scenarioId)}.md</code><code>tests/${esc(item.tenant.toLowerCase())}/${esc(item.region.toLowerCase())}/${esc(item.scenarioId)}.spec.ts</code></div>
     <div class="actions"><button class="btn primary" id="triggerGeneration" ${ready.length ? '' : 'disabled'}>创建生成与验证任务</button><button class="btn secondary" data-close>取消</button></div><div id="generationResult"></div>
   </div>`;
   document.body.append(node);
   node.querySelector('[data-close]').onclick = () => node.remove();
-  const syncTargetGraph = () => {
-    const targetId = node.querySelector('#generationTargetGraph').value;
-    node.querySelectorAll('[data-graph-option]').forEach(option => option.classList.toggle('target-graph', option.dataset.graphOption === targetId));
-    const targetCheckbox = [...node.querySelectorAll('[data-generation-graph]')].find(input => input.value === targetId);
-    if (targetCheckbox) { targetCheckbox.checked = true; targetCheckbox.disabled = true; }
-    node.querySelectorAll('[data-generation-graph]').forEach(input => { if (input.value !== targetId) input.disabled = false; });
-  };
-  node.querySelector('#generationTargetGraph')?.addEventListener('change', syncTargetGraph); syncTargetGraph();
+  node.querySelector('#openKnowledgeManager')?.addEventListener('click', () => { node.remove(); openKnowledgeManager?.(); });
+  const planSelect = node.querySelector('#generationPlan'); const suiteSelect = node.querySelector('#generationSuite'); const caseSelect = node.querySelector('#generationExistingCase');
+  const syncCases = () => { const choices = testCases.filter(testCase => testCase.suiteId === suiteSelect.value && (testCase.caseKind === 'bdd-generated' || testCase.data?.bddCaseId === item.id) && testCase.data?.bddCaseId === item.id); caseSelect.disabled = !suiteSelect.value; caseSelect.innerHTML = `<option value="">新建一个 BDD 生成 Test Case</option>${choices.map(testCase => `<option value="${esc(testCase.id)}">覆盖 ${esc(testCase.name)} · 当前 v${esc(testCase.currentVersion || testCase.version || 1)}</option>`).join('')}`; };
+  const syncSuites = () => { const planId = planSelect.value; const choices = suites.filter(suite => suite.planId === planId); suiteSelect.disabled = !choices.length; suiteSelect.innerHTML = choices.length ? `<option value="">请选择 Test Suite</option>${choices.map(suite => `<option value="${esc(suite.id)}">${esc(suite.name)}</option>`).join('')}` : '<option value="">请先选择 Test Plan</option>'; syncCases(); };
+  planSelect?.addEventListener('change', syncSuites); suiteSelect?.addEventListener('change', syncCases); syncSuites();
   node.querySelector('#triggerGeneration').onclick = async () => {
     try {
       const knowledgeSourceIds = [...node.querySelectorAll('[data-generation-graph]:checked')].map(input => input.value);
       if (!knowledgeSourceIds.length) throw new Error('至少选择一个 READY 知识图谱');
+      if (!planSelect.value || !suiteSelect.value) throw new Error('请先选择生成 Test Case 的 Test Plan 和 Test Suite');
       const job = await api(`/api/bdd-cases/${item.id}/generation-jobs`, { method: 'POST', body: JSON.stringify({
-        targetKnowledgeSourceId: node.querySelector('#generationTargetGraph').value,
+        targetPlanId: planSelect.value,
+        targetSuiteId: suiteSelect.value,
+        targetCaseId: caseSelect.value || undefined,
         knowledgeSourceIds,
         replayMode: node.querySelector('#replayMode').value,
         autoFix: node.querySelector('#autoFix').checked,
         maxAttempts: Number(node.querySelector('#maxAttempts').value),
         useGeneratorAgent: node.querySelector('#useGenerator').checked,
         recordings: lines(node.querySelector('#generatorRecordings').value),
+        codegenScript: node.querySelector('#generatorCodegenScript').value,
       }) });
-      node.querySelector('#generationResult').innerHTML = `<div class="notice success"><strong>任务已创建：${esc(job.id)}</strong><p>${esc(STATUS_LABELS[job.status] || job.status)}</p><p>目标脚本：${esc(job.outputs.testPath || job.outputs.testRelativePath)}</p><p>下一步：把下面指令交给当前 AI Agent；Agent 会读取任务、图谱证据并提交脚本，平台随后回放和循环修复。</p><pre id="newAgentInstruction">${esc(job.agentInstruction||'')}</pre><button class="btn small secondary" id="copyNewAgentInstruction">复制 Agent 指令</button></div>`;
+      node.querySelector('#generationResult').innerHTML = `<div class="notice success"><strong>任务已创建：${esc(job.id)}</strong><p>${esc(STATUS_LABELS[job.status] || job.status)}</p><p>归属：${esc(job.platformTarget?.planName)} → ${esc(job.platformTarget?.suiteName)} → ${esc(job.platformTarget?.caseName || '脚本生成后创建 Test Case')}</p><p>下一步：把下面指令交给当前 AI Agent；Agent 会读取任务、图谱证据并提交脚本，平台随后创建/覆盖该 Test Case、回放和循环修复。</p><pre id="newAgentInstruction">${esc(job.agentInstruction||'')}</pre><button class="btn small secondary" id="copyNewAgentInstruction">复制 Agent 指令</button></div>`;
       node.querySelector('#copyNewAgentInstruction').onclick=()=>copyText(job.agentInstruction,toast);
       toast('生成、回放与 QA 验收任务已创建');
       await refresh(true);
@@ -85,7 +90,7 @@ export function renderGenerationQueue({ jobs, cases, runtime, api, esc, toast, r
       return `<article class="job-row" data-generation-job="${esc(job.id)}"><div class="split"><div><h3>${esc(caseItem?.scenarioId || job.bddCaseId)}</h3><p>${esc(job.generator?.engine || '历史任务')} · ${esc(job.runtime?.label || '历史任务')}</p><small>${esc(job.outputs?.testRelativePath || '历史任务未记录输出路径')}</small></div><span class="badge ${statusClass(job.status)}">${esc(STATUS_LABELS[job.status] || job.status)}</span></div>
         ${pipeline(job)}
         <div class="job-policy"><span>${validation.replayMode === 'manual' ? '手工回放' : '自动回放'}</span><span>${validation.autoFix === false ? '不自动修复' : '自动修复'}</span><span>${validation.attemptCount || 0} / ${validation.maxAttempts || 5} 次</span><span>QA：${esc(qa.status || 'pending')}</span></div>
-        <div class="job-evidence"><b>本任务冻结的输入</b><span>目标 Repo：${esc(job.sources?.knowledgeSources?.find(source=>source.id===job.sources?.targetKnowledgeSourceId)?.name||'历史任务未记录')}</span><span>图谱检索：${esc(graphSummary||'历史任务未记录命中文件')}</span><span>Codegen：${esc((job.sources?.recordings||[]).join(', ')||'未提供')}</span></div>
+        <div class="job-evidence"><b>本任务冻结的输入</b><span>平台归属： <i data-i18n-skip>${esc(job.platformTarget ? `${job.platformTarget.planName} → ${job.platformTarget.suiteName} → ${job.platformTarget.caseName || '等待脚本生成后创建 Test Case'}` : '历史任务：外部 Repo 输出')}</i></span><span>图谱检索：${esc(graphSummary||'历史任务未记录命中文件')}</span><span>Codegen：${esc((job.sources?.recordings||[]).join(', ')||'未提供')}</span></div>
         ${['queued','fix-queued'].includes(job.status)?`<div class="notice"><b>交给当前 AI Agent</b><pre>${esc(instruction)}</pre><button class="btn small secondary" data-copy-agent="${esc(job.id)}">复制 Agent 指令</button></div>`:''}
         ${job.status === 'fix-queued' ? `<div class="notice warning"><b>等待当前 AI Agent 修复</b><p>Agent 应读取最新错误、Trace/截图/录像，最小化修改脚本并重新提交；平台随后继续回放。</p><details><summary>修复 Prompt</summary><pre>${esc(job.fixPrompt || '')}</pre></details></div>` : ''}
         <div class="actions"><button class="btn small primary" data-replay="${esc(job.id)}" ${canReplay ? '' : 'disabled'}>▶ 开始回放</button><button class="btn small secondary" data-sign="${esc(job.id)}" ${job.status === 'awaiting-qa' ? '' : 'disabled'}>QA 签署</button></div>

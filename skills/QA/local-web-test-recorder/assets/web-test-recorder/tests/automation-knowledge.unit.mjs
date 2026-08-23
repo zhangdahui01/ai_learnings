@@ -15,3 +15,12 @@ test('multi-repository retrieval keeps relevant automation evidence from each se
   assert.ok(evidence.some(item => item.knowledgeSourceId === 'p0'));
   assert.ok(evidence.find(item => item.knowledgeSourceId === 'p0').matchedTerms.includes('coupay'));
 });
+
+test('uses custom Given, When, and Then wording to retrieve matching code snippets', () => {
+  const indexes = [{ id: 'automation', name: 'P0 automation', entries: [{ path: 'tests/payment-v2.spec.ts', tests: ['payment v2 happy path'], locators: ['payment-v2-confirm'], flows: ['payment'], symbols: ['enablePaymentV2'], imports: [], snippets: ["test('payment v2', async ({ page }) => { await page.getByTestId('payment-v2-confirm').click(); });"] }] }];
+  const testCase = { title: 'Payment', functionName: 'Confirm payment', bdd: { givenContext: '', preconditionKeys: [], customPreconditions: ['Feature Flag payment_v2 is enabled'], steps: [{ when: 'Click payment-v2-confirm', then: 'Payment v2 receipt is visible' }], when: [], then: [] } };
+  const evidence = selectKnowledgeEvidence(indexes, testCase, 3);
+  assert.equal(evidence[0].path, 'tests/payment-v2.spec.ts');
+  assert.ok(evidence[0].matchedTerms.some(term => term.includes('payment-v2')));
+  assert.match(evidence[0].codeSnippets.join('\n'), /payment-v2-confirm/);
+});

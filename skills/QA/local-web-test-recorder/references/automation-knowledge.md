@@ -26,10 +26,10 @@
 页面不再让用户选择 Codex、Claude Code 或 Devin。服务器按环境自动记录当前 Agent；未知环境显示“当前本地 Agent”。点击“生成 Playwright 脚本”后会：
 
 1. 校验 BDD 已批准且至少一个 Repo 图谱为 READY。
-2. 单选最终输出 Repo，同时多选参考图谱；目标 Repo 自动包含在参考集合中。
-3. 将准确 BDD 落盘到目标 Repo 的 `specs/<tenant>/<region>/<scenarioId>.md`。
-4. 建立队列 Job，冻结全部参考图谱 ID/名称/路径、检索证据、目标 Repo、可选 Codegen 引用和 Prompt。
-5. 固定最终输出为目标 Repo 的 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；其他 Repo 始终只读。Job 审计包单独保存在平台 `data/generation-jobs/<job-id>/`。
+2. 选择最终归属的 Test Plan 和 Test Suite，同时多选参考图谱；所有图谱 Repo 始终只读。
+3. 将准确 BDD 冻结到平台 `data/generation-jobs/<job-id>/spec.md`。
+4. 建立队列 Job，冻结全部参考图谱 ID/名称/路径、检索证据、Plan/Suite 归属、可选 Codegen 引用和 Prompt。
+5. 最终输出先保存在平台 `test-suites/_bdd-generation/<job-id>/`；首次提交后创建目标 Suite 下的 BDD 生成 Test Case。重复生成可选择覆盖同一 Case，平台创建新版本，其他 Repo 始终只读。
 
 勾选 Playwright Generator Agent 时，Agent 根据 Job 调用官方 Generator 并实时验证页面；关闭 Generator 时必须提供 Codegen 原生脚本。Planner、Generator、Healer 都随 Playwright 提供，不是三个额外 npm 包。启动器完成锁定的 `npm ci` 后，用 `--agent-target /absolute/repo --agent-loop codex|claude|copilot|vscode|vscode-legacy|opencode` 才会在明确 Repo 中执行 `playwright init-agents`；升级 Playwright 后应重新生成。没有显式目标时禁止写入任何业务 Repo。Devin 没有经过确认的官方专用 loop 参数时，使用相同 Job、Skill 指令和普通 Playwright CLI，不伪造接口。
 
@@ -40,7 +40,7 @@
 - `--offline` 禁止下载；`--without-graphify` 明确使用内置图；Linux 只有显式 `--install-system-deps` 才尝试系统库安装。
 - Node.js、Git、Python 属于系统级前置，不能由项目静默获取管理员权限安装；新机器缺失时启动器必须给出明确提示。
 
-浏览器页面负责创建并排队 Job，不能跨进程直接控制 Codex、Claude Code 或 Devin。当前 Agent 收到“处理生成队列”请求后读取 `queued` Job，生成 TypeScript，再调用 `PUT /api/generation-jobs/<job-id>/result`；服务器把结果写入 Job 固定的目标 Repo 路径。页面提供两种触发策略：
+浏览器页面负责创建并排队 Job，不能跨进程直接控制 Codex、Claude Code 或 Devin。当前 Agent 收到“处理生成队列”请求后读取 `queued` Job，生成 TypeScript，再调用 `PUT /api/generation-jobs/<job-id>/result`；服务器把结果保存为 Job 原生脚本并创建或覆盖冻结目标 Test Case。页面提供两种触发策略：
 
 - 自动回放：Agent 每次提交生成或修复代码后，平台立即真实执行目标测试。
 - 手工回放：脚本进入 `awaiting-replay`，由 QA 在页面点击“开始回放”。

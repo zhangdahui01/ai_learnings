@@ -61,6 +61,22 @@ async function persistGenerationJobSnapshot(job) {
   await mkdir(job.jobFolder, { recursive: true });
   await writeFile(join(job.jobFolder, 'job.json'), JSON.stringify(job, null, 2));
 }
+async function saveInlineCodegenEvidence(job, value, source = 'creation') {
+  const code = String(value || '').trim();
+  if (!code) return null;
+  if (code.length > 1024 * 1024) throw httpError(413, 'Codegen 脚本不能超过 1 MB；请保存为文件后填写文件路径。', 'CODEGEN_SCRIPT_TOO_LARGE');
+  if (!job.jobFolder) throw httpError(409, '生成任务缺少本地证据目录，无法保存 Codegen 脚本。', 'CODEGEN_EVIDENCE_FOLDER_MISSING');
+  const evidenceDir = join(job.jobFolder, 'evidence');
+  await mkdir(evidenceDir, { recursive: true });
+  const path = join(evidenceDir, 'codegen-recording.spec.js');
+  await writeFile(path, `${code}\n`);
+  job.sources ||= {}; job.sources.recordings = [...new Set([...(job.sources.recordings || []), path])];
+  job.sources.inlineCodegen ||= []; job.sources.inlineCodegen.push({ path, source, characters: code.length, savedAt: now() });
+  const guidance = `Inline native Codegen evidence is saved at ${path}. Open and validate it before the next generation or repair.`;
+  job.prompt = `${job.prompt || ''}\n\n${guidance}`;
+  if (job.fixPrompt) job.fixPrompt = `${job.fixPrompt}\n\n${guidance}`;
+  return path;
+}
 function redactGenerationOutput(value) {
   return String(value || '')
     .replace(/((?:password|passwd|secret|token|authorization|api[_-]?key)\s*[:=]\s*)[^\s,;}]+/gi, '$1[REDACTED]')
@@ -1206,6 +1222,44 @@ app.delete('/api/knowledge/:id', async (req, res) => { const db = await store();
 
 app.get('/api/agent-runtime', (_req, res) => res.json(detectAgentRuntime()));
 
+async function upsertGeneratedPlatformCase(db, job, bddCase, code) {
+  const target = job.platformTarget || {};
+  const plan = db.plans.find(item => item.id === target.planId);
+  const suite = db.suites.find(item => item.id === target.suiteId);
+  if (!plan || !suite || suite.planId !== plan.id) throw httpError(409, '生成任务所属的 Test Plan 或 Test Suite 已不存在或层级已变化，请重新创建任务。', 'GENERATION_PLATFORM_TARGET_INVALID');
+  let testCase = target.caseId ? db.cases.find(item => item.id === target.caseId) : null;
+  const caseName = `${bddCase.scenarioId} · ${bddCase.functionName || bddCase.title || 'Generated Playwright'}`.slice(0, 180);
+  if (!testCase) {
+    testCase = {
+      ...defaultCase(caseName), suiteId: suite.id, editorMode: 'code', caseKind: 'bdd-generated', codeLanguage: 'typescript',
+      priority: ['P0', 'P1', 'P2'].includes(bddCase.priority) ? bddCase.priority : 'P1',
+      tags: [...new Set(['bdd-generated', bddCase.tenant, bddCase.category].filter(Boolean))],
+      data: { bddCaseId: bddCase.id, scenarioId: bddCase.scenarioId, source: 'bdd-generator' },
+      currentVersion: 1, stableVersion: 1, editRevision: 1, versions: [],
+    };
+    db.cases.push(testCase); suite.caseIds.push(testCase.id); suite.caseBindings.push({ caseId: testCase.id, versionPolicy: 'latest', version: null });
+    ensureVersionState(testCase, 'case', db);
+    commitAssetVersion(suite, 'suite', db, { source: 'bdd-generation-membership', description: `加入 BDD 生成用例 ${testCase.name}`, changedScopes: ['caseIds', 'caseBindings'] });
+    target.caseId = testCase.id; target.caseName = testCase.name;
+    job.platformTarget = target;
+  } else {
+    testCase.name = caseName;
+    testCase.editorMode = 'code'; testCase.caseKind = 'bdd-generated'; testCase.codeLanguage = 'typescript';
+    testCase.priority = ['P0', 'P1', 'P2'].includes(bddCase.priority) ? bddCase.priority : testCase.priority;
+  }
+  ensureExecutionSources(testCase, 'case');
+  testCase.recordedSources.steps = {
+    originalJavascript: code, runnableJavascript: code, immutableOriginal: true,
+    provenance: 'bdd-generator', generatedFromBddCaseId: bddCase.id, generatedAt: now(),
+  };
+  testCase.executionModes.steps = 'native';
+  testCase.sources ||= {}; testCase.sources.javascript = code;
+  testCase.updatedAt = now();
+  commitAssetVersion(testCase, 'case', db, { source: 'bdd-generator', description: `BDD ${bddCase.scenarioId} 生成 / 更新原生 Playwright 脚本`, changedScopes: ['sources', 'recordedSources', 'executionModes', 'priority', 'tags'] });
+  await persistSources(db, testCase, false); await persistSuiteArtifacts(db, suite); updateCurrentVersionSnapshot(testCase, 'case', db); updateCurrentVersionSnapshot(suite, 'suite', db);
+  return testCase;
+}
+
 app.post('/api/bdd-cases/:id/generation-jobs', async (req, res) => {
   const db = await store(); const item = db.bddCases.find(entry => entry.id === req.params.id);
   if (!item) throw httpError(404, '未找到 BDD Case', 'BDD_CASE_NOT_FOUND');
@@ -1213,31 +1267,50 @@ app.post('/api/bdd-cases/:id/generation-jobs', async (req, res) => {
   const readyGraphs = db.knowledgeSources.filter(source => source.graphReady && source.graph?.status === 'ready');
   if (!readyGraphs.length) throw httpError(409, '脚本生成前必须先为自动化 Repo 构建可用的知识图谱。', 'KNOWLEDGE_GRAPH_REQUIRED');
   const requestedIds = Array.isArray(req.body.knowledgeSourceIds) ? [...new Set(req.body.knowledgeSourceIds.map(String))] : req.body.knowledgeSourceId ? [String(req.body.knowledgeSourceId)] : [];
-  const targetId = String(req.body.targetKnowledgeSourceId || req.body.knowledgeSourceId || (readyGraphs.length === 1 ? readyGraphs[0].id : ''));
-  const targetGraph = readyGraphs.find(source => source.id === targetId);
-  if (!targetGraph) throw httpError(409, '请明确选择最终脚本写入的目标 Repo。', 'KNOWLEDGE_TARGET_REQUIRED');
-  if (!requestedIds.includes(targetGraph.id)) requestedIds.unshift(targetGraph.id);
+  let targetPlan = db.plans.find(plan => plan.id === String(req.body.targetPlanId || ''));
+  let targetSuite = db.suites.find(suite => suite.id === String(req.body.targetSuiteId || ''));
+  let targetCase = null;
+  // Legacy CLI/API callers did not have the Plan/Suite picker. Keep them runnable,
+  // while the product UI always requires an explicit destination.
+  if (!req.body.targetPlanId && !req.body.targetSuiteId) {
+    targetPlan = db.plans.find(plan => plan.name === 'BDD 生成（旧任务）' && plan.legacyGenerationTarget) || { id: randomUUID(), name: 'BDD 生成（旧任务）', description: '兼容旧版脚本生成 API', suiteIds: [], legacyGenerationTarget: true, createdAt: now(), updatedAt: now() };
+    if (!db.plans.some(plan => plan.id === targetPlan.id)) db.plans.push(targetPlan);
+    targetSuite = db.suites.find(suite => suite.planId === targetPlan.id && suite.legacyGenerationTarget) || { id: randomUUID(), planId: targetPlan.id, name: 'BDD 生成（旧任务）', description: '兼容旧版脚本生成 API', caseIds: [], caseBindings: [], setupSteps: [], teardownSteps: [], sources: { setupSteps: {}, teardownSteps: {} }, sessionPolicy: 'shared-current-run', defaults: defaultRuntimeSettings(), accountRef: '', data: {}, version: 1, currentVersion: 1, stableVersion: 1, editRevision: 1, versions: [], legacyGenerationTarget: true, createdAt: now(), updatedAt: now() };
+    if (!db.suites.some(suite => suite.id === targetSuite.id)) { db.suites.push(targetSuite); targetPlan.suiteIds.push(targetSuite.id); ensureVersionState(targetSuite, 'suite', db); }
+  }
+  if (!targetPlan) throw httpError(409, '请选择生成后的 Test Case 所属 Test Plan。', 'GENERATION_PLAN_REQUIRED');
+  if (!targetSuite || targetSuite.planId !== targetPlan.id) throw httpError(409, '请选择该 Test Plan 下有效的 Test Suite。', 'GENERATION_SUITE_REQUIRED');
+  if (req.body.targetCaseId) {
+    targetCase = db.cases.find(testCase => testCase.id === String(req.body.targetCaseId));
+    if (!targetCase || targetCase.suiteId !== targetSuite.id || (targetCase.caseKind !== 'bdd-generated' && targetCase.data?.bddCaseId !== item.id)) throw httpError(409, '只能覆盖当前 Test Suite 下、由同一 BDD Case 生成的 Test Case。', 'GENERATION_CASE_TARGET_INVALID');
+  }
   const selectedGraphs = readyGraphs.filter(source => requestedIds.includes(source.id));
   const missingIds = requestedIds.filter(id => !selectedGraphs.some(source => source.id === id));
   if (missingIds.length) throw httpError(409, `以下知识图谱不存在或未 READY：${missingIds.join(', ')}`, 'KNOWLEDGE_GRAPH_NOT_READY');
   if (!selectedGraphs.length) throw httpError(409, '至少选择一个 READY 知识图谱作为生成证据。', 'KNOWLEDGE_GRAPH_SELECTION_REQUIRED');
-  const recordings = Array.isArray(req.body.recordings) ? req.body.recordings.filter(Boolean) : [];
+  const recordings = Array.isArray(req.body.recordings) ? req.body.recordings.map(value => String(value || '').trim()).filter(Boolean) : [];
+  const codegenScript = String(req.body.codegenScript || '').trim();
   const useGeneratorAgent = req.body.useGeneratorAgent !== false;
-  if (!useGeneratorAgent && !recordings.length) throw httpError(409, '不使用 Generator Agent 时，至少需要提供一个 Playwright Codegen 原生脚本。', 'GENERATION_SOURCE_REQUIRED');
+  if (!useGeneratorAgent && !recordings.length && !codegenScript) throw httpError(409, '不使用 Generator Agent 时，至少需要粘贴或提供一个 Playwright Codegen 原生脚本。', 'GENERATION_SOURCE_REQUIRED');
   const outputDir = join(dataDir, 'generation-jobs');
   const job = await createGenerationJob({
     testCase: item,
     knowledgeSources: selectedGraphs,
-    targetKnowledgeSource: targetGraph,
+    targetPlan,
+    targetSuite,
     recordings,
     useGeneratorAgent,
     outputDir,
-    targetRepoPath: process.env.RECORD_DRY_RUN === '1' ? suitesDir : targetGraph.repoPath,
+    targetRepoPath: root,
+    platformTestSuitesDir: suitesDir,
     replayMode: req.body.replayMode,
     autoFix: req.body.autoFix,
     maxAttempts: req.body.maxAttempts,
   });
-  db.generationJobs.unshift(job); item.generation.status = 'queued'; item.generation.jobIds.unshift(job.id); await save(db); res.status(201).json(job);
+  if (targetCase) job.platformTarget = { ...job.platformTarget, caseId: targetCase.id, caseName: targetCase.name };
+  const inlineCodegenPath = await saveInlineCodegenEvidence(job, codegenScript, 'creation');
+  if (inlineCodegenPath) addGenerationProgress(job, 'evidence', 'saved', '已保存 QA 粘贴的 Playwright Codegen 原生脚本');
+  await persistGenerationJobSnapshot(job); db.generationJobs.unshift(job); item.generation.status = 'queued'; item.generation.jobIds.unshift(job.id); await save(db); res.status(201).json(job);
 });
 
 app.get('/api/generation-jobs/:id', async (req, res) => {
@@ -1251,11 +1324,15 @@ app.post('/api/generation-jobs/:id/recordings', async (req, res) => {
   if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
   if (job.status === 'signed-off') throw httpError(409, '已完成 QA 签署的任务不可追加证据；请从 BDD Case 创建新任务。', 'GENERATION_JOB_SIGNED_OFF');
   const additions = (Array.isArray(req.body.recordings) ? req.body.recordings : []).map(value => String(value || '').trim()).filter(Boolean);
-  if (!additions.length) throw httpError(400, '请至少填写一个 Codegen 脚本绝对路径。', 'CODEGEN_RECORDING_REQUIRED');
+  const codegenScript = String(req.body.codegenScript || '').trim();
+  if (!additions.length && !codegenScript) throw httpError(400, '请至少粘贴 Codegen 脚本或填写一个脚本绝对路径。', 'CODEGEN_RECORDING_REQUIRED');
   job.sources ||= {}; job.sources.recordings = [...new Set([...(job.sources.recordings || []), ...additions])];
-  job.prompt = `${job.prompt || ''}\n\nAdditional native Codegen evidence supplied by QA: ${additions.join(', ')}. Open and validate these files before the next generation or repair.`;
-  if (job.fixPrompt) job.fixPrompt = `${job.fixPrompt}\n\nAdditional native Codegen evidence: ${additions.join(', ')}`;
-  addGenerationProgress(job, 'evidence', 'updated', `QA 追加了 ${additions.length} 个 Codegen 参考脚本`);
+  if (additions.length) {
+    job.prompt = `${job.prompt || ''}\n\nAdditional native Codegen evidence supplied by QA: ${additions.join(', ')}. Open and validate these files before the next generation or repair.`;
+    if (job.fixPrompt) job.fixPrompt = `${job.fixPrompt}\n\nAdditional native Codegen evidence: ${additions.join(', ')}`;
+  }
+  const inlineCodegenPath = await saveInlineCodegenEvidence(job, codegenScript, 'append');
+  addGenerationProgress(job, 'evidence', 'updated', `QA 追加了 ${additions.length + (inlineCodegenPath ? 1 : 0)} 个 Codegen 参考脚本`);
   await persistGenerationJobSnapshot(job); await save(db); res.json(job);
 });
 
@@ -1264,10 +1341,13 @@ app.put('/api/generation-jobs/:id/result', async (req, res) => {
   if (!job) throw httpError(404, '未找到生成任务', 'GENERATION_JOB_NOT_FOUND');
   const code = normalizeNativeSource(req.body.code); const testPath = job.outputs?.testPath;
   if (!testPath) throw httpError(409, '该历史任务没有目标脚本路径，请重新创建生成任务。', 'GENERATION_OUTPUT_PATH_MISSING');
+  const bddCase = db.bddCases.find(item => item.id === job.bddCaseId);
+  if (!bddCase) throw httpError(409, '该任务关联的 BDD Case 已删除，不能创建平台 Test Case。', 'BDD_CASE_FOR_GENERATION_MISSING');
   await mkdir(dirname(testPath), { recursive:true }); await writeFile(testPath, code);
+  const platformCase = await upsertGeneratedPlatformCase(db, job, bddCase, code);
   ensureGenerationJobState(job);
   job.status = job.validation.replayMode === 'auto' ? 'generated' : 'awaiting-replay';
-  job.result = { code, testPath, notes: String(req.body.notes || ''), savedAt: now() };
+  job.result = { code, testPath, platformCaseId: platformCase.id, notes: String(req.body.notes || ''), savedAt: now() };
   job.qaSignOff = { status: 'pending', reviewer: '', comments: '', at: null };
   addGenerationProgress(job, 'generation', 'completed', job.validation.attemptCount ? 'Agent 已提交修复后的脚本' : 'Agent 已提交生成脚本');
   await persistGenerationJobSnapshot(job); await save(db);

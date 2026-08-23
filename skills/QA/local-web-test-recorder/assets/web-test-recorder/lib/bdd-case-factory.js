@@ -220,6 +220,7 @@ export function renderGherkin(input) {
     const entry = PRECONDITION_REGISTRY.find(item => item.key === key);
     lines.push(`- [${key}] ${entry?.description || key}`);
   });
+  (bdd.customPreconditions || []).filter(Boolean).forEach(condition => lines.push(`- [custom] ${condition}`));
   [listLine('AB', bdd.abGroups), listLine('Account', bdd.accounts), listLine('Product', bdd.product), listLine('Payment', bdd.payment)].filter(Boolean).forEach(line => lines.push(line));
   lines.push('', '**When / Then:**');
   if (bdd.steps.length) bdd.steps.forEach((pair, index) => {
@@ -433,6 +434,7 @@ export function upgradeBddCaseSchema(input) {
     next.bdd.abGroups = [...new Set([...preserved, ...inferAbGroups(next.bdd.givenContext)])];
     next.source.abExtractionVersion = 2;
   } else if (!Array.isArray(next.bdd.abGroups)) next.bdd.abGroups = inferAbGroups(next.bdd.givenContext);
+  next.bdd.customPreconditions = Array.isArray(next.bdd.customPreconditions) ? next.bdd.customPreconditions.map(clean).filter(Boolean) : [];
   next.bdd.accounts ||= []; next.bdd.product ||= ''; next.bdd.payment ||= '';
   next.bdd.when ||= []; next.bdd.then ||= [];
   if (!Array.isArray(next.bdd.steps)) {

@@ -4,12 +4,12 @@
 
 进入左侧 **BDD Case Center**，导入未加密的多 Sheet `.xlsx`。系统按 Excel Sheet 从左到右分类，在同一 Sheet 内按有效的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 聚合：相同组合的多行成为一个 BDD Case，多个 `No.` 合并为 `MAIN_001_002` 形式，全部来源行号仍可追溯。`Pre-requisite` 原值就是 Given；例如 `AB Key [AB ID] is A/B` 还会自动写入 Spec 的 `- AB: [AB ID] = A/B`。Excel 每一行的 Step 与 Expected Result 保存为一张成对 When/Then 卡片，可一起排序、增加或删除，不会把全部 When 和全部 Then 分开。`functionName` 默认由 `[Depth1][Depth2][Depth3][Pre-requisite][第一条 Step]` 组成。
 
-进入“Repo 知识图谱”可为开发 Repo、组件/Page Object Repo、既有自动化框架分别构建图谱。推荐先运行 Graphify；未安装时可使用内置代码图。生成弹窗中单选最终写入 `specs/`、`tests/` 的目标 Repo，同时多选参考图谱；目标 Repo 自动进入参考集合，其余 Repo 只读。知识图谱和 QA 批准后的 BDD 都是必需项，Codegen 是可选证据。页面自动识别 Codex、Claude Code、Devin 或普通本地 Agent。
+进入“Repo 知识图谱”可为开发 Repo、组件/Page Object Repo、既有自动化框架分别构建图谱。推荐先运行 Graphify；未安装时可使用内置代码图。生成弹窗中选择平台内的 Test Plan 和 Test Suite，同时多选只读参考图谱；图谱不会成为脚本写入位置。首次生成会在该 Suite 下创建 BDD 生成 Test Case；重复生成可选择覆盖同一 Case，系统会创建新版本并保留旧脚本与回放记录。知识图谱和 QA 批准后的 BDD 都是必需项，Codegen 是可选证据。页面自动识别 Codex、Claude Code、Devin 或普通本地 Agent。
 
 ### BDD Case Center 的完整生成与验收流程
 
 1. 在“BDD 审核中心”逐 Sheet、逐聚合 Case 检查全部来源行、metadata、Given 和成对 When/Then、自动化可行度及阻断项。点击“QA 批准”或“退回”会打开页面内评审弹窗；退回原因必填，阻断项覆盖必须勾选并说明。成功后保留当前 Sheet/Case，状态卡立即更新；只有 `approved` 才启用“生成 Playwright 脚本”。
-2. 在“Repo 知识图谱”为每个需要参考的本地 Repo 构建或刷新 READY 图谱。创建任务时单选输出 Repo，并多选参考图谱。
+2. 在“Repo 知识图谱”为每个需要参考的本地 Repo 构建或刷新 READY 图谱。创建任务时选择目标 Test Plan 与 Test Suite，并多选参考图谱；若同一 BDD 已生成过 Case，可选择覆盖并创建新版本。
 3. 点击“生成 Playwright 脚本”，选择自动回放或手工回放、是否失败后进入 Agent 修复队列、最大回放/修复轮次、是否使用 Generator Agent，以及可选 Codegen 脚本。
 4. 创建后页面显示并可复制适配当前 Codex、Claude Code 或 Devin 的 `agentInstruction`。Agent 用 Job ID 读取批准后的 BDD、每个 Repo 实际命中的文件/关键词及可选录制脚本，打开源文件复用真实测试模式，生成 TypeScript 并提交结果。网页服务器不能跨进程自行启动宿主 Agent；把复制的指令粘贴给当前 Agent 即可。
 5. 自动模式在 Agent 提交代码后立即真实执行目标测试；手工模式停在 `awaiting-replay`，由 QA 在“脚本生成队列”点击“开始回放”。回放固定开启 Trace，并收集目标 Repo 配置生成的截图和录像。
@@ -26,7 +26,7 @@ BDD Case Center 的审核页、图谱页、生成弹窗、任务队列、错误�
 
 - `data/store.json`：BDD Case、Import、知识图谱摘要、Job 状态、每轮回放结果和 QA 签署。
 - `data/generation-jobs/<job-id>/`：冻结的 BDD Spec 与 Job 审计包。
-- 目标 Repo 的 `specs/<tenant>/<region>/<scenarioId>.md` 与 `tests/<tenant>/<region>/<scenarioId>.spec.ts`：批准后的 Spec 和最终脚本。
+- `data/generation-jobs/<job-id>/` 与 `test-suites/_bdd-generation/<job-id>/`：冻结 BDD、生成过程和待验证脚本；验证后同步到所选 Test Plan → Test Suite → Test Case 的版本目录。
 - `artifacts/generation/<job-id>/attempt-N/`：第 N 次回放的 Trace、截图、录像及其他 Playwright 附件。
 
 ### 跨电脑安装与迁移（个人电脑 → 工作电脑 / Devin）
@@ -36,7 +36,7 @@ BDD Case Center 的审核页、图谱页、生成弹窗、任务队列、错误�
 1. 在工作电脑克隆 `ai_learnings`，或把 `skills/QA/local-web-test-recorder` 安装到 Devin 目标仓库的 `.agents/skills/local-web-test-recorder`。
 2. 安装 Node.js 20+ 与 Git；如要使用 Graphify，再安装 Python 3.10+。进入 `assets/web-test-recorder` 后直接运行 `node start-server.mjs`，启动器会自动补齐 npm 包、Playwright 浏览器和隔离的 Graphify。
 3. 在工作电脑重新导入原始 `.xlsx`，并用工作电脑上的绝对路径为每个开发/自动化 Repo 分别构建图谱。不要把开发 Repo 复制进 Skill。
-4. QA 批准 BDD 后，在生成弹窗选择一个输出 Repo 和多个参考图谱。Devin 对话中执行：`@skills:local-web-test-recorder 处理 queued Playwright 生成任务，回放并修复直到通过或达到上限`。
+4. QA 批准 BDD 后，在生成弹窗选择目标 Test Plan、Test Suite 和多个参考图谱；重复任务可选择覆盖现有 BDD 生成 Case。Devin 对话中执行：`@skills:local-web-test-recorder 处理 queued Playwright 生成任务，回放并修复直到通过或达到上限`。
 5. 工作内网站只能在工作电脑验证。本机自测覆盖 Excel 分组、UI、API、图谱多选和队列状态，但不能替代工作网络、真实账号和目标站点验收。
 
 若确实要迁移已审核状态，只在两台服务均停止时复制 `data/store.json` 和必要的 `data/generation-jobs/`，复制前检查敏感路径与数据。到新电脑后必须重建全部 Repo 图谱，因为绝对路径通常不同。不要复制 `node_modules`、浏览器 Profile 或开发 Repo 副本。

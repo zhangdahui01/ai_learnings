@@ -15,9 +15,9 @@ Use this Agent Skill in Codex, Claude Code, or Devin to create and operate a loc
 2. 在每个 Sheet 内按有效的 `Depth1 + Depth2 + Depth3 + Pre-requisite` 精确分组；同组多行合并为一个 BDD Case，多个 `No.` 压缩为 `MAIN_001_002` 形式。`Pre-requisite` 原值就是 Given；其中 `AB Key [AB ID] is A/B` 会同时结构化为 Given 的 `- AB: [AB ID] = A/B`，不能丢失。Excel 每一行的 Step 与 Expected Result 永远作为一对 When/Then 保存、编辑、排序和预览，不能拆成两个互不对应的列表。
 3. 计算 `0–100` 的 Web UI 自动化可行度，并标记 `web-ui / hybrid / api / app / manual` 目标及阻碍条件。
 4. QA 在 **BDD Case Center** 按准确 Coupay 模板编辑 metadata、Given/When/Then、Common Check 和支付专项检查并批准；评审使用页面内弹窗，退回必须填写原因，批准后页面保留当前 Sheet/Case 并立即解除生成按钮门禁。BDD 不做版本堆叠，保存即更新当前事实，但保留原始源行和编辑修订号。
-5. 可为多个开发 Repo、组件/Page Object Repo 和既有 UI 自动化 Repo 分别建立 READY 知识图谱（推荐 Graphify，内置代码图可兜底）。生成时单选一个目标 Repo 写入 `specs/` 与 `tests/`，同时多选一个或多个图谱作为只读证据；批准 BDD 与至少一个 READY 图谱是必需项，Codegen 是可选证据。
+5. 可为多个开发 Repo、组件/Page Object Repo 和既有 UI 自动化 Repo 分别建立 READY 知识图谱（推荐 Graphify，内置代码图可兜底）。生成时必须选择平台内已有的 `Test Plan → Test Suite`；多个图谱只作为只读证据。首次提交生成脚本后平台在该 Suite 下创建 `BDD 生成` Test Case；重复生成可显式选择覆盖同一 BDD 生成 Case，并创建新版本、保留旧原生代码快照与回放记录。批准 BDD 与至少一个 READY 图谱是必需项，Codegen 是可选证据。
 
-当用户要求“生成 Playwright 脚本”或“处理生成队列”时，不要只解释步骤：读取 `GET /api/state` 中 `generationJobs`，或用 `GET /api/generation-jobs/<job-id>` 读取弹窗创建的特定任务。对 `queued` Job，按 `agentInstruction`、`prompt`、`outputs.specPath`、每个已选图谱的命中文件/关键词和可选录制引用调用当前环境可用的 Playwright Generator Agent。既有 P0 自动化 Repo 是重要证据源：必须打开检索命中的测试/Page Object/Fixture 文件复用真实登录、支付和定位模式，但不能仅因名称相似直接复制。把代码提交到 `PUT /api/generation-jobs/<job-id>/result`，请求体为 `{code, notes}`。服务器会把代码写入 Job 固定的目标 Repo `tests/<tenant>/<region>/<scenarioId>.spec.ts`；自动模式随后真实执行该文件，手工模式则进入 `awaiting-replay`，等待 QA 在页面点击回放。
+当用户要求“生成 Playwright 脚本”或“处理生成队列”时，不要只解释步骤：读取 `GET /api/state` 中 `generationJobs`，或用 `GET /api/generation-jobs/<job-id>` 读取弹窗创建的特定任务。对 `queued` Job，按 `agentInstruction`、`prompt`、`outputs.specPath`、每个已选图谱的命中文件/关键词和可选录制引用调用当前环境可用的 Playwright Generator Agent。既有 P0 自动化 Repo 是重要证据源：必须打开检索命中的测试/Page Object/Fixture 文件复用真实登录、支付和定位模式，但不能仅因名称相似直接复制。把代码提交到 `PUT /api/generation-jobs/<job-id>/result`，请求体为 `{code, notes}`。服务器会将代码保存到 Job 的平台产物目录，并创建或覆盖 Job 冻结的 Test Case 原生代码；自动模式随后真实执行该文件，手工模式则进入 `awaiting-replay`，等待 QA 在页面点击回放。
 
 对 `fix-queued` Job，读取 `fixPrompt` 以及 `validation.attempts` 最新一轮的错误摘要、stdout/stderr 和 artifacts；优先使用 Playwright Healer 的检查与修复思路，做最小、可解释的修复，不能删除关键断言或用固定等待掩盖失败。再次调用同一 result API 提交修复代码。自动模式会立即再回放，循环至 `awaiting-qa` 或达到 `validation.maxAttempts` 后进入 `failed`。不要自称 UI 服务器直接调用了宿主 Agent：服务器负责编排、回放和证据，当前 Codex/Claude Code/Devin Agent 负责生成及修复。
 
@@ -29,7 +29,7 @@ BDD Case Center 必须把上述闭环作为一个页面级工作流展示，而�
 
 BDD Case Center 的审核、Repo 图谱、生成弹窗、任务队列、错误记录和 QA 签署必须跟随全局 `zh-CN`、`en`、`ko` 切换。翻译 UI 标签、帮助和友好错误；不要翻译或改写 BDD 正文、不可变 Excel 源行、Repo 路径、代码、Prompt、命令及 stdout/stderr，因为这些属于可审计证据。
 
-本流水线新增的存储约定：`data/store.json` 保存 Job 状态、每轮结果和 QA 签署；`data/generation-jobs/<job-id>/` 保存冻结输入；目标 Repo 保存 `specs/<tenant>/<region>/<scenarioId>.md` 与 `tests/<tenant>/<region>/<scenarioId>.spec.ts`；`artifacts/generation/<job-id>/attempt-N/` 保存每轮 Trace 及目标配置生成的截图/录像。不得提交这些运行数据、目标 Repo 副本或凭据。
+本流水线新增的存储约定：`data/store.json` 保存 Job 状态、Plan/Suite/Case 归属、每轮结果和 QA 签署；`data/generation-jobs/<job-id>/` 保存冻结输入；`test-suites/_bdd-generation/<job-id>/` 保存待验证原生脚本，并在提交后同步至目标 Case 的版本目录；`artifacts/generation/<job-id>/attempt-N/` 保存每轮 Trace 及截图/录像。不得提交这些运行数据、目标 Repo 副本或凭据。
 
 跨电脑迁移时只复制或重新安装本 Skill，不复制开发 Repo、账号或 `data/`。新机器只需预装 Node.js 20+、Git，以及启用 Graphify 时所需的 Python 3.10+；`node start-server.mjs` 默认自动执行 `npm ci`、补齐 Chromium/Firefox/WebKit，并把官方 `graphifyy` 隔离安装到 `data/tools/graphify/`。启动器不能猜测并修改业务 Repo；需要官方 Playwright Planner/Generator/Healer 时，显式传入 `--agent-target /absolute/repo --agent-loop codex|claude|vscode|opencode`，启动器才在该 Repo 执行 `playwright init-agents`。路径、图谱摘要和 Job 都保存在运行该服务的电脑；代码索引不会把目标 Repo 源文件复制进 Git。Devin 没有官方专用 loop 参数，仍用 `@skills:local-web-test-recorder`、Job API 和普通 Playwright CLI。完整清单见中英文 guideline 的“自动依赖安装”和“跨电脑安装与迁移”。
 

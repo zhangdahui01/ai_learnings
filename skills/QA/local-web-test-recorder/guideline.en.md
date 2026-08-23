@@ -4,12 +4,12 @@
 
 Open **BDD Case Center** and import an unencrypted multi-sheet `.xlsx`. Sheets remain in workbook order. Within each sheet, rows are grouped by the effective `Depth1 + Depth2 + Depth3 + Pre-requisite`: matching rows become one BDD case, IDs compact to forms such as `MAIN_001_002`, and every source row remains traceable. The original Pre-requisite is Given. For example, `AB Key [AB ID] is A/B` is also structured into the Spec as `- AB: [AB ID] = A/B`. Each Excel Step stays paired with the Expected Result from the same row in an editable When/Then card; pairs can be reordered, added, or removed without separating actions from outcomes. The default functionName is `[Depth1][Depth2][Depth3][Pre-requisite][first Step]`.
 
-Build separate READY graphs for development, component/Page Object, and existing automation repositories. Graphify is recommended, with the built-in local graph as a fallback. In the generation dialog, choose one output repository for `specs/` and `tests/`, then multi-select one or more reference graphs; the output graph is always included and all other repositories remain read-only. Approved BDD and at least one graph are mandatory; Codegen recordings are optional evidence.
+Build separate READY graphs for development, component/Page Object, and existing automation repositories. Graphify is recommended, with the built-in local graph as a fallback. In the generation dialog, choose the destination Test Plan and Test Suite, then multi-select one or more read-only reference graphs. The first result creates a BDD-generated Test Case in that Suite; a repeated generation may explicitly overwrite that same Case as a new version while retaining historical native scripts and replay evidence. Approved BDD and at least one graph are mandatory; Codegen recordings are optional evidence.
 
 ### Complete BDD generation and acceptance workflow
 
 1. In **BDD review center**, review each grouped case by sheet, all source rows, metadata, Given, paired When/Then steps, suitability score, and blockers. Approve and Reject open an in-page review dialog; rejection requires a reason, and overriding blockers requires an explicit checkbox and explanation. The selected sheet/case remains visible after success, and only `approved` enables generation.
-2. In **Repository knowledge graph**, build or refresh a READY graph for every local repository you need. Choose one output repository and multiple reference graphs when creating the job.
+2. In **Repository knowledge graph**, build or refresh a READY graph for every local repository you need. Choose the destination Test Plan and Test Suite plus multiple reference graphs when creating the job. If the BDD already has a generated Case in that Suite, select it to overwrite through a new version.
 3. Click **Generate Playwright script** and choose automatic or manual replay, whether failures enter the Agent repair queue, the maximum replay/repair attempts, Generator Agent usage, and optional Codegen scripts.
 4. After creation, copy the runtime-specific `agentInstruction` shown by the page into the current Codex, Claude Code, or Devin Agent. By Job ID, the Agent reads the approved BDD, matched paths/terms from every selected repository, and optional recordings; it opens those files to reuse real login/payment/Page Object patterns and submits TypeScript. The web server cannot launch the host Agent across process boundaries.
 5. Automatic mode executes the target test immediately after each Agent submission. Manual mode stops at `awaiting-replay` until QA clicks **Start replay**. Trace is always enabled; screenshots and video are collected when produced by the target repository configuration.
@@ -26,7 +26,7 @@ Local storage used by this workflow:
 
 - `data/store.json`: BDD cases/imports, graph summaries, job state, every replay result, and QA sign-off.
 - `data/generation-jobs/<job-id>/`: frozen BDD spec and job audit pack.
-- Target repository `specs/<tenant>/<region>/<scenarioId>.md` and `tests/<tenant>/<region>/<scenarioId>.spec.ts`: approved spec and final script.
+- `data/generation-jobs/<job-id>/` and `test-suites/_bdd-generation/<job-id>/`: frozen BDD, generation audit data, and the pending native script; after submission it is synchronized to the selected Test Plan → Test Suite → Test Case version folder.
 - `artifacts/generation/<job-id>/attempt-N/`: Trace, screenshots, video, and other Playwright evidence from attempt N.
 
 ### Cross-computer installation and migration (personal → work computer / Devin)
@@ -36,7 +36,7 @@ The feature has no hard-coded dependency on this computer. Git contains only the
 1. Clone `ai_learnings` on the work computer, or install `skills/QA/local-web-test-recorder` as `.agents/skills/local-web-test-recorder` in the Devin target repository.
 2. Install Node.js 20+ and Git; install Python 3.10+ when Graphify is required. In `assets/web-test-recorder`, run `node start-server.mjs`; the launcher installs npm packages, Playwright browsers, and isolated Graphify automatically.
 3. Re-import the workbook and build each repository graph from its absolute path on the work computer. Never copy development repositories into the Skill.
-4. Approve BDD, select one output repository and multiple reference graphs, then ask Devin: `@skills:local-web-test-recorder process queued Playwright generation jobs, replay, and repair until passing or reaching the limit`.
+4. Approve BDD, select the destination Test Plan and Test Suite plus multiple reference graphs, then ask Devin: `@skills:local-web-test-recorder process queued Playwright generation jobs, replay, and repair until passing or reaching the limit`. Select an existing BDD-generated Case when intentionally replacing a prior generated script.
 5. Work-only sites must be validated on the work computer. Personal-computer tests cover Excel grouping, UI/API behavior, multi-graph selection, and queue state, not the corporate network, real accounts, or target site.
 
 To migrate reviewed state, stop both servers and copy only `data/store.json` plus required `data/generation-jobs/`, after checking for sensitive paths. Rebuild every repository graph because absolute paths usually change. Do not copy `node_modules`, browser profiles, or repository clones.

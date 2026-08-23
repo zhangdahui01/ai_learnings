@@ -73,3 +73,11 @@ test('extracts AB Key from Pre-requisite into the Given AB section and migrates 
   const numbered = upgradeBddCaseSchema({ id: 'numbered-ab', source: { caseId: 'AB_NUMBERED', abExtractionVersion: 1 }, bdd: { givenContext: '3. AB Key 103680 is B', abGroups: ['3. AB Key 103680 is B'], when: [], then: [] } });
   assert.deepEqual(numbered.bdd.abGroups, ['[103680] = B']);
 });
+
+test('keeps QA-added Given conditions in the executable BDD preview', async () => {
+  const result = await parseManualCaseWorkbook(await fixture());
+  const next = refreshBddDerivedFields({ ...result.cases[0], bdd: { ...result.cases[0].bdd, preconditionKeys: ['auth.coupang.loggedIn'], customPreconditions: ['Feature Flag payment_v2 is enabled for the QA account'] } });
+  assert.deepEqual(next.bdd.customPreconditions, ['Feature Flag payment_v2 is enabled for the QA account']);
+  assert.match(next.gherkin, /\[auth\.coupang\.loggedIn\] Coupang logged-in state/);
+  assert.match(next.gherkin, /\[custom\] Feature Flag payment_v2 is enabled for the QA account/);
+});
