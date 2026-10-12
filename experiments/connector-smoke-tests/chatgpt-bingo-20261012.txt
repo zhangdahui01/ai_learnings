@@ -1,0 +1,5 @@
+GitHub connector write verification
+Source: ChatGPT bingo conversation
+Date: 2026-10-12 UTC
+Purpose: Harmless user-requested connector write and read-back test.
+No private data or production changes.
