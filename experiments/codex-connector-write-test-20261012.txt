@@ -1,0 +1,7 @@
+Local Codex GitHub plugin write test
+
+Test ID: bingo-codex-connector-write-test-20261012
+Repository: zhangdahui01/ai_learnings
+Created through the GitHub connector create_file tool from a local Codex task.
+Purpose: verify user-authorized file creation and subsequent read-back through the plugin.
+This file contains harmless test text only.
