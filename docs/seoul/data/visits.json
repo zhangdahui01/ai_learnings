@@ -1,0 +1,396 @@
+[
+ {
+  "place_id": "alla-prima",
+  "date": "2026-10-31",
+  "meal": "lunch",
+  "menu": [
+   {
+    "en": "Onion",
+    "ko": "양파",
+    "media": [
+     {
+      "src": "photos/alla-prima/20261031-04.jpg",
+      "thumb": "photos/alla-prima/20261031-04-t.jpg",
+      "zh": "当日菜单与第一口小杯",
+      "en": "Today's menu and the first small cup"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c01.mp4",
+      "poster": "media/alla-prima/c01.jpg",
+      "zh": "服务员介绍洋葱汤",
+      "en": "The server introduces the onion soup"
+     }
+    ]
+   },
+   {
+    "en": "Tomato",
+    "ko": "토마토",
+    "media": [
+     {
+      "src": "photos/alla-prima/20261031-05.jpg",
+      "thumb": "photos/alla-prima/20261031-05-t.jpg",
+      "zh": "青花瓷碗里的白身鱼、桃子与橄榄油",
+      "en": "White fish, peach and olive oil in a blue-and-white bowl"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c02.mp4",
+      "poster": "media/alla-prima/c02.jpg",
+      "zh": "第二道上桌",
+      "en": "The second course arrives"
+     }
+    ],
+    "note_zh": "鱼肉很鲜嫩，蛮好的。",
+    "note_en": "The fish was fresh and tender. Very good."
+   },
+   {
+    "en": "Olive · Peach · Caviar",
+    "ko": "올리브 · 복숭아 · 캐비어",
+    "media": [
+     {
+      "src": "photos/alla-prima/20261031-06.jpg",
+      "thumb": "photos/alla-prima/20261031-06-t.jpg",
+      "zh": "层层薄片叠成的一朵花",
+      "en": "Thin slices folded into a flower"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c03.mp4",
+      "poster": "media/alla-prima/c03.jpg",
+      "zh": "自制韩国鱼子酱与布里欧修",
+      "en": "House-cured Korean caviar and brioche"
+     }
+    ],
+    "note_zh": "说不清是什么菜，但做得蛮好吃的。",
+    "note_en": "Not sure what it was exactly, but it was delicious."
+   },
+   {
+    "en": "Whey",
+    "ko": "유청",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-01.jpg",
+      "thumb": "photos/alla-prima/dish-01-t.jpg",
+      "zh": "桌边淋上乳清酱汁",
+      "en": "Whey sauce poured at the table"
+     },
+     {
+      "src": "photos/alla-prima/dish-02.jpg",
+      "thumb": "photos/alla-prima/dish-02-t.jpg",
+      "zh": "根茎蔬菜、叶菜与可食用的花",
+      "en": "Root vegetables, leafy greens and edible flowers"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c04.mp4",
+      "poster": "media/alla-prima/c04.jpg",
+      "zh": "桌边淋上乳清酱汁",
+      "en": "Whey sauce poured at the table"
+     }
+    ],
+    "note_zh": "非常非常一般。",
+    "note_en": "Very, very ordinary."
+   },
+   {
+    "en": "Carnaroli · Langoustine · Neungi mushroom · Chestnut · Truffle",
+    "ko": "까르나롤리 · 랑구스틴 · 능이 · 밤 · 송로버섯",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-03.jpg",
+      "thumb": "photos/alla-prima/dish-03-t.jpg",
+      "zh": "卡纳罗利米烩饭，顶上是松露丝",
+      "en": "Carnaroli risotto crowned with shaved truffle"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c05.mp4",
+      "poster": "media/alla-prima/c05.jpg",
+      "zh": "陈放七年的卡纳罗利米烩饭",
+      "en": "Risotto of seven-year aged Carnaroli"
+     }
+    ],
+    "note_zh": "米饭配上面的蘑菇，松软可口，拌着底下的汤汁，相当赞。",
+    "note_en": "Rice with the mushroom on top, soft and lovely with the sauce underneath. Excellent."
+   },
+   {
+    "en": "Silver pomfret · Burdock · Chopi",
+    "ko": "덕자병어 · 우엉 · 초피",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-04.jpg",
+      "thumb": "photos/alla-prima/dish-04-t.jpg",
+      "zh": "铜壶浇上热高汤",
+      "en": "Hot broth poured from a brass pot"
+     },
+     {
+      "src": "photos/alla-prima/dish-05.jpg",
+      "thumb": "photos/alla-prima/dish-05-t.jpg",
+      "zh": "银鲳、萝卜年糕与炸牛蒡丝",
+      "en": "Silver pomfret, radish rice cake and crispy burdock"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c06.mp4",
+      "poster": "media/alla-prima/c06.jpg",
+      "zh": "滚烫高汤浇在银鲳上",
+      "en": "Hot broth poured over the silver pomfret"
+     }
+    ],
+    "note_zh": "铜壶浇汤的这道也不错，就是不太知道怎么评价。",
+    "note_en": "The one with the broth poured from the pot was good too, though hard to put into words."
+   },
+   {
+    "en": "Rump",
+    "ko": "보섭살",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-06.jpg",
+      "thumb": "photos/alla-prima/dish-06-t.jpg",
+      "zh": "韩牛 1++ 臀肉，配小洋葱与鼠尾草",
+      "en": "Hanwoo 1++ rump with pearl onions and sage"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c07.mp4",
+      "poster": "media/alla-prima/c07.jpg",
+      "zh": "韩牛 1++ 臀肉",
+      "en": "Hanwoo 1++ rump"
+     }
+    ],
+    "note_zh": "非常嫩，很好吃，可惜量太少。（现场：很嫩，就是有一点点肥。）",
+    "note_en": "Very, very tender and delicious, but the portion was too small. (At the table: tender, just a little fatty.)"
+   },
+   {
+    "en": "Whole wheat flour · Maitake · Kelp",
+    "ko": "전립분 · 잎새버섯 · 다시마",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-07.jpg",
+      "thumb": "photos/alla-prima/dish-07-t.jpg",
+      "zh": "全麦鲜面，昆布油与舞茸高汤",
+      "en": "Whole-wheat noodles, kombu oil and maitake broth"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c08.mp4",
+      "poster": "media/alla-prima/c08.jpg",
+      "zh": "最后一道咸食：全麦鲜面",
+      "en": "Last savory course: fresh whole-wheat noodles"
+     }
+    ]
+   },
+   {
+    "en": "Salt",
+    "ko": "소금",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-08.jpg",
+      "thumb": "photos/alla-prima/dish-08-t.jpg",
+      "zh": "盐味冰淇淋淋上阿贝基纳橄榄油",
+      "en": "Salt ice cream finished with Arbequina olive oil"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c09.mp4",
+      "poster": "media/alla-prima/c09.jpg",
+      "zh": "盐味冰淇淋淋上橄榄油",
+      "en": "Salt ice cream finished with olive oil"
+     }
+    ],
+    "note_zh": "冰淇淋确实不错。",
+    "note_en": "The ice cream was genuinely good."
+   },
+   {
+    "en": "Hojicha · Buckwheat · Yirgacheffe",
+    "ko": "호지차 · 메밀 · 예가체프",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-09.jpg",
+      "thumb": "photos/alla-prima/dish-09-t.jpg",
+      "zh": "荞麦酥饼夹焙茶冰淇淋",
+      "en": "Hojicha ice cream between buckwheat sablés"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c10.mp4",
+      "poster": "media/alla-prima/c10.jpg",
+      "zh": "焙茶冰淇淋夹在荞麦酥饼间",
+      "en": "Hojicha ice cream between buckwheat sablés"
+     }
+    ],
+    "note_zh": "冰淇淋也不错。",
+    "note_en": "Good ice cream here too."
+   },
+   {
+    "en": "Coffee · Tea",
+    "ko": "커피 · 차",
+    "media": [
+     {
+      "src": "photos/alla-prima/dish-10.jpg",
+      "thumb": "photos/alla-prima/dish-10-t.jpg",
+      "zh": "茶与两枚小甜点",
+      "en": "Tea with two petits fours"
+     },
+     {
+      "type": "video",
+      "src": "media/alla-prima/c11.mp4",
+      "poster": "media/alla-prima/c11.jpg",
+      "zh": "咖啡与收尾",
+      "en": "Coffee to finish"
+     }
+    ]
+   }
+  ],
+  "photos": [
+   {
+    "src": "photos/alla-prima/20261031-01.jpg",
+    "thumb": "photos/alla-prima/20261031-01-t.jpg",
+    "zh": "吧台全景，厨房就在面前",
+    "en": "The counter and the open kitchen"
+   },
+   {
+    "src": "photos/alla-prima/20261031-02.jpg",
+    "thumb": "photos/alla-prima/20261031-02-t.jpg",
+    "zh": "开餐前厨房在备菜",
+    "en": "The kitchen plating before service"
+   },
+   {
+    "src": "photos/alla-prima/20261031-03.jpg",
+    "thumb": "photos/alla-prima/20261031-03-t.jpg",
+    "zh": "开场的一杯香槟",
+    "en": "A glass of Champagne to start"
+   }
+  ],
+  "ratings": null,
+  "notes_zh": "",
+  "notes_en": "",
+  "spend": "₩192,000",
+  "revisit": null,
+  "cover": null,
+  "cover_src": {
+   "src": "photos/alla-prima/20261031-05.jpg",
+   "thumb": "photos/alla-prima/20261031-05-t.jpg",
+   "zh": "青花瓷碗里的白身鱼、桃子与橄榄油",
+   "en": "White fish, peach and olive oil in a blue-and-white bowl"
+  },
+  "film": {
+   "title_zh": "用餐影片",
+   "title_en": "The film",
+   "duration": "4:45",
+   "chapters": [
+    {
+     "id": "intro",
+     "zh": "入座 · 开放厨房",
+     "en": "Arrival · the open kitchen",
+     "src": "media/alla-prima/intro.mp4",
+     "poster": "media/alla-prima/intro.jpg"
+    },
+    {
+     "id": "c01",
+     "zh": "01 洋葱",
+     "en": "01 Onion",
+     "src": "media/alla-prima/c01.mp4",
+     "poster": "media/alla-prima/c01.jpg"
+    },
+    {
+     "id": "krug",
+     "zh": "Krug 香槟",
+     "en": "Krug Grande Cuvée",
+     "src": "media/alla-prima/krug.mp4",
+     "poster": "media/alla-prima/krug.jpg"
+    },
+    {
+     "id": "c02",
+     "zh": "02 番茄",
+     "en": "02 Tomato",
+     "src": "media/alla-prima/c02.mp4",
+     "poster": "media/alla-prima/c02.jpg"
+    },
+    {
+     "id": "c03",
+     "zh": "03 橄榄 · 桃子 · 鱼子酱",
+     "en": "03 Olive · Peach · Caviar",
+     "src": "media/alla-prima/c03.mp4",
+     "poster": "media/alla-prima/c03.jpg"
+    },
+    {
+     "id": "c04",
+     "zh": "04 乳清",
+     "en": "04 Whey",
+     "src": "media/alla-prima/c04.mp4",
+     "poster": "media/alla-prima/c04.jpg"
+    },
+    {
+     "id": "c05",
+     "zh": "05 烩饭",
+     "en": "05 Risotto",
+     "src": "media/alla-prima/c05.mp4",
+     "poster": "media/alla-prima/c05.jpg"
+    },
+    {
+     "id": "pace",
+     "zh": "“快一点！”",
+     "en": "\"Faster, please!\"",
+     "src": "media/alla-prima/pace.mp4",
+     "poster": "media/alla-prima/pace.jpg"
+    },
+    {
+     "id": "c06",
+     "zh": "06 银鲳",
+     "en": "06 Silver pomfret",
+     "src": "media/alla-prima/c06.mp4",
+     "poster": "media/alla-prima/c06.jpg"
+    },
+    {
+     "id": "c07",
+     "zh": "07 韩牛臀肉",
+     "en": "07 Rump",
+     "src": "media/alla-prima/c07.mp4",
+     "poster": "media/alla-prima/c07.jpg"
+    },
+    {
+     "id": "c08",
+     "zh": "08 全麦面",
+     "en": "08 Noodles",
+     "src": "media/alla-prima/c08.mp4",
+     "poster": "media/alla-prima/c08.jpg"
+    },
+    {
+     "id": "c09",
+     "zh": "09 盐",
+     "en": "09 Salt",
+     "src": "media/alla-prima/c09.mp4",
+     "poster": "media/alla-prima/c09.jpg"
+    },
+    {
+     "id": "c10",
+     "zh": "10 焙茶",
+     "en": "10 Hojicha",
+     "src": "media/alla-prima/c10.mp4",
+     "poster": "media/alla-prima/c10.jpg"
+    },
+    {
+     "id": "c11",
+     "zh": "11 咖啡 · 茶",
+     "en": "11 Coffee · Tea",
+     "src": "media/alla-prima/c11.mp4",
+     "poster": "media/alla-prima/c11.jpg"
+    }
+   ]
+  },
+  "spend_note_zh": "午餐套餐 ₩230,000（折扣 ₩120,000）+ Krug 单杯 ₩78,000 + 咖啡 ₩4,000",
+  "spend_note_en": "Lunch course ₩230,000 (₩120,000 discount) + glass of Krug ₩78,000 + coffee ₩4,000",
+  "review": {
+   "headline_zh": "烩饭和韩牛最惊艳，蔬菜那道很一般",
+   "headline_en": "The risotto and the hanwoo stole the show; the vegetable course fell flat",
+   "body_zh": "开场的鱼很鲜嫩；桃子那道说不清是什么，但很好吃。蔬菜（乳清）那道非常一般。松露烩饭松软可口，拌着底下的汤汁相当赞；铜壶浇汤的银鲳也不错。韩牛非常非常嫩，可惜量太少。甜品两道都有冰淇淋，冰淇淋确实做得好。",
+   "body_en": "The fish early on was fresh and tender, and the peach course, whatever it was, was delicious. The vegetable (whey) course was very ordinary. The truffle risotto was soft and lovely with its sauce, a real highlight, and the pomfret in broth was good too. The hanwoo was incredibly tender but the portion was too small. Both desserts came with ice cream, and the ice cream was genuinely good.",
+   "best": 4,
+   "score": 7,
+   "revisit": true,
+   "revisit_zh": "朋友来首尔会带去，自己不会再去",
+   "revisit_en": "Yes with visiting friends; not again on my own"
+  }
+ }
+]

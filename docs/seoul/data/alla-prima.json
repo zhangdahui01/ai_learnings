@@ -1,0 +1,36 @@
+[
+  {
+    "id": "alla-prima",
+    "name_en": "alla prima",
+    "name_ko": "알라프리마",
+    "stars": 2,
+    "new_2026": false,
+    "green_star": false,
+    "cuisine_en": "Innovative",
+    "cuisine_zh": "创新料理",
+    "chef": "Kim Jin-hyuk (김진혁)",
+    "area_en": "Nonhyeon-dong, Gangnam-gu",
+    "area_zh": "江南区 论岘洞",
+    "address_ko": "서울 강남구 학동로17길 13 1층",
+    "address_en": "1F, 13 Hakdong-ro 17-gil, Gangnam-gu, Seoul",
+    "lat": 37.5134,
+    "lng": 127.026,
+    "price": null,
+    "booking": "Catchtable",
+    "phone": "+82 2-511-2555",
+    "website": "https://allaprima.co.kr",
+    "michelin_url": "https://guide.michelin.com/kr/en/seoul-capital-area/kr-seoul/restaurant/alla-prima",
+    "intro_en": "Chef Kim Jin-hyuk trained in Japan for about five years before opening alla prima in 2015; it won a star within two years and has held two since 2019. A long counter wraps the open kitchen, and the tasting menu treats Korean seasonal produce with a free hand, borrowing Japanese, Italian and French technique without settling into any one of them.",
+    "intro_zh": "主厨金振赫在日本学艺约五年，2015 年开出 alla prima，两年内摘得一星，2019 年起保持二星。长吧台环绕开放厨房，tasting menu 以韩国当季食材为本，自由借用日、意、法的技法，却不被任何一种菜系框住。",
+    "highlights_en": [
+      "Counter seating around a fully open kitchen",
+      "Menu written as ingredient trios, e.g. Olive · Peach · Caviar",
+      "Joseon-style blue-and-white bowls alongside dark stoneware"
+    ],
+    "highlights_zh": [
+      "吧台座位，完整的开放式厨房就在眼前",
+      "菜单只写食材组合，如「橄榄 · 桃子 · 鱼子酱」",
+      "青花瓷碗与深色石器交替出场"
+    ]
+  }
+]

@@ -1,0 +1,933 @@
+[
+ {
+  "id": "seongsu-dong",
+  "name_en": "Seongsu-dong",
+  "name_ko": "성수동",
+  "name_zh": "圣水洞",
+  "category": "neighborhood",
+  "area_en": "Seongsu-dong, Seongdong-gu",
+  "area_zh": "城东区 圣水洞",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.544,
+  "lng": 127.056,
+  "subway": "Seongsu Stn (Line 2), Exit 3",
+  "hours": "Most cafés & shops ~11:00–21:00",
+  "fee": "Free",
+  "intro_en": "A former shoe-making and warehouse district where old red-brick factories now hold roasteries, concept stores and brand pop-ups. People call it Seoul's Brooklyn, and new things open here almost every week.",
+  "intro_zh": "这里原来是制鞋作坊和仓库区，如今旧红砖厂房里开满了咖啡烘焙店、概念店和品牌快闪店，被称为“首尔的布鲁克林”，几乎每周都有新店开张。",
+  "highlights_en": [
+   "Walk Yeonmujang-gil and the lanes around it for converted-factory cafés and design shops",
+   "Pop-ups change constantly; weekday afternoons are far less crowded than weekends",
+   "Combine with Seoul Forest, a 10-minute walk west"
+  ],
+  "highlights_zh": [
+   "逛延武场街（연무장길）及周边小巷，看工厂改造的咖啡馆和设计小店",
+   "快闪店更新很快，工作日下午比周末人少很多",
+   "往西步行约10分钟就是首尔林，可以一起逛"
+  ],
+  "website": null,
+  "status": "visited"
+ },
+ {
+  "id": "hannam-dong",
+  "name_en": "Hannam-dong",
+  "name_ko": "한남동",
+  "name_zh": "汉南洞",
+  "category": "neighborhood",
+  "area_en": "Hannam-dong, Yongsan-gu",
+  "area_zh": "龙山区 汉南洞",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.5375,
+  "lng": 127.0015,
+  "subway": "Hangangjin Stn (Line 6), Exit 3",
+  "hours": "Most boutiques ~11:00–20:00",
+  "fee": "Free",
+  "intro_en": "A quiet, well-off hillside neighbourhood next to Itaewon, full of embassies, galleries, fashion flagships and good restaurants. It feels more grown-up and relaxed than Seongsu, and Leeum Museum is just up the hill.",
+  "intro_zh": "紧邻梨泰院的山坡住宅区，安静又讲究，使馆、画廊、时装旗舰店和好餐厅都集中在这里。氛围比圣水洞更成熟松弛，Leeum美术馆就在坡上。",
+  "highlights_en": [
+   "Browse the Hannam-daero 20-gil boutique street and design-led flagship stores",
+   "Pair with Leeum Museum (book ahead) for a half-day art-and-coffee route",
+   "Weekday daytime is calmest; evenings are good for wine bars and dinner"
+  ],
+  "highlights_zh": [
+   "逛汉南大路20街一带的精品店和设计感旗舰店",
+   "搭配Leeum美术馆（需提前预约），半天“看展+咖啡”路线",
+   "工作日白天最清静，晚上适合去葡萄酒吧和吃晚餐"
+  ],
+  "website": null,
+  "status": "want"
+ },
+ {
+  "id": "ikseon-dong",
+  "name_en": "Ikseon-dong Hanok Street",
+  "name_ko": "익선동 한옥거리",
+  "name_zh": "益善洞韩屋街",
+  "category": "neighborhood",
+  "area_en": "Ikseon-dong, Jongno-gu",
+  "area_zh": "钟路区 益善洞",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.5742,
+  "lng": 126.9899,
+  "subway": "Jongno 3-ga Stn (Lines 1, 3, 5), Exit 4",
+  "hours": "Shops ~11:00–22:00",
+  "fee": "Free",
+  "intro_en": "One of Seoul's oldest surviving clusters of small 1920s–30s urban hanok, now packed into narrow alleys of cafés, bakeries and tiny bars. Small enough to cover in an hour, and very photogenic.",
+  "intro_zh": "首尔现存最早的一片1920–30年代城市韩屋群，窄巷里挤满咖啡馆、面包店和小酒吧。范围不大，一小时就能逛完，非常出片。",
+  "highlights_en": [
+   "Go on a weekday or right at opening; weekend afternoons get very packed",
+   "After dark the lantern-lit alleys turn into a good spot for a drink",
+   "Jongmyo and Changdeokgung are both within a 10-minute walk"
+  ],
+  "highlights_zh": [
+   "建议工作日或刚开门时去，周末下午人非常多",
+   "天黑后小巷挂灯，很适合小酌一杯",
+   "步行10分钟内可到宗庙和昌德宫"
+  ],
+  "website": null
+ },
+ {
+  "id": "bukchon-hanok-village",
+  "name_en": "Bukchon Hanok Village",
+  "name_ko": "북촌한옥마을",
+  "name_zh": "北村韩屋村",
+  "category": "neighborhood",
+  "area_en": "Gahoe-dong & Samcheong-dong, Jongno-gu",
+  "area_zh": "钟路区 嘉会洞·三清洞",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.5826,
+  "lng": 126.9836,
+  "subway": "Anguk Stn (Line 3), Exit 2",
+  "hours": "Core 'red zone' lanes: visitors allowed 10:00–17:00 only",
+  "fee": "Free",
+  "intro_en": "A hillside of traditional tiled-roof houses between Gyeongbokgung and Changdeokgung, where people still live. Its sloping lanes give the classic view of hanok roofs with modern Seoul behind them.",
+  "intro_zh": "位于景福宫和昌德宫之间的山坡上，成片传统瓦顶韩屋，至今仍有居民居住。坡道小巷里能看到韩屋屋顶与现代首尔同框的经典画面。",
+  "highlights_en": [
+   "Since 2025 a tourist curfew applies in the core lanes (17:00–10:00), with fines for entering",
+   "Keep quiet—these are private homes; Bukchon-ro 11-gil has the famous rooftop view",
+   "Continue to Samcheong-dong's galleries and cafés or to MMCA Seoul"
+  ],
+  "highlights_zh": [
+   "2025年起核心区实行游客宵禁（17:00–次日10:00），违规进入会被罚款",
+   "这里是居民住宅，请保持安静；北村路11街是著名的屋顶观景点",
+   "顺路去三清洞的画廊、咖啡馆，或国立现代美术馆首尔馆"
+  ],
+  "website": null
+ },
+ {
+  "id": "seochon",
+  "name_en": "Seochon Village",
+  "name_ko": "서촌",
+  "name_zh": "西村",
+  "category": "neighborhood",
+  "area_en": "Tongin-dong & Nusang-dong, Jongno-gu",
+  "area_zh": "钟路区 通仁洞·楼上洞",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.58,
+  "lng": 126.9703,
+  "subway": "Gyeongbokgung Stn (Line 3), Exit 2",
+  "hours": null,
+  "fee": "Free",
+  "intro_en": "The low-key neighbourhood on the west side of Gyeongbokgung, with hanok, small galleries, bookshops and neighbourhood restaurants. It is more lived-in and less touristy than Bukchon.",
+  "intro_zh": "景福宫西侧的低调街区，有韩屋、小画廊、独立书店和家常小馆。比北村更有生活气息，游客也少得多。",
+  "highlights_en": [
+   "Tongin Market's 'dosirak café' lets you buy old-style coins and fill a lunch box from stalls",
+   "Wander Nuha-dong lanes toward Suseong-dong Valley at the foot of Inwangsan",
+   "Pair with Gyeongbokgung in the morning and Seochon for lunch"
+  ],
+  "highlights_zh": [
+   "通仁市场的“便当咖啡”：用复古铜钱在各摊位挑菜装便当",
+   "沿楼下洞小巷走到仁王山脚下的水声洞溪谷",
+   "上午逛景福宫，中午来西村吃饭，路线很顺"
+  ],
+  "website": null
+ },
+ {
+  "id": "yeonnam-dong",
+  "name_en": "Yeonnam-dong & Gyeongui Line Forest Park",
+  "name_ko": "연남동 · 경의선숲길",
+  "name_zh": "延南洞·京义线林荫道",
+  "category": "neighborhood",
+  "area_en": "Yeonnam-dong, Mapo-gu",
+  "area_zh": "麻浦区 延南洞",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.56,
+  "lng": 126.9235,
+  "subway": "Hongik Univ. Stn (Line 2 / AREX / Gyeongui–Jungang), Exit 3",
+  "hours": null,
+  "fee": "Free",
+  "intro_en": "A long linear park built on an old railway line, nicknamed 'Yeontral Park', lined with cafés, small restaurants and shops. It sits next to Hongdae but feels slower, with picnicking on the lawn and walking under the trees.",
+  "intro_zh": "由废弃铁路改造的带状公园，昵称“延特罗公园”，两侧是咖啡馆、小餐馆和小店。紧挨弘大但节奏更慢，可以在草坪野餐、林荫下散步。",
+  "highlights_en": [
+   "Grab takeaway and sit on the lawn on a warm evening—very local",
+   "Side streets east of the park hide good Chinese-Korean and Southeast Asian spots",
+   "Walk the park southeast toward Gongdeok for a quieter stretch"
+  ],
+  "highlights_zh": [
+   "天气好的傍晚买份外卖坐在草坪上，很有本地感",
+   "公园东侧小巷藏着不错的中华料理和东南亚餐厅",
+   "沿林荫道往东南走向孔德方向，人更少"
+  ],
+  "website": null
+ },
+ {
+  "id": "euljiro",
+  "name_en": "Euljiro (Hipjiro)",
+  "name_ko": "을지로",
+  "name_zh": "乙支路（Hip支路）",
+  "category": "neighborhood",
+  "area_en": "Euljiro 3-ga, Jung-gu",
+  "area_zh": "中区 乙支路3街",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.5664,
+  "lng": 126.9915,
+  "subway": "Euljiro 3-ga Stn (Lines 2, 3), Exit 4",
+  "hours": "Bars mostly evening; printing shops daytime, closed Sun",
+  "fee": "Free",
+  "intro_en": "An old district of printing presses, lighting shops and metal workshops where hidden bars and cafés now sit on upper floors. In the evening the alley beer street fills with plastic tables, and it is one of the most atmospheric parts of old Seoul.",
+  "intro_zh": "老城区里的印刷厂、灯具店和五金作坊之间，楼上藏着很多没有招牌的酒吧和咖啡馆。傍晚啤酒巷摆满塑料桌椅，是最有老首尔味道的地方之一。",
+  "highlights_en": [
+   "Look for unmarked doors and stairwells—many bars have no street signage",
+   "Nogari (dried pollack) beer alley near Euljiro 3-ga is liveliest after 19:00",
+   "Visit on a weekday to see the workshops actually running"
+  ],
+  "highlights_zh": [
+   "留意没有招牌的门和楼梯口，很多酒吧都不挂牌",
+   "乙支路3街附近的明太鱼干啤酒巷19:00以后最热闹",
+   "工作日来能看到作坊真正在运转"
+  ],
+  "website": null
+ },
+ {
+  "id": "mangwon-dong",
+  "name_en": "Mangwon-dong & Mangwon Market",
+  "name_ko": "망원동 · 망원시장",
+  "name_zh": "望远洞·望远市场",
+  "category": "neighborhood",
+  "area_en": "Mangwon-dong, Mapo-gu",
+  "area_zh": "麻浦区 望远洞",
+  "address_ko": "서울특별시 마포구 포은로8길 14 (망원시장)",
+  "address_en": "14 Poeun-ro 8-gil, Mapo-gu (Mangwon Market)",
+  "lat": 37.556,
+  "lng": 126.906,
+  "subway": "Mangwon Stn (Line 6), Exit 2",
+  "hours": "Market ~09:00–21:00",
+  "fee": "Free",
+  "intro_en": "A residential neighbourhood with a cheap, lively traditional market and lanes of small cafés and bakeries. It is also the easiest gateway to Mangwon Hangang Park on the river.",
+  "intro_zh": "生活感很强的住宅区，有便宜热闹的传统市场，小巷里是小咖啡馆和面包店。从这里步行到望远汉江公园也最方便。",
+  "highlights_en": [
+   "Snack through the market: croquettes, fried chicken, tteokbokki",
+   "Pack market food and walk 10–15 min to Mangwon Hangang Park for sunset",
+   "Cafés on Poeun-ro and Mangwon-ro are quieter than Yeonnam's"
+  ],
+  "highlights_zh": [
+   "在市场边走边吃：可乐饼、炸鸡、炒年糕",
+   "买好市场小吃，步行10–15分钟去望远汉江公园看日落",
+   "葆恩路和望远路的咖啡馆比延南洞清静"
+  ],
+  "website": null
+ },
+ {
+  "id": "gyeongbokgung",
+  "name_en": "Gyeongbokgung Palace",
+  "name_ko": "경복궁",
+  "name_zh": "景福宫",
+  "category": "palace",
+  "area_en": "Sejongno, Jongno-gu",
+  "area_zh": "钟路区 世宗路",
+  "address_ko": "서울특별시 종로구 사직로 161",
+  "address_en": "161 Sajik-ro, Jongno-gu, Seoul",
+  "lat": 37.5759,
+  "lng": 126.9768,
+  "subway": "Gyeongbokgung Stn (Line 3), Exit 5",
+  "hours": "09:00–17:00 Nov–Feb; to 18:00 Mar–May & Sep–Oct; to 18:30 Jun–Aug. Closed Tue",
+  "fee": "₩3,000 (free in hanbok)",
+  "intro_en": "The main royal palace of the Joseon dynasty, built in 1395 with Bugaksan mountain behind it. It is the largest of Seoul's five palaces, and its throne hall and lotus-pond pavilion are the city's best-known images.",
+  "intro_zh": "朝鲜王朝的正宫，1395年建成，背靠北岳山。它是首尔五大宫中规模最大的，勤政殿和庆会楼是首尔最具代表性的画面。",
+  "highlights_en": [
+   "Royal guard-changing ceremony at Gwanghwamun Gate at 10:00 and 14:00 (not Tue)",
+   "Don't miss Gyeonghoeru Pavilion and Hyangwonjeong at the quieter north end",
+   "Seasonal night openings sell out fast—book on the day tickets open"
+  ],
+  "highlights_zh": [
+   "光化门守门将交接仪式每天10:00和14:00（周二除外）",
+   "别错过庆会楼和北侧较安静的香远亭",
+   "季节性夜间开放门票很快售罄，开票当天就要抢"
+  ],
+  "website": "https://royal.khs.go.kr"
+ },
+ {
+  "id": "changdeokgung",
+  "name_en": "Changdeokgung Palace & Huwon Secret Garden",
+  "name_ko": "창덕궁 · 후원",
+  "name_zh": "昌德宫·后苑（秘苑）",
+  "category": "palace",
+  "area_en": "Waryong-dong, Jongno-gu",
+  "area_zh": "钟路区 卧龙洞",
+  "address_ko": "서울특별시 종로구 율곡로 99",
+  "address_en": "99 Yulgok-ro, Jongno-gu, Seoul",
+  "lat": 37.5793,
+  "lng": 126.991,
+  "subway": "Anguk Stn (Line 3), Exit 3",
+  "hours": "09:00–17:30 Nov–Jan; to 18:00 Feb–May & Sep–Oct; to 18:30 Jun–Aug. Closed Mon",
+  "fee": "₩3,000; Huwon guided tour +₩5,000",
+  "intro_en": "A UNESCO World Heritage palace whose buildings follow the shape of the hills instead of a strict grid. Many find it the most beautiful of the five. Behind it lies Huwon, a wooded royal garden of pavilions and ponds that you can only enter on a timed guided tour.",
+  "intro_zh": "联合国教科文组织世界遗产。宫殿顺着山势布局，不拘泥于严格的中轴线，很多人认为它是五宫中最美的。宫后的“后苑”是林间亭台与池塘组成的皇家园林，只能跟随定时导览进入。",
+  "highlights_en": [
+   "Huwon tours are capped—book online (released ~6 days ahead) or queue early on site",
+   "Late Oct–mid Nov foliage around Buyongji Pond is spectacular",
+   "The Moonlight Tour (spring/autumn) is the most coveted ticket in Seoul"
+  ],
+  "highlights_zh": [
+   "后苑导览限量，需网上预约（约提前6天放票）或当天早到现场排队",
+   "10月下旬至11月中旬芙蓉池一带红叶最美",
+   "春秋季的“月光纪行”夜游是首尔最难抢的门票之一"
+  ],
+  "website": "https://royal.khs.go.kr"
+ },
+ {
+  "id": "changgyeonggung",
+  "name_en": "Changgyeonggung Palace",
+  "name_ko": "창경궁",
+  "name_zh": "昌庆宫",
+  "category": "palace",
+  "area_en": "Waryong-dong, Jongno-gu",
+  "area_zh": "钟路区 卧龙洞",
+  "address_ko": "서울특별시 종로구 창경궁로 185",
+  "address_en": "185 Changgyeonggung-ro, Jongno-gu, Seoul",
+  "lat": 37.5787,
+  "lng": 126.995,
+  "subway": "Hyehwa Stn (Line 4), Exit 4",
+  "hours": "09:00–21:00, closed Mon",
+  "fee": "₩1,000",
+  "intro_en": "A smaller palace built for queens and queen dowagers, next door to Changdeokgung. Its 1909 Victorian-style glass greenhouse and pond garden make it the most relaxed palace for a stroll, especially in the evening.",
+  "intro_zh": "为王后和大妃们修建的较小宫殿，与昌德宫相邻。园内1909年建的维多利亚式玻璃温室和池塘花园，让它成为最适合悠闲散步的宫殿，傍晚尤其好。",
+  "highlights_en": [
+   "Open until 21:00—come at dusk for the greenhouse and Chundangji Pond",
+   "A gate links it to Jongmyo via the 340 m palace-wall path (opened 2022)",
+   "Usually much quieter than Gyeongbokgung"
+  ],
+  "highlights_zh": [
+   "开放到21:00，傍晚来看大温室和春塘池",
+   "可经2022年开通的340米宫墙路与宗庙相连",
+   "通常比景福宫清静得多"
+  ],
+  "website": "https://royal.khs.go.kr"
+ },
+ {
+  "id": "deoksugung",
+  "name_en": "Deoksugung Palace",
+  "name_ko": "덕수궁",
+  "name_zh": "德寿宫",
+  "category": "palace",
+  "area_en": "Jeong-dong, Jung-gu",
+  "area_zh": "中区 贞洞",
+  "address_ko": "서울특별시 중구 세종대로 99",
+  "address_en": "99 Sejong-daero, Jung-gu, Seoul",
+  "lat": 37.5661,
+  "lng": 126.975,
+  "subway": "City Hall Stn (Lines 1, 2), Exit 2",
+  "hours": "09:00–21:00, closed Mon",
+  "fee": "₩1,000",
+  "intro_en": "A compact downtown palace across from City Hall, unusual for mixing traditional halls with Western neoclassical buildings from the Korean Empire era. Seokjojeon now holds the MMCA Deoksugung art galleries.",
+  "intro_zh": "位于市厅对面的市中心小宫殿，传统殿阁与大韩帝国时期的西式新古典建筑并存，非常特别。石造殿现为国立现代美术馆德寿宫馆。",
+  "highlights_en": [
+   "Guard-changing ceremony at Daehanmun Gate (11:00, 14:00, 15:30; not Mon)",
+   "Walk Deoksugung Stonewall Road (Jeongdong-gil) afterward—gorgeous in autumn",
+   "Evening visits are lovely when the buildings are lit"
+  ],
+  "highlights_zh": [
+   "大汉门前有守门将交接仪式（11:00、14:00、15:30，周一除外）",
+   "之后沿德寿宫石墙路（贞洞路）散步，秋天特别美",
+   "晚上建筑亮灯后来逛很有气氛"
+  ],
+  "website": "https://royal.khs.go.kr"
+ },
+ {
+  "id": "gyeonghuigung",
+  "name_en": "Gyeonghuigung Palace",
+  "name_ko": "경희궁",
+  "name_zh": "庆熙宫",
+  "category": "palace",
+  "area_en": "Sinmunno, Jongno-gu",
+  "area_zh": "钟路区 新门路",
+  "address_ko": "서울특별시 종로구 새문안로 45",
+  "address_en": "45 Saemunan-ro, Jongno-gu, Seoul",
+  "lat": 37.5713,
+  "lng": 126.9683,
+  "subway": "Seodaemun Stn (Line 5), Exit 4",
+  "hours": "09:00–18:00, closed Mon",
+  "fee": "Free",
+  "intro_en": "The 'western palace', mostly demolished in the colonial era and only partly rebuilt. It is the least visited of the five, so you often get its throne hall and hillside terraces almost to yourself.",
+  "intro_zh": "昔日的“西阙”，殖民时期大部分被拆除，后来只部分复原。它是五宫中游客最少的，常常可以独享正殿和山坡台阶。",
+  "highlights_en": [
+   "Free entry—an easy 30–45 minute stop",
+   "Seoul Museum of History (also free) is right at the entrance",
+   "Gingko trees around the grounds turn gold in early November"
+  ],
+  "highlights_zh": [
+   "免费参观，30–45分钟就能逛完",
+   "入口旁就是首尔历史博物馆（同样免费）",
+   "11月上旬园内银杏变成金黄色"
+  ],
+  "website": null
+ },
+ {
+  "id": "jongmyo",
+  "name_en": "Jongmyo Shrine",
+  "name_ko": "종묘",
+  "name_zh": "宗庙",
+  "category": "palace",
+  "area_en": "Hunjeong-dong, Jongno-gu",
+  "area_zh": "钟路区 薰井洞",
+  "address_ko": "서울특별시 종로구 종로 157",
+  "address_en": "157 Jong-ro, Jongno-gu, Seoul",
+  "lat": 37.5747,
+  "lng": 126.9936,
+  "subway": "Jongno 3-ga Stn (Lines 1, 3, 5), Exit 11",
+  "hours": "09:00–17:30 Nov–Jan; to 18:00 Feb–May & Sep–Oct; to 18:30 Jun–Aug. Closed Tue",
+  "fee": "₩1,000",
+  "intro_en": "The royal ancestral shrine of the Joseon kings and a UNESCO World Heritage site. Its main hall, Jeongjeon, is one of the longest single wooden buildings in Asia, and its plain, solemn design is very different from the palaces.",
+  "intro_zh": "朝鲜历代君王供奉祖先的王室宗庙，联合国教科文组织世界遗产。正殿是亚洲最长的单体木结构建筑之一，庄严简朴的风格与各宫殿截然不同。",
+  "highlights_en": [
+   "Weekdays are guided-tour only; free wandering on Sat, Sun, holidays & last Wed of month",
+   "The Jongmyo Jerye royal rite with court music is held each May (and November)",
+   "Exit via the north gate on free-entry days to continue into Changgyeonggung"
+  ],
+  "highlights_zh": [
+   "工作日只能跟导览参观；周六、周日、公休日及每月最后一个周三可自由参观",
+   "每年5月（及11月）举行宗庙祭礼，有宫廷祭礼乐演奏",
+   "自由参观日可从北神门出去，直接进入昌庆宫"
+  ],
+  "website": "https://royal.khs.go.kr"
+ },
+ {
+  "id": "yeouido-hangang-park",
+  "name_en": "Yeouido Hangang Park",
+  "name_ko": "여의도한강공원",
+  "name_zh": "汝矣岛汉江公园",
+  "category": "river",
+  "area_en": "Yeouido-dong, Yeongdeungpo-gu",
+  "area_zh": "永登浦区 汝矣岛洞",
+  "address_ko": "서울특별시 영등포구 여의동로 330",
+  "address_en": "330 Yeouidong-ro, Yeongdeungpo-gu, Seoul",
+  "lat": 37.5281,
+  "lng": 126.933,
+  "subway": "Yeouinaru Stn (Line 5), Exit 2 or 3",
+  "hours": "Open 24h",
+  "fee": "Free",
+  "intro_en": "The busiest and best-known Han River park, with wide lawns, bike rentals, a night market in warmer months and the big fireworks festival in autumn. It is the classic place to order fried chicken to a riverside mat.",
+  "intro_zh": "最热闹、最有名的汉江公园，有大片草坪、自行车租赁，暖季有夜市，秋天举办首尔国际烟花节。坐在江边垫子上点炸鸡外卖就是从这里出名的。",
+  "highlights_en": [
+   "Spring cherry blossoms line Yunjung-ro (Yeouiseo-ro) next to the park",
+   "Rent a bike or Ddareungi and ride along the river at sunset",
+   "Ramyeon machines at convenience stores here are a must-try ritual"
+  ],
+  "highlights_zh": [
+   "春天公园旁的轮中路有樱花大道",
+   "租辆自行车（或首尔共享单车“따릉이”）在日落时沿江骑行",
+   "便利店的汉江拉面机是必体验项目"
+  ],
+  "website": "https://hangang.seoul.go.kr"
+ },
+ {
+  "id": "banpo-hangang-park",
+  "name_en": "Banpo Hangang Park & Moonlight Rainbow Fountain",
+  "name_ko": "반포한강공원 · 달빛무지개분수",
+  "name_zh": "盘浦汉江公园·月光彩虹喷泉",
+  "category": "river",
+  "area_en": "Banpo-dong, Seocho-gu",
+  "area_zh": "瑞草区 盘浦洞",
+  "address_ko": "서울특별시 서초구 신반포로11길 40",
+  "address_en": "40 Sinbanpo-ro 11-gil, Seocho-gu, Seoul",
+  "lat": 37.511,
+  "lng": 126.996,
+  "subway": "Express Bus Terminal Stn (Lines 3, 7, 9), Exit 8-1",
+  "hours": "Park 24h. Fountain Mar 15–Oct: 12:00, 19:30, 20:00, 20:30, 21:00 (+21:30 Jun–Sep), 20 min each",
+  "fee": "Free",
+  "intro_en": "A south-bank park built around Banpo Bridge, whose sides shoot water in a lit, music-backed show, listed as the world's longest bridge fountain. The floating Sebitseom islands next to it glow at night.",
+  "intro_zh": "位于江南岸、以盘浦大桥为中心的公园。大桥两侧会喷出配有灯光和音乐的水幕，号称世界最长的桥梁喷泉。旁边的浮岛“三色岛”夜晚也会亮灯。",
+  "highlights_en": [
+   "Evening shows are the best; the season ends at the end of October and restarts in mid-March",
+   "Shows are cancelled in wind, rain or bad water conditions—check before going",
+   "Sit on the riverside steps near Sebitseom for the full view of the bridge"
+  ],
+  "highlights_zh": [
+   "晚上的场次最好看；每年10月底停喷，次年3月中旬恢复",
+   "大风、下雨或水质不佳时会取消，出发前先确认",
+   "坐在三色岛附近的江边台阶上，可以看到整座桥"
+  ],
+  "website": "https://hangang.seoul.go.kr"
+ },
+ {
+  "id": "ttukseom-hangang-park",
+  "name_en": "Ttukseom Hangang Park",
+  "name_ko": "뚝섬한강공원",
+  "name_zh": "纛岛汉江公园",
+  "category": "river",
+  "area_en": "Jayang-dong, Gwangjin-gu",
+  "area_zh": "广津区 紫阳洞",
+  "address_ko": "서울특별시 광진구 강변북로 139",
+  "address_en": "139 Gangbyeonbuk-ro, Gwangjin-gu, Seoul",
+  "lat": 37.5296,
+  "lng": 127.069,
+  "subway": "Jayang Stn (Line 7, formerly Ttukseom Resort), Exit 2 or 3",
+  "hours": "Open 24h",
+  "fee": "Free",
+  "intro_en": "The north-bank park most popular for water sports, with paddleboarding and windsurfing, an outdoor pool in summer and a weekend flea market. The station opens straight onto the river, so it is very easy to reach.",
+  "intro_zh": "北岸最适合水上运动的公园，可以玩桨板、帆板，夏季有户外泳池，周末有跳蚤市场。地铁站出来就是江边，交通非常方便。",
+  "highlights_en": [
+   "The J-Bug (Jabeolle) observation tube on the station is a quirky cultural space",
+   "Great for a late-afternoon bike ride east toward Jamsil",
+   "Near Seongsu—cross over for dinner after a riverside walk"
+  ],
+  "highlights_zh": [
+   "车站旁的“蚕蛹”（자벌레）观景长廊是个有趣的文化空间",
+   "傍晚可往东骑车到蚕室方向",
+   "离圣水洞很近，江边散步后可以去那边吃晚饭"
+  ],
+  "website": "https://hangang.seoul.go.kr",
+  "status": "visited"
+ },
+ {
+  "id": "nanji-hangang-park",
+  "name_en": "Nanji Hangang Park",
+  "name_ko": "난지한강공원",
+  "name_zh": "兰芝汉江公园",
+  "category": "river",
+  "area_en": "Sangam-dong, Mapo-gu",
+  "area_zh": "麻浦区 上岩洞",
+  "address_ko": "서울특별시 마포구 한강난지로 162",
+  "address_en": "162 Hangangnanji-ro, Mapo-gu, Seoul",
+  "lat": 37.5665,
+  "lng": 126.8765,
+  "subway": "World Cup Stadium Stn (Line 6), Exit 1, then ~20 min walk or bus",
+  "hours": "Open 24h (campground by reservation)",
+  "fee": "Free (camping paid)",
+  "intro_en": "A wide, green riverside park on former landfill, part of the World Cup Park complex. It has a campground, an eco-wetland and fewer crowds than Yeouido.",
+  "intro_zh": "建在旧垃圾填埋场上的开阔滨江绿地，属于世界杯公园的一部分。有露营场和生态湿地，人比汝矣岛少很多。",
+  "highlights_en": [
+   "Book the Nanji campground for a BBQ night by the river",
+   "Combine with Haneul Park's silver-grass (eulalia) fields in October",
+   "Good flat cycling path toward the river's western stretch"
+  ],
+  "highlights_zh": [
+   "可预约兰芝露营场，在江边烧烤过夜",
+   "10月可顺路去天空公园看芒草（紫芒）",
+   "往西有平坦的自行车道，很适合骑行"
+  ],
+  "website": "https://hangang.seoul.go.kr"
+ },
+ {
+  "id": "seonyudo-park",
+  "name_en": "Seonyudo Park",
+  "name_ko": "선유도공원",
+  "name_zh": "仙游岛公园",
+  "category": "river",
+  "area_en": "Yanghwa-dong, Yeongdeungpo-gu",
+  "area_zh": "永登浦区 杨花洞",
+  "address_ko": "서울특별시 영등포구 선유로 343",
+  "address_en": "343 Seonyu-ro, Yeongdeungpo-gu, Seoul",
+  "lat": 37.5437,
+  "lng": 126.8998,
+  "subway": "Seonyudo Stn (Line 9), Exit 2, then ~15 min walk via Seonyugyo footbridge",
+  "hours": "06:00–24:00",
+  "fee": "Free",
+  "intro_en": "A small island in the Han River where an old water-treatment plant was turned into a garden park. Concrete tanks and pillars are now covered in plants, a well-known example of industrial reuse in landscape design.",
+  "intro_zh": "汉江中的小岛，由旧净水厂改造成园林公园，混凝土水池和柱子上长满植物，是景观设计中工业遗址再利用的著名案例。",
+  "highlights_en": [
+   "Cross the arched Seonyugyo footbridge at sunset for river views",
+   "The Garden of Green Pillars is the most photogenic corner",
+   "Pair with Mangwon Hangang Park across the river"
+  ],
+  "highlights_zh": [
+   "日落时走过拱形的仙游桥，江景很美",
+   "“绿柱庭园”是最出片的角落",
+   "可以和对岸的望远汉江公园一起逛"
+  ],
+  "website": "https://hangang.seoul.go.kr"
+ },
+ {
+  "id": "ichon-hangang-park",
+  "name_en": "Ichon Hangang Park",
+  "name_ko": "이촌한강공원",
+  "name_zh": "二村汉江公园",
+  "category": "river",
+  "area_en": "Ichon-dong, Yongsan-gu",
+  "area_zh": "龙山区 二村洞",
+  "address_ko": "서울특별시 용산구 이촌로72길 62",
+  "address_en": "62 Ichon-ro 72-gil, Yongsan-gu, Seoul",
+  "lat": 37.5172,
+  "lng": 126.9705,
+  "subway": "Ichon Stn (Line 4 / Gyeongui–Jungang), Exit 4, then ~10 min walk",
+  "hours": "Open 24h",
+  "fee": "Free",
+  "intro_en": "A calm, natural-feeling stretch of riverbank with reed beds and willow-lined paths, popular with local families. It is a peaceful choice after a morning at the National Museum of Korea.",
+  "intro_zh": "安静、自然感强的江岸，有芦苇丛和柳树小路，很受本地家庭欢迎。上午逛完国立中央博物馆后来这里放松正合适。",
+  "highlights_en": [
+   "Walk the reed-bed path in autumn when the grasses turn silver",
+   "Much quieter than Yeouido or Banpo for a picnic",
+   "Ten minutes from the National Museum of Korea"
+  ],
+  "highlights_zh": [
+   "秋天芦苇变银白色时走湿地小路",
+   "野餐比汝矣岛、盘浦安静得多",
+   "距国立中央博物馆约10分钟"
+  ],
+  "website": "https://hangang.seoul.go.kr"
+ },
+ {
+  "id": "n-seoul-tower",
+  "name_en": "N Seoul Tower & Namsan",
+  "name_ko": "N서울타워 · 남산",
+  "name_zh": "N首尔塔·南山",
+  "category": "view",
+  "area_en": "Yongsan-dong, Yongsan-gu",
+  "area_zh": "龙山区 龙山洞",
+  "address_ko": "서울특별시 용산구 남산공원길 105",
+  "address_en": "105 Namsangongwon-gil, Yongsan-gu, Seoul",
+  "lat": 37.5512,
+  "lng": 126.9883,
+  "subway": "Myeongdong Stn (Line 4), Exit 3 → ~10 min walk to Namsan Cable Car; or Namsan bus 01A/01B",
+  "hours": "Observatory ~10:00–22:30 (weekends to 23:00)",
+  "fee": "Grounds free; observatory ~₩26,000 (adult)",
+  "intro_en": "Seoul's landmark tower stands on top of Namsan, the forested hill in the middle of the city. The summit plaza, love-lock fences and Joseon-era beacon mounds are free, and the view at dusk is the classic one.",
+  "intro_zh": "首尔的地标塔，立在市中心林木茂密的南山顶上。山顶广场、爱情锁围栏和朝鲜时代烽燧台都免费开放，黄昏时的景色最经典。",
+  "highlights_en": [
+   "Walk up the Namsan trails (~30–40 min) instead of the cable car to skip queues",
+   "Come for sunset and stay for the city lights",
+   "The free plaza view is nearly as good as the paid observatory"
+  ],
+  "highlights_zh": [
+   "沿南山步道走上去（约30–40分钟），不用排缆车",
+   "日落前到，看完晚霞再看夜景",
+   "免费的山顶广场视野几乎不输付费展望台"
+  ],
+  "website": "https://www.seoultower.co.kr"
+ },
+ {
+  "id": "lotte-world-tower-seoul-sky",
+  "name_en": "Lotte World Tower – Seoul Sky",
+  "name_ko": "롯데월드타워 서울스카이",
+  "name_zh": "乐天世界塔·首尔天空展望台",
+  "category": "view",
+  "area_en": "Sincheon-dong, Songpa-gu",
+  "area_zh": "松坡区 新川洞",
+  "address_ko": "서울특별시 송파구 올림픽로 300",
+  "address_en": "300 Olympic-ro, Songpa-gu, Seoul",
+  "lat": 37.5126,
+  "lng": 127.1025,
+  "subway": "Jamsil Stn (Lines 2, 8), Exit 1 or 2",
+  "hours": "10:30–22:00 (later on Fri–Sat)",
+  "fee": "~₩29,000+ (adult; varies by date)",
+  "intro_en": "Korea's tallest building at 555 m, with the Seoul Sky observatory on floors 117–123, including a glass-floored deck. On clear days you can see across the whole city to the mountains and, sometimes, the sea.",
+  "intro_zh": "高555米的韩国第一高楼，首尔天空展望台位于117–123层，还有玻璃地板观景台。天气晴朗时可以看到整座城市直到群山，有时甚至能看到海。",
+  "highlights_en": [
+   "Check the air-quality/visibility forecast—fine-dust days ruin the view",
+   "Book a slot ~30 min before sunset for day-to-night views",
+   "Walk around Seokchon Lake below afterward (cherry blossoms in April)"
+  ],
+  "highlights_zh": [
+   "去之前查空气质量和能见度，雾霾天景色大打折扣",
+   "预约日落前约30分钟的时段，可以看日景到夜景",
+   "之后绕楼下的石村湖散步（4月樱花很美）"
+  ],
+  "website": "https://seoulsky.lotteworld.com"
+ },
+ {
+  "id": "naksan-park",
+  "name_en": "Naksan Park & Seoul City Wall",
+  "name_ko": "낙산공원 · 한양도성",
+  "name_zh": "骆山公园·汉阳都城城墙",
+  "category": "view",
+  "area_en": "Ihwa-dong, Jongno-gu",
+  "area_zh": "钟路区 梨花洞",
+  "address_ko": "서울특별시 종로구 낙산길 41",
+  "address_en": "41 Naksan-gil, Jongno-gu, Seoul",
+  "lat": 37.5805,
+  "lng": 127.0086,
+  "subway": "Hyehwa Stn (Line 4), Exit 2, then ~15 min uphill",
+  "hours": "Open 24h",
+  "fee": "Free",
+  "intro_en": "A low hill on the east side of the old city where the 600-year-old Seoul City Wall runs along the ridge. It has one of the best free night views downtown, and the walk passes the Ihwa Mural Village.",
+  "intro_zh": "老城东侧的一座小山，600年历史的汉阳都城城墙沿山脊延伸。这里有市中心最好的免费夜景之一，途中会经过梨花洞壁画村。",
+  "highlights_en": [
+   "Walk the wall-side path at dusk—the city lights frame the stone wall",
+   "Continue down the wall to Heunginjimun (Dongdaemun Gate) and DDP",
+   "Daehangno's small theatres and cafés are at the bottom of the hill"
+  ],
+  "highlights_zh": [
+   "黄昏时沿城墙边小路走，城市灯光映衬着石墙",
+   "顺城墙往下走到兴仁之门（东大门）和DDP",
+   "山脚就是大学路的小剧场和咖啡馆"
+  ],
+  "website": null
+ },
+ {
+  "id": "ddp",
+  "name_en": "Dongdaemun Design Plaza (DDP)",
+  "name_ko": "동대문디자인플라자",
+  "name_zh": "东大门设计广场（DDP）",
+  "category": "view",
+  "area_en": "Euljiro 7-ga, Jung-gu",
+  "area_zh": "中区 乙支路7街",
+  "address_ko": "서울특별시 중구 을지로 281",
+  "address_en": "281 Eulji-ro, Jung-gu, Seoul",
+  "lat": 37.5669,
+  "lng": 127.0094,
+  "subway": "Dongdaemun History & Culture Park Stn (Lines 2, 4, 5), Exit 1",
+  "hours": "Outdoor plaza 24h; exhibitions ~10:00–20:00",
+  "fee": "Free (some exhibitions paid)",
+  "intro_en": "Zaha Hadid's curving aluminium-clad complex, a design and exhibition hub built over the old Dongdaemun Stadium site. Its rooftop garden and LED rose field at night make it great for an evening walk.",
+  "intro_zh": "扎哈·哈迪德设计的曲面铝板建筑群，建在旧东大门运动场原址上，是设计与展览中心。屋顶花园和夜晚的LED玫瑰园很适合傍晚散步。",
+  "highlights_en": [
+   "Visit after dark when the façade and the Seoul Light media-art show light up",
+   "Check the DDP calendar for design and fashion exhibitions",
+   "Dongdaemun's late-night fashion malls are right next door"
+  ],
+  "highlights_zh": [
+   "天黑后来看建筑外立面和“首尔之光”媒体艺术灯光秀",
+   "提前查看DDP日程，常有设计和时装展",
+   "旁边就是东大门通宵营业的时装商场"
+  ],
+  "website": "https://ddp.or.kr"
+ },
+ {
+  "id": "leeum-museum-of-art",
+  "name_en": "Leeum Museum of Art",
+  "name_ko": "리움미술관",
+  "name_zh": "Leeum三星美术馆",
+  "category": "museum",
+  "area_en": "Hannam-dong, Yongsan-gu",
+  "area_zh": "龙山区 汉南洞",
+  "address_ko": "서울특별시 용산구 이태원로55길 60-16",
+  "address_en": "60-16 Itaewon-ro 55-gil, Yongsan-gu, Seoul",
+  "lat": 37.5384,
+  "lng": 126.999,
+  "subway": "Hangangjin Stn (Line 6), Exit 1, then ~10 min uphill",
+  "hours": "10:00–18:00, closed Mon",
+  "fee": "Permanent collection free (book online); special exhibitions paid",
+  "intro_en": "Samsung's art museum, spread across buildings by Mario Botta, Jean Nouvel and Rem Koolhaas. It shows top-level Korean celadon and Buddhist art next to major contemporary exhibitions, and it is one of the best museums in Asia.",
+  "intro_zh": "三星旗下的美术馆，建筑分别由马里奥·博塔、让·努维尔和雷姆·库哈斯设计。馆内有顶级的韩国青瓷和佛教艺术，也有重量级当代艺术展，是亚洲最好的美术馆之一。",
+  "highlights_en": [
+   "Reserve a timed slot online (up to ~2 weeks ahead), especially for weekends",
+   "Don't skip the M1 spiral staircase and the celadon/buncheong galleries",
+   "Combine with Hannam-dong cafés and boutiques for a full afternoon"
+  ],
+  "highlights_zh": [
+   "提前在网上预约时段（最多约提前两周），周末尤其要早订",
+   "别错过M1馆的螺旋楼梯以及青瓷、粉青沙器展厅",
+   "和汉南洞的咖啡馆、精品店一起逛，安排一个下午"
+  ],
+  "website": "https://www.leeum.org"
+ },
+ {
+  "id": "national-museum-of-korea",
+  "name_en": "National Museum of Korea",
+  "name_ko": "국립중앙박물관",
+  "name_zh": "韩国国立中央博物馆",
+  "category": "museum",
+  "area_en": "Yongsan-dong, Yongsan-gu",
+  "area_zh": "龙山区 龙山洞",
+  "address_ko": "서울특별시 용산구 서빙고로 137",
+  "address_en": "137 Seobinggo-ro, Yongsan-gu, Seoul",
+  "lat": 37.5239,
+  "lng": 126.9803,
+  "subway": "Ichon Stn (Line 4 / Gyeongui–Jungang), Exit 2 (underground walkway)",
+  "hours": "09:30–17:30; Wed & Sat to 21:00",
+  "fee": "Free (some special exhibitions paid)",
+  "intro_en": "Korea's flagship museum, covering about 5,000 years of history in a huge modern building with a pond and gardens. Highlights include Silla gold crowns, celadon, and a quiet, almost meditative room of two pensive Bodhisattva statues.",
+  "intro_zh": "韩国最重要的博物馆，在一座带池塘和花园的巨大现代建筑里，展示约五千年的历史。亮点有新罗金冠、高丽青瓷，以及专门陈列两尊半跏思惟像的“思惟之屋”，氛围宁静得近乎冥想。",
+  "highlights_en": [
+   "Go straight to the 'Room of Quiet Contemplation' (2F) for the two pensive Bodhisattvas",
+   "Wednesday/Saturday late openings are calm and great after work",
+   "The museum shop's MU:DS goods (e.g. Bodhisattva figurines) are popular souvenirs"
+  ],
+  "highlights_zh": [
+   "直奔二楼“思惟之屋”看两尊半跏思惟像",
+   "周三、周六夜间开放时人少，适合下班后去",
+   "博物馆文创（如思惟像摆件）是很受欢迎的纪念品"
+  ],
+  "website": "https://www.museum.go.kr"
+ },
+ {
+  "id": "mmca-seoul",
+  "name_en": "MMCA Seoul",
+  "name_ko": "국립현대미술관 서울관",
+  "name_zh": "国立现代美术馆 首尔馆",
+  "category": "museum",
+  "area_en": "Sogyeok-dong, Jongno-gu",
+  "area_zh": "钟路区 昭格洞",
+  "address_ko": "서울특별시 종로구 삼청로 30",
+  "address_en": "30 Samcheong-ro, Jongno-gu, Seoul",
+  "lat": 37.5788,
+  "lng": 126.9801,
+  "subway": "Anguk Stn (Line 3), Exit 1",
+  "hours": "10:00–18:00; Wed & Sat to 21:00",
+  "fee": "Varies by exhibition; free Wed & Sat 18:00–21:00",
+  "intro_en": "The National Museum of Modern and Contemporary Art's main Seoul branch, set between Gyeongbokgung and Bukchon. It has strong rotating shows of Korean and international contemporary art in an open, courtyard-style building.",
+  "intro_zh": "国立现代美术馆在首尔的主馆，位于景福宫与北村之间。开放式庭院建筑里常年有高水平的韩国及国际当代艺术展。",
+  "highlights_en": [
+   "Free entry on Wednesday and Saturday evenings (18:00–21:00)",
+   "Also free on the last Wednesday of every month ('Culture Day')",
+   "Easy to combine with Gyeongbokgung, Bukchon and Samcheong-dong"
+  ],
+  "highlights_zh": [
+   "周三、周六晚上18:00–21:00免费",
+   "每月最后一个周三“文化日”也免费",
+   "和景福宫、北村、三清洞顺路一起逛"
+  ],
+  "website": "https://www.mmca.go.kr"
+ },
+ {
+  "id": "gwangjang-market",
+  "name_en": "Gwangjang Market",
+  "name_ko": "광장시장",
+  "name_zh": "广藏市场",
+  "category": "market",
+  "area_en": "Jongno 5-ga, Jongno-gu",
+  "area_zh": "钟路区 钟路5街",
+  "address_ko": "서울특별시 종로구 창경궁로 88",
+  "address_en": "88 Changgyeonggung-ro, Jongno-gu, Seoul",
+  "lat": 37.57,
+  "lng": 126.999,
+  "subway": "Jongno 5-ga Stn (Line 1), Exit 7",
+  "hours": "Food stalls ~08:30–23:00 daily; shops ~08:30–18:00 (fabric/hanbok closed Sun)",
+  "fee": "Free",
+  "intro_en": "One of Seoul's oldest covered markets, dating back over a century, famous for its central food alley of steaming stalls. It is the go-to for classic Korean street food in a lively, crowded setting.",
+  "intro_zh": "首尔历史最悠久的有顶市场之一，已有一百多年历史，以中央热气腾腾的美食摊位区闻名。想在热闹拥挤的环境里吃地道韩国街头小吃，来这里就对了。",
+  "highlights_en": [
+   "Must-eats: bindaetteok (mung-bean pancake), yukhoe (beef tartare), mayak gimbap, kalguksu",
+   "Check prices before ordering at stalls; places with posted prices are safest",
+   "Weekday late afternoons beat the weekend crush"
+  ],
+  "highlights_zh": [
+   "必吃：绿豆煎饼、生拌牛肉、麻药紫菜包饭、刀切面",
+   "点餐前先问清价格，挂出价目表的摊位最放心",
+   "工作日傍晚比周末人少很多"
+  ],
+  "website": null
+ },
+ {
+  "id": "starfield-coex-library",
+  "name_en": "Starfield Library (COEX)",
+  "name_ko": "별마당 도서관",
+  "name_zh": "星空图书馆（COEX）",
+  "category": "market",
+  "area_en": "Samseong-dong, Gangnam-gu",
+  "area_zh": "江南区 三成洞",
+  "address_ko": "서울특별시 강남구 영동대로 513 스타필드 코엑스몰 B1",
+  "address_en": "B1 Starfield COEX Mall, 513 Yeongdong-daero, Gangnam-gu, Seoul",
+  "lat": 37.5102,
+  "lng": 127.06,
+  "subway": "Bongeunsa Stn (Line 9), Exit 7 (direct to COEX); or Samseong Stn (Line 2)",
+  "hours": "10:30–22:00 daily",
+  "fee": "Free",
+  "intro_en": "An open public library in the middle of COEX Mall, known for its 13-metre bookshelves stacked with tens of thousands of books. It is a great place to sit, read and people-watch while exploring Gangnam.",
+  "intro_zh": "位于COEX商场中央的开放式图书馆，以13米高、摆满数万册书的巨型书墙闻名。逛江南时很适合在这里坐下看书、看人。",
+  "highlights_en": [
+   "Weekday mornings are best for photos without crowds",
+   "Bongeunsa Temple is right across the road—a peaceful contrast",
+   "Seasonal installations in the atrium change through the year"
+  ],
+  "highlights_zh": [
+   "工作日上午拍照人最少",
+   "马路对面就是奉恩寺，动静对比很有意思",
+   "中庭的季节性装置一年中会更换几次"
+  ],
+  "website": "https://www.starfield.co.kr"
+ },
+ {
+  "id": "seoul-forest",
+  "name_en": "Seoul Forest",
+  "name_ko": "서울숲",
+  "name_zh": "首尔林",
+  "category": "nature",
+  "area_en": "Seongsu-dong 1-ga, Seongdong-gu",
+  "area_zh": "城东区 圣水洞1街",
+  "address_ko": "서울특별시 성동구 뚝섬로 273",
+  "address_en": "273 Ttukseom-ro, Seongdong-gu, Seoul",
+  "lat": 37.5446,
+  "lng": 127.0398,
+  "subway": "Seoul Forest Stn (Suin–Bundang Line), Exit 3",
+  "hours": "Open 24h (some facilities closed Mon)",
+  "fee": "Free",
+  "intro_en": "A large park opened in 2005 on a former racetrack and golf course, with woods, ponds, a deer enclosure and riverside paths. It is the green heart of the Seongsu area.",
+  "intro_zh": "2005年在旧赛马场和高尔夫球场上建成的大型公园，有树林、池塘、梅花鹿园和滨江步道，是圣水洞一带的“绿肺”。",
+  "highlights_en": [
+   "See the free-roaming sika deer in the Ecological Forest area",
+   "Ginkgo avenue turns gold in early–mid November",
+   "Cafés on 'Seoul Forest-gil' just east of the park are excellent"
+  ],
+  "highlights_zh": [
+   "生态林区可以看到梅花鹿",
+   "11月上中旬银杏大道一片金黄",
+   "公园东侧“首尔林路”上的咖啡馆很不错"
+  ],
+  "website": null
+ },
+ {
+  "id": "cheonggyecheon",
+  "name_en": "Cheonggyecheon Stream",
+  "name_ko": "청계천",
+  "name_zh": "清溪川",
+  "category": "nature",
+  "area_en": "Cheonggye Plaza, Jongno-gu / Jung-gu",
+  "area_zh": "钟路区/中区 清溪广场",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.5692,
+  "lng": 126.978,
+  "subway": "Gwanghwamun Stn (Line 5), Exit 5 → Cheonggye Plaza",
+  "hours": "Open 24h",
+  "fee": "Free",
+  "intro_en": "A stream restored in 2005 after decades under an elevated highway, now a nearly 11 km sunken walkway through downtown. It is a cool, quiet way to walk from Gwanghwamun toward Gwangjang Market and Dongdaemun.",
+  "intro_zh": "曾在高架路下被掩埋数十年、2005年复原的溪流，如今是一条贯穿市中心、约11公里长的下沉式步道。从光化门一路走到广藏市场和东大门，凉爽又安静。",
+  "highlights_en": [
+   "Start at the spiral 'Spring' sculpture at Cheonggye Plaza",
+   "Evenings are lovely with lit bridges; lantern festival in November",
+   "Walk ~25 min east to Gwangjang Market for dinner"
+  ],
+  "highlights_zh": [
+   "从清溪广场的螺旋雕塑《Spring》出发",
+   "晚上桥梁亮灯很美；11月有首尔灯笼节",
+   "往东步行约25分钟到广藏市场吃晚饭"
+  ],
+  "website": null
+ },
+ {
+  "id": "bukhansan-baegundae",
+  "name_en": "Bukhansan – Baegundae Peak",
+  "name_ko": "북한산 백운대",
+  "name_zh": "北汉山·白云台",
+  "category": "nature",
+  "area_en": "Bukhansan National Park, Gangbuk-gu",
+  "area_zh": "江北区 北汉山国立公园",
+  "address_ko": null,
+  "address_en": null,
+  "lat": 37.6588,
+  "lng": 126.9779,
+  "subway": "Bukhansan Ui Stn (Ui-Sinseol LRT), Exit 2 → Baegundae trailhead",
+  "hours": "Trails open from early morning; descend before sunset",
+  "fee": "Free",
+  "intro_en": "The granite peak at 836 m is the highest point in Seoul, inside a national park reachable by subway. The final scramble uses fixed cables and gives a huge view over the whole city.",
+  "intro_zh": "海拔836米的花岗岩山峰是首尔最高点，所在国立公园坐地铁就能到。最后一段要扶着固定钢索攀爬，登顶后能俯瞰整座城市。",
+  "highlights_en": [
+   "Ui-dong → Baegundae is about 2–2.5 hrs up; wear proper hiking shoes",
+   "Start early on weekends—the top cable section queues by late morning",
+   "Autumn foliage (late Oct) and clear post-rain days give the best views"
+  ],
+  "highlights_zh": [
+   "从牛耳洞登白云台约2–2.5小时，务必穿登山鞋",
+   "周末要早出发，上午晚些时候顶段钢索处会排队",
+   "10月下旬红叶季和雨后放晴的日子视野最好"
+  ],
+  "website": "https://www.knps.or.kr"
+ }
+]
