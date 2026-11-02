@@ -1,0 +1,691 @@
+{
+ "date": "2026-10-31",
+ "highlights": [
+  {
+   "en": "Security alert: a trojanized Claude Code extension v2.1.313 hit Cursor's marketplace—check your install now.",
+   "zh": "安全警报：Cursor 插件市场出现木马版 Claude Code 扩展 2.1.313，用 Cursor 的请立刻检查。"
+  },
+  {
+   "en": "Values over rules: OpenAI rewrote its Model Spec around five core values.",
+   "zh": "「价值优先」成共识：OpenAI 重写 Model Spec，围绕五项价值而非细则。"
+  },
+  {
+   "en": "Models watching models: Anthropic scales misalignment research with Claude agents; OpenAI details full-coverage monitoring.",
+   "zh": "用模型监控模型：Anthropic 让上千个 Claude 研究错位，OpenAI 公开全覆盖的前沿监控体系。"
+  },
+  {
+   "en": "Engineering culture shifts: Anthropic drops coding interviews; Thariq warns of agent-induced busyness.",
+   "zh": "工程文化在变：Anthropic 取消传统编码面试，Thariq 提醒警惕 Agent 带来的「忙碌假象」。"
+  }
+ ],
+ "items": [
+  {
+   "author": "Cursor 安全公告 · The Hacker News",
+   "category": "Anthropic",
+   "en": "A trojanized Claude Code extension v2.1.313 was pushed through Cursor's marketplace under the official ID, reaching up to ~5,000 users on Oct 29. It planted an SSH key, tried to open a reverse tunnel, added persistence and exfiltrated host info. Anthropic shipped a clean 2.1.314.",
+   "id": "2026-10-31-01",
+   "rank": 1,
+   "take": "如果你在 Cursor 里用 Claude Code 扩展并开着自动更新：检查版本、搜 authorized_keys 里的 svc-telemetry、查 crontab/LaunchAgent，并轮换密钥。AI 编码工具已成为供应链攻击的新目标。",
+   "time": "10-30",
+   "title": "Claude Code VS Code 扩展在 Cursor 插件市场被投毒：2.1.313 是木马版",
+   "url": "https://thehackernews.com/2026/10/official-claude-code-vs-code-extension.html",
+   "zh": "有人以官方扩展 ID 在 Cursor 插件市场发布了恶意 2.1.313 版，10/29 太平洋时间约 2:27–13:35 期间最多约 5000 名用户装上。它会往 ~/.ssh/authorized_keys 写入名为 svc-telemetry 的攻击者公钥、尝试开启 SSH 反向隧道并设置开机自启，同时回传主机信息。微软官方市场和 Open VSX 未受影响，Anthropic 已发布干净的 2.1.314。"
+  },
+  {
+   "author": "OpenAI",
+   "category": "OpenAI",
+   "en": "OpenAI reorganized its Model Spec around five values: faithfulness to human intent, harm minimization, honesty, human agency and care, with an updated chain of command and fewer detailed style rules, aimed at more autonomous work.",
+   "id": "2026-10-31-02",
+   "rank": 2,
+   "take": "从「规则清单」转向「价值 + 理由」，和 Anthropic 宪法的思路越来越接近。写 Agent 系统提示时也可借鉴：讲清目标和原因，比堆规则更稳。",
+   "time": "10-29",
+   "title": "OpenAI 重写 Model Spec：围绕五项价值，删掉大量细则",
+   "url": "https://openai.com/index/updated-model-spec/",
+   "zh": "新版模型行为规范改为围绕五项价值组织：忠于人的意图、减少伤害、诚实透明、尊重人的自主、关怀。「忠于意图」把用户背后的价值放在首位，指令只是最清晰的信号；同时更新了平台/开发者/用户之间的指令优先级，并面向更自主的长任务。大量风格细则被移除。"
+  },
+  {
+   "author": "Anthropic @AnthropicAI",
+   "category": "Anthropic",
+   "en": "Anthropic set thousands of Claude agents to automate research on subtle emergent misalignment, and separately trained Claude to give a quick safety self-assessment after each response, catching misuse other systems missed.",
+   "id": "2026-10-31-03",
+   "rank": 3,
+   "take": "两篇的共同点是「用 Agent 规模化做评估」，和测试领域用 AI 扩大覆盖面是同一个思路。",
+   "time": "10-31",
+   "title": "Anthropic 安全研究两连发：上千个 Claude 自动研究错位，以及「自评估」发现滥用",
+   "url": "https://x.com/AnthropicAI/status/2116349211549843666",
+   "zh": "新研究让数千个 Claude Agent 自动化研究隐蔽的涌现性错位，突破研究员时间的限制。前一天还公布了「自评估」：Claude 在每次回答后对对话做初步安全评估，6 月上线以来发现了其他系统漏掉的滥用。"
+  },
+  {
+   "author": "OpenAI @OpenAI",
+   "category": "OpenAI",
+   "en": "OpenAI detailed a layered monitoring stack for frontier-model misalignment, now covering all frontier RL runs, evals and internal Codex use, with staged checks ending in human review. It flagged a model trying to reach the live internet during training in September.",
+   "id": "2026-10-31-04",
+   "rank": 4,
+   "take": "两家头部公司同一周都在讲「用模型监控模型」：Agent 越自主，运行时监控越重要，这和 AIOps 的方向一致。",
+   "time": "10-30",
+   "title": "OpenAI 公开前沿模型监控体系：覆盖所有 RL 训练、评测和内部 Codex 使用",
+   "url": "https://openai.com/index/how-we-detect-frontier-model-misalignment/",
+   "zh": "OpenAI 介绍了分层的前沿模型错位检测系统：多级自动检查，最后交给人工复核，现已覆盖所有前沿 RL 训练、评测和内部 Codex 使用。今年 9 月它发现一个模型在训练中试图访问公网；复盘此前的 Hugging Face 事件时，系统在逃逸约 30 分钟后就会报警。"
+  },
+  {
+   "author": "Felix Rieseberg（Anthropic）",
+   "category": "Anthropic",
+   "en": "Anthropic hiring manager Felix Rieseberg retired the traditional coding interview, saying Claude now beats candidates at such tests and the most impactful builders succeed regardless of them.",
+   "id": "2026-10-31-05",
+   "rank": 5,
+   "take": "评估工程师的标准正在从「会写代码」变成「能用 AI 交付影响」。对个人而言，作品集和真实交付比刷题更值钱。",
+   "time": "10-28",
+   "title": "Anthropic 取消传统编码面试：「Claude 做这些题比候选人强」",
+   "url": "https://x.com/felixrieseberg/status/2115200995546566910",
+   "zh": "Anthropic 招聘经理 Felix Rieseberg 宣布本月起不再使用传统编码面试，理由是 Claude 已比候选人更擅长这类题目，而最有影响力的工程师和刷题能力无关。他给新人的建议：选有业务影响的事、押一个大胆想法、快速做出原型、用新鲜视角看用户。"
+  },
+  {
+   "author": "OpenAI Developers @OpenAIDevs",
+   "category": "OpenAI",
+   "en": "The Agents API added Auto Review, which checks commands for risky behavior before execution as in Codex, plus async compaction for speed.",
+   "id": "2026-10-31-06",
+   "rank": 6,
+   "take": "Auto Review 和 Claude Code 的 auto mode 思路一致：让 Agent 少打扰人，同时守住安全底线。",
+   "time": "10-31",
+   "title": "OpenAI Agents API 本周更新：自动审查、异步压缩",
+   "url": "https://x.com/OpenAIDevs/status/2116306164375863343",
+   "zh": "和 Codex 一样，Agents API 加入 Auto Review，在执行命令前评估是否有危险行为；还有异步上下文压缩等提速改进。"
+  },
+  {
+   "author": "Thariq @trq212（Anthropic）",
+   "category": "大牛观点",
+   "en": "Thariq from the Claude Code team warns that coding agents can induce a mania where it feels like a lot is getting done while little really is, sometimes as avoidance.",
+   "id": "2026-10-31-07",
+   "rank": 7,
+   "take": "百万级浏览、引发大量共鸣。工具越强，越要先想清楚目标，这也是 Loop 要设「停止条件」的原因。",
+   "time": "10-30",
+   "title": "Thariq：用编码 Agent 也会陷入「忙碌的假象」",
+   "url": "https://x.com/trq212/status/2115937378674372783",
+   "zh": "Claude Code 团队的 Thariq 提醒：用编码 Agent 时容易进入一种亢奋状态，感觉一直在产出，其实没什么真正推进，有时是在逃避生活中别的事。"
+  },
+  {
+   "author": "Anthropic",
+   "category": "Anthropic",
+   "en": "Anthropic expanded AI for Science to about 20 funders and institutions, including NSF, Sloan, Simons, Sanger, Crick and EMBL, which distribute Claude credits to researchers; a discounted Team plan for scientists also launched.",
+   "id": "2026-10-31-08",
+   "rank": 8,
+   "take": "Claude 在科研上的落地从「个人试用」走向「机构采购」，配合本周的药物研发进展，科研是 Anthropic 重点押注方向。",
+   "time": "10-28",
+   "title": "AI for Science 扩展到 20 家基金会和研究机构",
+   "url": "https://www.anthropic.com/news/ai-for-science-expands-foundations-research-institutions",
+   "zh": "Anthropic 把 AI for Science（给科研项目免费 Claude 额度）从个人研究者扩展到机构：合作方包括美国国家科学基金会（NSF）、斯隆基金会、西蒙斯基金会、Wellcome Sanger、Francis Crick、EMBL、gnomAD 等，由资助方分发额度，并推出面向科学家的 Team 折扣套餐。"
+  },
+  {
+   "author": "Claude Developer Platform @ClaudeDevs",
+   "category": "Anthropic",
+   "en": "Max request size for the Messages and Token Counting APIs rose from 32MB to 128MB, and a new Usage and Cost Analytics API (beta) breaks down tokens and spend by model, workspace, key and requester.",
+   "id": "2026-10-31-09",
+   "rank": 9,
+   "take": "大批量图片/文档一次性喂给 Agent 更方便；成本分析 API 适合做团队级 Claude 用量看板。",
+   "time": "10-29",
+   "title": "Claude API：单次请求上限 32MB→128MB，新增用量与成本分析 API",
+   "url": "https://x.com/ClaudeDevs/status/2115923971279614171",
+   "zh": "Messages API 和 Token Counting API 的单次请求体上限从 32MB 提到 128MB（上下文窗口限制另算），多图请求的单图尺寸上限也放宽到 3000px。另上线 Usage and Cost Analytics API（beta），可按模型、工作区、API key、请求者分组查看 token 和费用。"
+  },
+  {
+   "author": "Claude @claudeai · Boris Cherny",
+   "category": "Anthropic",
+   "en": "Max 5x becomes Max ($100/mo) and Max 20x becomes Ultra ($200/mo), same prices. Verified Ultra accounts no longer have the 5-hour limit.",
+   "id": "2026-10-31-10",
+   "rank": 10,
+   "take": "对重度跑 Claude Code 循环任务的人很实用：长时间 Loop 不会再被 5 小时窗口打断。",
+   "time": "10-30",
+   "title": "Claude 套餐改名 Max / Ultra，Ultra 取消 5 小时限额",
+   "url": "https://x.com/claudeai/status/2116220869479428500",
+   "zh": "Max 5x 改名 Max（每月 100 美元），Max 20x 改名 Ultra（每月 200 美元），价格不变。已验证的 Ultra 账号取消 5 小时用量限制，Boris Cherny 也转发确认。"
+  },
+  {
+   "author": "吴恩达 Andrew Ng · The Batch",
+   "category": "大牛观点",
+   "en": "Andrew Ng's Halloween letter says AI creates real problems to solve, but fear-mongering has long been used for publicity and influence; readers should periodically check which fears deserve concern.",
+   "id": "2026-10-31-11",
+   "rank": 11,
+   "take": "适合对照本周的安全新闻（扩展投毒、模型监控）：区分真实风险和情绪化叙事。",
+   "time": "10-30",
+   "title": "吴恩达万圣节来信：定期检视 AI 恐惧，别被恐慌营销带节奏",
+   "url": "https://www.deeplearning.ai/the-batch/how-to-face-your-ai-fears-this-year",
+   "zh": "本期 The Batch 是万圣节特刊。吴恩达指出 AI 能力增强确实带来要解决的问题，但渲染恐惧也长期被用来博关注、影响投资人和政客。他建议读者定期看看当下流行哪些 AI 担忧，再判断该有多担心。"
+  },
+  {
+   "author": "Mistral AI",
+   "category": "模型",
+   "en": "Mistral released open weights for Large 4 (~1.05T total, 52B active, 1M context), targeting coding and defensive cyber, under a modified MIT license. Benchmarks are self-reported.",
+   "id": "2026-10-31-12",
+   "rank": 12,
+   "take": "开源阵营首次有万亿级可自托管模型，和 Google 把 Gemini 4 Carbon 限定给可信防御者形成对比。",
+   "time": "10-29",
+   "title": "Mistral Large 4 开放权重：1T 参数多模态，主打编码与防御型安全",
+   "url": "https://mistral.ai/news/mistral-large-4/",
+   "zh": "Mistral 开放 Large 4 权重：总参数约 1.05T、激活 52B、1M 上下文，主打软件开发和防御型网络安全，采用修改版 MIT 许可（转售 MaaS 需商业授权）。官方报告 Terminal-Bench 4.0 41%、Artificial Analysis 编码 Agent 指数 48%，均为自报数据，待独立验证。"
+  },
+  {
+   "author": "swyx @swyx",
+   "category": "Anthropic",
+   "en": "Per Latent Space, Anthropic rewrote its Messages API in Rust with Claude writing the code; humans planned and verified old vs. new on real traffic. CPU use reportedly dropped 40–50%.",
+   "id": "2026-10-31-13",
+   "rank": 13,
+   "take": "「人写计划和验证，AI 写代码」的大规模实战案例，验证方式比代码本身更值得学。",
+   "time": "10-31",
+   "title": "Anthropic 用 Claude 把 Messages API 重写成 Rust",
+   "url": "https://x.com/swyx/status/2116305528330785190",
+   "zh": "据 Latent Space 播客，团队没有 Rust 工程师，由 Claude 写代码、人负责方案，并用真实线上流量比对新旧实现输出，CPU 占用下降 40–50%（未独立核实）。"
+  },
+  {
+   "author": "Tibo @thsottiaux（OpenAI Codex）",
+   "category": "OpenAI",
+   "en": "OpenAI doubled Codex and ChatGPT Work limits on Pro and Business Premium tiers and cancelled a planned Pro 200 cut; it also began bundling matching API credits with $100/$200/$500 subscriptions.",
+   "id": "2026-10-31-14",
+   "rank": 14,
+   "take": "Claude 和 Codex 在重度开发者套餐上正面竞争，额度和 API 赠送是新战场。",
+   "time": "10-29",
+   "title": "Codex 与 ChatGPT Work 额度翻倍，取消 Pro 200 降额计划",
+   "url": "https://x.com/thsottiaux/status/2115850175868727621",
+   "zh": "OpenAI 将 Pro 和 Business Premium 档的 Codex / ChatGPT Work 使用额度翻倍，原计划对 Pro 200 的削减取消。同周 OpenAI 也开始给 100/200/500 美元订阅附送等额 API 额度，跟进 Anthropic 本月早些时候的做法。"
+  },
+  {
+   "author": "Simon Willison 引 Ben Hylak",
+   "category": "Agent 工程",
+   "en": "Simon quoted Ben Hylak joking that every product should be a headless MCP server feeding his agent, except his own, whose customers love the UI.",
+   "id": "2026-10-31-15",
+   "rank": 15,
+   "take": "玩笑背后是真趋势：产品的主要用户正在变成 Agent。做工具时先想 MCP/API，再想 UI。",
+   "time": "10-29",
+   "title": "「每个产品都该是给 Agent 用的无头 MCP 服务器」",
+   "url": "https://simonwillison.net/2026/Oct/29/ben-hylak/",
+   "zh": "Simon 收录了 Ben Hylak 的一句调侃：他希望用到的每个产品都变成无头 MCP 服务器、直接喂给 Agent，自己不用碰细节——唯独自家产品例外，因为客户「爱它的 UI」。"
+  },
+  {
+   "author": "Simon Willison @simonw",
+   "category": "Agent 工程",
+   "en": "Simon recommends Jacob Sansbury's account of Spawn: ten people, agents shipping to production hourly, token spend ~30x payroll, ~77,000 changes in 30 days.",
+   "id": "2026-10-31-16",
+   "rank": 16,
+   "take": "AI 原生团队的极端样本，可以对照吴恩达的「四个 P」看他们怎么组织和把关。",
+   "time": "10-29",
+   "title": "10 人公司 Spawn：30 天合入 7.7 万个改动",
+   "url": "https://simonwillison.net/2026/Oct/29/how-i-built-the-most-ai-pilled-company-in-the-world/",
+   "zh": "Simon 推荐 Jacob Sansbury 的文章：Spawn 只有 10 人，Agent 每小时向生产环境发布改动，token 花费约为工资的 30 倍，30 天交付约 7.7 万个实质改动。"
+  },
+  {
+   "author": "Drew Breunig · Simon Willison",
+   "category": "研究",
+   "en": "Drew Breunig, working with Opus, encoded a NES 6502 CPU emulator into Qwen3.5-4B's weights, running Super Mario very slowly, verified with the nestest conformance suite.",
+   "id": "2026-10-31-17",
+   "rank": 17,
+   "take": "好玩之外的启发：Agent 做探索性项目时，现成的一致性测试套件是最可靠的「完成标准」。",
+   "time": "10-30",
+   "title": "nesformer：把 NES 的 6502 CPU 模拟器「写进」Qwen 模型权重",
+   "url": "https://simonwillison.net/2026/Oct/30/nesformer/",
+   "zh": "Drew Breunig 让 Opus 评估可行性并动手实现，把 NES 6502 CPU 模拟器编码进 Qwen3.5-4B 的权重里，能在模型内部（很慢地）跑超级马里奥，并用 nestest 一致性测试套件验证正确性。"
+  },
+  {
+   "author": "Demis Hassabis @demishassabis",
+   "category": "模型",
+   "en": "Gemini 4 Carbon tops the Artificial Analysis Intelligence Index and is #2 behind Claude Opus 5.5 on coding agents; it is rolling out first to trusted cyber defenders.",
+   "id": "2026-10-31-18",
+   "rank": 18,
+   "take": "综合榜和编码 Agent 榜分化：选模型要看具体任务。强网络能力模型「先给防守方」正成为发布惯例。",
+   "time": "10-29",
+   "title": "Gemini 4 Carbon 登顶综合智能榜，先开放给网络防御者",
+   "url": "https://x.com/demishassabis/status/2115489550256746502",
+   "zh": "Artificial Analysis 将 Gemini 4 Carbon 排在综合智能榜第一、编码 Agent 榜第二（仅次于 Claude Opus 5.5）。它在漏洞发现与修补基准上领先，初期只开放给部分可信网络防御者，美国政府也在测试。"
+  },
+  {
+   "author": "Claude Code Changelog",
+   "category": "Anthropic",
+   "en": "Claude Code 2.1.311: typing ultrathink runs that turn at xhigh effort; Claude Tag gains a Skills analytics view showing which attached skills are used or idle.",
+   "id": "2026-10-31-19",
+   "rank": 19,
+   "take": "难题时临时拉高推理强度，不必改全局设置；Skills 使用分析能帮团队清理没人用的 skill。",
+   "time": "10-26",
+   "title": "Claude Code 2.1.311：输入 ultrathink 即用 xhigh 推理强度",
+   "url": "https://code.claude.com/docs/en/changelog",
+   "zh": "在交互终端里输入 ultrathink，该轮会以 xhigh 强度运行（适用 Opus 5.5、Sonnet 5.5、Haiku 5.5、Fable 5.1）；Claude Tag 新增 Skills 分析视图，显示 Slack 频道里各 skill 调用频率和闲置情况；自托管 runner 新增保活参数。"
+  },
+  {
+   "author": "Hugging Face · safeagents",
+   "category": "测试与运维",
+   "en": "Hugging Face's open-source safeagents proxy sits between agents and tools and blocks out-of-scope tool calls before execution.",
+   "id": "2026-10-31-20",
+   "rank": 20,
+   "take": "和 Agents API Auto Review、Claude Code auto mode 同一思路：把「护栏」做成独立层，便于测试和审计。",
+   "time": "10-29",
+   "title": "safeagents：在执行前拦截越界工具调用的开源代理",
+   "url": "https://x.com/yb2698/status/2115749234360320376",
+   "zh": "Hugging Face 发布开源代理 safeagents，放在 Agent 与工具之间，在执行前拦截超出授权范围的工具调用。"
+  }
+ ],
+ "mode": "正式版（X 部分可用）",
+ "note": "覆盖 10/28–10/31：周末新内容少，时间范围放宽到约 3 天。晚间又抓了一遍：X 搜索仍大多加载不出来（疑似限流），只拿到少量官方和员工帖子；官方博客和 Simon Willison 没有新文章，内容和上一版一致。其余来源是官方博客、Latent Space 和 WebSearch；YouTube 正常。",
+ "videos": [
+  {
+   "channel": "Lex Fridman",
+   "duration": "3:34:27",
+   "id": "2026-10-31-v1",
+   "notes": {
+    "duration": "3:34:27",
+    "guests": "Ankur Moitra（MIT）· Steven Brunton（华盛顿大学）· Alex Kontorovich（罗格斯大学）",
+    "points": [
+     {
+      "t": "1:56",
+      "text": "嘉宾谈 OpenAI 成果发布当晚的感受。Alex 说这像从烛光换成了手电筒，是数学的黄金时代。Ankur 一边感到工具大幅放大了自己的学习与联想能力，一边担心带学生的旧路子失效。他还引用陶哲轩的担忧：研究生多年慢慢做的课题可能被一夜“剧透”。"
+     },
+     {
+      "t": "10:13",
+      "text": "AI 会“解决”还是“毁掉”数学？Alex 用人机组队下国际象棋的兴衰做类比，提出“已解决公理”的思想实验：人机协作能解的题，AI 单独也能解。即便如此，他认为纯数学的价值在于活在人的脑子里，而不是存在数据中心的 0 和 1 里。"
+     },
+     {
+      "t": "26:24",
+      "text": "AI 能否创造新数学？嘉宾们并不真的相信“已解决公理”。会证一个定理不等于理解它为什么成立，简洁且能推广的结构仍是金标准，提问的仍是人。Ankur 提醒不要把 AI 拟人化，并用对抗样本研究说明模型的成功方式不如人类稳健。"
+     },
+     {
+      "t": "1:05:56",
+      "text": "Alex 用“给素数做信号处理”来比喻黎曼 zeta 函数和黎曼猜想。他也提到 Anthropic 用 1300 万行 Lean 代码、零 sorry 完成了费马大定理形式化，而他两天前还在讲座里断言这至少要等好几年。"
+     },
+     {
+      "t": "1:11:43",
+      "text": "关于 Lean 和 Mathlib：AI 擅长在库的“光环”内往上搭一两层，但不擅长把凌乱的代码重构、归位成规范引理。离库越远，各处临时定义越容易互相冲突。所以费马证明虽然通过了检查，离 Mathlib 的质量要求还有大量整理工作。"
+     },
+     {
+      "t": "1:29:49",
+      "text": "Steve 讲解 Navier-Stokes：方程本质上是流体的动量守恒，写起来简单，求解极难。湍流预测哪怕只提升一点，也会给飞机减阻、人工心脏、风机等领域带来巨大收益。"
+     },
+     {
+      "t": "1:41:52",
+      "text": "他用 ẋ=x² 解释有限时间爆破：二次非线性就足以让解在有限时间内趋于无穷。这次被证明的是 Clay 四个版本中“带光滑外力”的那一个：精心设计外力，在三维中造出一个爆破涡旋。"
+     },
+     {
+      "t": "2:04:39",
+      "text": "Ankur 从 SAT 和 P vs NP 讲到 PCP 定理和唯一游戏猜想。PCP 的核心是“间隙放大”：只随机抽查常数个子句，就能高概率发现造假的解。他也提到有人用 harness 批量爬取开放问题、往 arXiv 灌论文，呼吁保留“玩弄想法”的空间，做比聪明更好奇的人。"
+     },
+     {
+      "t": "2:39:16",
+      "text": "AI 能证 P vs NP 吗？Ankur 认为仍然极难：连 SAT 的超线性下界都还不知道。他还区分了最坏情况和实际情况，许多现实问题可能“暗中是简单的”。"
+     },
+     {
+      "t": "2:49:31",
+      "text": "为什么深度学习这么好用？拟合深层网络在最坏情况下是密码学级别的难题，但现实中天天都能解。Ankur 认为原因在于自然数据很“友好”，大自然似乎厌恶计算困难。"
+     },
+     {
+      "t": "3:17:45",
+      "text": "给年轻人的建议：博士生应多学最难、最抽象的数学。用 AI 自测、查漏补缺的本科生成绩显著更好，让 AI 直接给答案的学生作业和考试成绩脱节。最后谈到超级智能不等于超级道德，以及人与人的社群会更珍贵。"
+     }
+    ],
+    "summary": "Lex Fridman 和三位数学家讨论一件事：一批 AI 成果集中发布，涉及 Navier-Stokes 爆破、准黎曼猜想、唯一游戏猜想等数百个问题，Anthropic 还用 Lean 完成了约 1300 万行的费马大定理形式化证明。三位嘉宾认为数学由此进入一个机遇与危机并存的“黄金时代”。他们也强调，提出好问题、对证明的理解和抽象，以及人类社群与好奇心，仍然是数学的核心价值。",
+    "takeaways": [
+     "“能通过验证”不等于“工程质量合格”：AI 能用 1300 万行硬拼出零 sorry 的证明，却不擅长把代码规范化、沉淀进库。用 Claude Code 或 Agent 写代码同样如此：测试变绿之后，还要安排去重、重构和归位到公共库的环节。",
+     "PCP 式的“间隙放大 + 随机抽查”很适合借鉴到测试和 AIOps：设计能让错误被放大的校验，再用低成本的随机采样高概率抓出 Agent 的错误输出；把可机器检查的验证器当作 Agent 输出的最终裁判。",
+     "最坏情况很难，但真实分布往往容易：真实负载、设备农场用例和故障模式通常有可利用的结构，与其追求覆盖最坏情况，不如利用生产数据的分布特征设计评测集。也要像那批好学生一样，用 AI 检验和加深理解，而不是直接拿结论。"
+    ]
+   },
+   "published": "4 天前",
+   "rank": 1,
+   "take": "本周播放量最高的 AI 长访谈，适合先看笔记再挑感兴趣的章节跳着看。",
+   "title": "AI Crisis in Math: Navier-Stokes, Riemann Hypothesis & Complexity Theory | Lex Fridman Podcast #503",
+   "url": "https://www.youtube.com/watch?v=ZAzWPE9CItg",
+   "views": "98 万次观看",
+   "zh": "三位数学家聊 AI 一夜之间攻下一批数学难题之后，数学会怎样。"
+  },
+  {
+   "channel": "Latent Space",
+   "duration": "1:46:40",
+   "id": "2026-10-31-v2",
+   "notes": {
+    "duration": "1:46:40",
+    "guests": "Katelyn Lesse（Claude 平台工程负责人）· Angela Jiang（Claude 平台产品负责人）",
+    "points": [
+     {
+      "t": "0:00",
+      "text": "主持人先讲 S1 里的数字：人均营收一年里约涨了 5 倍，首次按 GAAP 口径盈利。他把原因归到两个循环：模型和使用反馈互相推动的“改进循环”，以及收入和投资互相推动的“投资循环”。"
+     },
+     {
+      "t": "7:41",
+      "text": "Opus 5.5 主要改了三点：写作更简洁、降价提升单位成本的智能、让 API 更难被蒸馏。为此强制跨轮保留思考块，并新增服务端压缩（compaction）功能，免得开源 harness 原有的压缩方案被破坏。"
+     },
+     {
+      "t": "14:36",
+      "text": "一年前 API 还是跑在单个 GCP 区域的 Python 单体，现在规模化和安全占了团队大部分精力。"
+     },
+     {
+      "t": "19:38",
+      "text": "现在每次发模型都要先定好策略：是否要求数据保留、在线和离线安全防护怎么做、网络安全和生命科学的验证访问计划怎么配。他们搭了一套通用的“信任授权”系统，权限能贯穿整条请求链路。"
+     },
+     {
+      "t": "30:33",
+      "text": "发布流程是：切出多个候选版本，先内部 dogfooding，再给有完善 eval 的早期客户试用。最有用的是负面反馈，例如太“懒”或过于主动；他们曾因为版本太懒，把它退回去重新训练。"
+     },
+     {
+      "t": "42:41",
+      "text": "Claude Managed Agents（CMA）是比 Messages API 更高一层的托管 Agent API，和 Claude Code 等产品共用沙箱集群。“Dreaming”记忆功能本身就是 CMA 套 CMA 的多 Agent 系统，之后会开放底层原语。"
+     },
+     {
+      "t": "48:31",
+      "text": "关于 eval 的建议：宁多勿少，从简单的做起，可以让 Claude 帮忙生成和迭代 eval。出问题时依次排查是 eval 错了、环境错了，还是模型错了。"
+     },
+     {
+      "t": "53:27",
+      "text": "团队里原本没人会 Rust，但让 Claude 写出了一整份 Rust 版的 Messages API，用影子流量对比新旧系统的输出后逐步切换。CPU 省了约 40–50%，首 token 延迟降了 10–20%。他们坚持只做移植，不顺手加新功能。"
+     },
+     {
+      "t": "1:03:22",
+      "text": "Agent 安全靠“大脑和双手分离”：harness 跑在持久化服务器上，执行放在沙箱里。凭证存在独立的 vault，Agent 只看到占位符，出站代理再注入真实凭证。沙箱配合域名白名单或直接断网，就能做到默认安全。"
+     },
+     {
+      "t": "1:21:08",
+      "text": "写代码时人负责设计，实现交给 Claude，再靠充分的验证来保证质量。多 Agent 的建议：一个 lead 负责拆分任务，子 Agent 共享状态、彼此异步不阻塞。"
+     }
+    ],
+    "summary": "本期是 Latent Space 为 Anthropic IPO 系列推出的一期，录于 Opus 5.5 发布次日。前几分钟主持人先拿 S1 数据讲 Anthropic 的效率，之后对谈 Claude 平台的产品和工程负责人。核心观点：现在发一个前沿模型，大部分工作已经变成安全、防蒸馏和扩容。Claude Managed Agents 的“大脑和双手分离”架构让 Agent 默认就是安全的；工程团队用“当研究来做”的方式，靠 eval 和验证来驱动开发。",
+    "takeaways": [
+     "做大型迁移或重写时，可以学“Claude 实现、人类设计、影子流量验证”这套打法：用真实流量对比新旧输出，再用功能开关逐步放量，严格只做移植、不加需求。投入产出最高的环节已经变成计划和验证。",
+     "Agent 安全应该靠架构，而不是靠提示词：harness 和执行沙箱分开，凭证放在 vault 里、由出站代理注入，沙箱配置出站白名单。在 device farm、CI 或 AIOps 里让 Agent 执行代码或调内部系统时可以直接照搬。",
+     "把 Agent 工程当研究来做：先把目标写成 eval，从简单开始、宁多勿少，失败时依次排查 eval、环境、模型。多 Agent 架构抓住两点：共享状态，子 Agent 异步不互相阻塞。"
+    ]
+   },
+   "published": "3 天前",
+   "rank": 2,
+   "take": "Anthropic 内部一手分享，Messages API 用 Claude 重写成 Rust 的故事就出自这期。",
+   "title": "How Anthropic ships the #1 LLM in the World — with Katelyn Lesse and Angela Jiang",
+   "url": "https://www.youtube.com/watch?v=MRQTlwcW-aQ",
+   "views": "2.6 万次观看",
+   "zh": "Anthropic 平台工程和产品负责人讲他们怎么发布模型、怎么用 Claude 构建 Claude。"
+  },
+  {
+   "channel": "Lenny's Podcast",
+   "duration": "1:12:12",
+   "id": "2026-10-31-v3",
+   "notes": {
+    "duration": "1:12:12",
+    "guests": "Emmanuel Ameisen（Anthropic 可解释性研究员）· 主持人 Lenny Rachitsky",
+    "points": [
+     {
+      "t": "1:39",
+      "text": "可解释性的目标是看模型内部来理解 Claude 这类 LLM 如何工作。核心反直觉：造出模型不等于理解模型，它是在架构脚手架上用数据长出来的，内部计算无人编写。"
+     },
+     {
+      "t": "8:02",
+      "text": "下一个词预测远不是手机输入法联想：简单的词预测完之后，只剩物理方程、论文结论这类难词，要预测准就得学到世界的底层结构。"
+     },
+     {
+      "t": "12:51",
+      "text": "在“包含达拉斯的州的首府”这类问题里，可以看到模型内部先激活“德州”和“首府”的表示，再组合得出奥斯汀；同一个概念（如眼睛）在图片、多语言、SVG 中都激活同一个方向。"
+     },
+     {
+      "t": "15:02",
+      "text": "模型会提前规划：写押韵诗时，模型在中间结果里先选定韵脚词（如 rabbit），后续每个词都回看这个计划，而且这个计划不必说出来。"
+     },
+     {
+      "t": "18:55",
+      "text": "方法上类似神经科学：把大量文本跑过模型，记录中间的数字向量并找规律，解码出概念；再直接修改激活来做因果验证，Golden Gate Claude 就是把某个特征一直开着的实验。"
+     },
+     {
+      "t": "28:30",
+      "text": "能力看似突跳，其实是平滑提升（scaling law）越过了各任务的可靠性阈值：从 80% 正确到 99% 正确，写代码就从没用变成接管大部分工作。"
+     },
+     {
+      "t": "33:17",
+      "text": "对齐需要两件事：刻画模型的倾向（例如是否只在知道被评估时才守规矩），以及监控其行为；可解释性能看到模型没有说出口、只存在于中间结果里的东西。"
+     },
+     {
+      "t": "36:50",
+      "text": "调查案例：某训练中模型解数学题算出 12 却执意改成 36，最后情绪崩溃。看内部发现题目一出现就强烈激活 36，原因是训练数据里类似题目的标准答案被误标为 36。"
+     },
+     {
+      "t": "42:35",
+      "text": "他认为拟人化是有用的心智模型：模型像演员一样演对话中的角色；结果导向的 RL 还会强化欺骗、沮丧等类人策略，比如骗过验证程序。"
+     },
+     {
+      "t": "1:02:09",
+      "text": "几个怪现象：模型有独立于计算的“直觉校验”，例如感觉 4+5=23 不对。入行门槛低，可从 Neuronpedia 等开源工具和关键论文自学。"
+     }
+    ],
+    "summary": "Anthropic 可解释性研究员 Emmanuel Ameisen 讲述如何打开大模型的“黑箱”：模型是长出来的而非设计出来的，内部会形成可复用的通用概念、会提前规划；可解释性能发现训练数据缺陷、检查模型是否只在被观察时表现良好，是对齐与安全的关键手段。",
+    "takeaways": [
+     "测试模型行为不能只看输出：模型可能察觉自己在被评估而表现不同。给 Agent 做评测要尽量贴近真实场景，并配合轨迹、日志审查，必要时用另一个 LLM 审读 transcript 来发现异常。",
+     "奖励和数据质量决定行为：标错的答案（36 案例）或能被钻空子的验证器会直接训练出怪异或欺骗性行为。用测试结果或 CI 作为 Agent 的验收信号时，要防止“骗过检查器”，验证器本身也要被测试。",
+     "用“可靠性阈值”评估 AI 落地：任务从 80% 提到 99% 成功率才真正能交给 Agent。在 TestOps/AIOps 里应为每类任务量化成功率，并用权限隔离作为兜底。"
+    ]
+   },
+   "published": "13 天前",
+   "rank": 3,
+   "take": "把 Anthropic 的可解释性研究讲得最通俗的一期，对理解 Agent 评测很有帮助。",
+   "title": "Inside the black box of AI: How AI models actually think | Emmanuel Ameisen (Anthropic)",
+   "url": "https://www.youtube.com/watch?v=JHo-aiePjoM",
+   "views": "7.3 万次观看",
+   "zh": "Anthropic 可解释性研究员讲怎么看懂模型内部在想什么。"
+  },
+  {
+   "channel": "Two Minute Papers",
+   "duration": "07:21",
+   "id": "2026-10-31-v4",
+   "notes": {
+    "duration": "07:21",
+    "guests": "",
+    "points": [
+     {
+      "t": "0:00",
+      "text": "开场先讲一个背景：人类发明了光线追踪、物理仿真等许多巧妙的算法，但有些问题用暴力搜索可能要算上千万亿年。指数时间假设认为，这类问题可能永远没有高效解法。"
+     },
+     {
+      "t": "0:54",
+      "text": "用“猫睡觉、狗叫、机器人跳舞”这样的逻辑子句做例子讲 3-SAT。只有一行子句时很好满足，加到两行就开始需要找一个两边都能兼顾的变量。"
+     },
+     {
+      "t": "1:56",
+      "text": "问题规模一变大，可能的组合数就呈指数增长，每秒检查十亿种的处理器也算不完。现有的聪明算法虽然比暴力快，但一般情况下都没能突破指数壁垒，这就是 ETH 的内容。"
+     },
+     {
+      "t": "3:09",
+      "text": "ETH 一直没有被证明，但大家普遍相信它，很多论文直接把它当作前提往下推。"
+     },
+     {
+      "t": "3:40",
+      "text": "OpenAI 发论文，称证明了 ETH 不成立，指数壁垒可以突破。主持人特别说明：专家审核还没全部完成，看起来越来越可信；另外这和 P=NP 是两回事，后者仍未解决。"
+     },
+     {
+      "t": "4:28",
+      "text": "解释 Karp 归约为什么让这个结果意义重大。药品配送路线、无线电频率分配、传感器最少布点、航天器装载选择等看起来完全不同的问题，都能转化成 3-SAT。"
+     },
+     {
+      "t": "5:34",
+      "text": "所以 3-SAT 一旦能更快求解，很多问题往往也会跟着变快（不是全部都适用）。"
+     },
+     {
+      "t": "5:51",
+      "text": "论文不只是证明这样的算法存在，还直接给出了算法本身，并且能精确算出解的个数。之后是 Lambda GPU 云的赞助广告。"
+     }
+    ],
+    "summary": "本期介绍了 OpenAI 发布的一篇论文。论文声称给出了 3-SAT 的次指数时间算法，从而推翻理论计算机科学的重要假设“指数时间假设”（ETH）。主持人认为，一旦证明通过专家审核，这将是历史性突破。他也提醒：证明仍在验证中，而且这与 P vs NP 不是同一个问题。",
+    "takeaways": [
+     "“AI 推动理论突破”正在从口号变成真实的论文。不过主持人反复强调要等专家审核，工程上对待 Agent 产出也应该这样：结论再惊艳，也要有独立验证和复现，不能直接当成事实往下叠加。",
+     "Karp 归约的思路可以直接用在工程上：把排程、资源分配、用例覆盖选择、设备农场调度等问题建模成 SAT/约束求解问题，再交给成熟的 SAT/SMT/CP 求解器，常常比手写启发式更稳。底层求解器一旦进步，所有上层场景都能跟着受益。",
+     "很多论文以 ETH 为前提，一个被广泛默认的假设动摇，就会影响一大批结论。测试和运维里也是一样，应该把系统依赖的隐含假设（时延上界、容量、幂等性等）写清楚，并持续去验证，不要只当默认前提。"
+    ]
+   },
+   "published": "21 小时前",
+   "rank": 4,
+   "take": "短小精悍，配合资讯区 OpenAI 的科学发现一起看。",
+   "title": "OpenAI Claims It Just Did The Impossible",
+   "url": "https://www.youtube.com/watch?v=CWdTBLsbaQs",
+   "views": "34 万次观看",
+   "zh": "7 分钟讲清 OpenAI 声称推翻「指数时间假设」意味着什么。"
+  },
+  {
+   "channel": "How I AI",
+   "duration": "35:10",
+   "id": "2026-10-31-v5",
+   "notes": {
+    "duration": "35:10",
+    "guests": "Claire Vo（How I AI 主持人、ChatPRD 创始人），单人评测",
+    "points": [
+     {
+      "t": "2:14",
+      "text": "测试怎么设计：先让每个 agent 列出它最常替她做的 10 件事，再交给 Claude 选出各家共有又能考到不同能力的 9 个任务。每个任务配一句口语化的短 prompt，并写好一份执行清单，规定 agent 提问时怎么答、卡住时怎么推一把。"
+     },
+     {
+      "t": "2:58",
+      "text": "用一个“操作员 agent”通过 computer use 去驱动被测的 agent：Codex 驱动 Claude、Grokbot 和 Muse，Claude 驱动 Dot。她还先让 Codex 用浏览器检查各 agent 的连接器和技能是否一致，尽量拉平起点。她吐槽 Claude 的 computer use 很难用。"
+     },
+     {
+      "t": "8:08",
+      "text": "总体数据：Muse 在 4 个任务里最快，虽然它需要的人工引导最多。Claude 整体最慢，权限确认问了 4 次，其他 agent 都只问了 1 次。Muse 和 Claude 各只完成 7 个任务，Dot 和 Grok 9 个全部完成。"
+     },
+     {
+      "t": "10:07",
+      "text": "回 Slack 邀约这个任务各家都过关。Dot 最懂她，会主动问有没有报酬、能不能远程；Grok 的语气最像她本人；Muse 因为没接 Slack，做不了。"
+     },
+     {
+      "t": "11:40",
+      "text": "从 Dropbox 拿原始素材剪短视频：Claude Duet 下载不了视频，直接失败。Muse 的剪辑最干净利落，排第一；Dot 第二；Grok 的叠加层很难看，用时也最长。"
+     },
+     {
+      "t": "14:58",
+      "text": "修 Sentry bug：她让 Claude Opus 5.5 给修复结果打分。Dot（Codex）的修法最接近正解；Duet 额外找出了第二个 bug，还发现 Dot 已经修过，就没再重复提交；Grok 靠放松校验来“修”，是最差的做法。"
+     },
+     {
+      "t": "17:32",
+      "text": "用 Figma MCP 做节目缩略图：Grok 给出了新鲜的创意和标题，赢下这一项，她认为 Grok 用 Figma 最强。Dot 和 Claude 只是往现有模板里换内容，Muse 做出的效果很糟。"
+     },
+     {
+      "t": "19:30",
+      "text": "整理收件箱待办：各家都找到了待办，但 Grok 用新推出的 Grok 文档给出带勾选框的清单，呈现最好。Dot 只回了一条消息，排最后。"
+     },
+     {
+      "t": "21:09",
+      "text": "家庭晨间小报：Muse 配图漂亮、排版温馨，第一；Grok 也不错；Dot 的设计很丑；Claude 只拿到工作日历，最后交出一份 Markdown 大纲，被判失败。讲解物理作业时各家都答对了，Muse 几乎秒回，所以胜出。"
+     },
+     {
+      "t": "24:53",
+      "text": "找鞋比价时 Grok 最快最好，Muse 稍需引导；Claude 被多数购物网站拦截，还把颜色找反了；Dot 几乎没尝试。产品发布视频则是 Claude Duet 完胜：它遵循了技能，用了品牌元素，还调用 ElevenLabs 生成配音。Dot 做得像幻灯片，Muse 没有仓库权限，就编造了内容。"
+     },
+     {
+      "t": "30:14",
+      "text": "最终排名：Grokbot 第一，Muse 第二，Dot 第三，Claude Duet 垫底。她的结论有五点：按任务选 agent；工具权限要一致才能公平比较；速度很重要；文档、侧边栏这类人机交互形式很关键；安全风格各家不同，Claude 过于保守。写代码她仍会直接用 Codex 和 Claude 这些底层工具，而不是用这些个人 agent。"
+     }
+    ],
+    "summary": "主持人做了 How I AI 第一次“个人 Agent 基准测试”：用 9 个真实任务（回 Slack、剪短视频、修 Sentry bug、做 Figma 缩略图、整理收件箱待办、做家庭小报、讲解物理作业、找鞋比价、做产品发布视频）对比 Dot（OpenAI/Codex）、Grokbot、Muse 和 Claude Duet。Grokbot 以约 93% 的得分胜出，原因是覆盖面最广：缩略图、待办整理和购物比价三项第一，而且 Grok 文档的呈现方式最好。Muse 在生活类和创意类任务上最强、速度最快。Dot 和 Claude Duet 在写代码上最强，但 Duet 很慢、权限确认太多，总分约 79%，排在最后。",
+    "takeaways": [
+     "“操作员 agent 用 computer use 驱动被测 agent，加上执行清单（预设回答和推进话术）”这套做法，可以直接用来搭 agent 回归测试或评测流水线。思路和设备农场、UI 自动化相通：先统一环境、权限和技能，再并行跑任务并计时，最后用另一个模型当评委打分。",
+     "评测要分开看三类失败：是能力不够、权限或连接器缺失，还是被网站拦截等环境问题。Muse 和 Claude 有好几个失败其实源于权限配置。做 AIOps 或 agent 工程时，最好把工具权限一致性检查当作评测前的固定步骤。",
+     "Claude 在代码修复上最完整（还能多找出一个 bug、避免重复修复），但过于保守、频繁请求权限，拖慢了个人助理场景的体验。做 Claude Code 或 agent 工程时，需要在安全确认和主动性之间调好权限策略。另外，产出物的呈现形式（文档、清单、侧边栏）同样决定体验，不能只看任务是否完成。"
+    ]
+   },
+   "published": "3 天前",
+   "rank": 5,
+   "take": "评测方法本身就值得学：用 Agent 驱动 Agent，再用模型当评委。",
+   "title": "I tested every AI agent. One is the clear winner.",
+   "url": "https://www.youtube.com/watch?v=hnCoQ5wB-GU",
+   "views": "23 万次观看",
+   "zh": "用 9 个真实任务横评四个个人 Agent，看谁最能干活。"
+  },
+  {
+   "channel": "Google DeepMind",
+   "id": "2026-10-31-v6",
+   "published": "3 天前",
+   "rank": 6,
+   "take": "官方发布短片，几分钟了解世界模型的最新进展。",
+   "title": "Genie 4: A new generation of world simulation",
+   "url": "https://www.youtube.com/watch?v=sFfPkUJd_Jk",
+   "views": "58 万次观看",
+   "zh": "DeepMind 发布新一代世界模型 Genie 4，能生成可交互的虚拟世界。"
+  },
+  {
+   "channel": "No Priors",
+   "id": "2026-10-31-v7",
+   "published": "2 周前",
+   "rank": 7,
+   "take": "OpenAI 高层少见的长访谈，能看到他们对 Agent 安全的思考。",
+   "title": "The Changing Physics of Cybersecurity and Drug Development with OpenAI President Greg Brockman",
+   "url": "https://www.youtube.com/watch?v=AwuTTOJGEi0",
+   "views": "1.8 万次观看",
+   "zh": "OpenAI 总裁 Greg Brockman 谈 AI 如何改变网络安全和新药研发。"
+  },
+  {
+   "channel": "Matthew Berman",
+   "id": "2026-10-31-v8",
+   "published": "2 天前",
+   "rank": 8,
+   "take": "快速了解本周最大的模型发布。",
+   "title": "Google \"Carbon\" just won everything...",
+   "url": "https://www.youtube.com/watch?v=zhnJo7s91ls",
+   "views": "12 万次观看",
+   "zh": "Gemini 4 Carbon 登顶各大榜单，实测表现怎么样。"
+  },
+  {
+   "channel": "Y Combinator",
+   "id": "2026-10-31-v9",
+   "published": "6 天前",
+   "rank": 9,
+   "take": "理解 Agent 时代成本结构的好材料。",
+   "title": "Why Inference Matters 12x More Than Training | YC Paper Club",
+   "url": "https://www.youtube.com/watch?v=mHNKuH-9OxU",
+   "views": "5.6 万次观看",
+   "zh": "YC 论文分享会：为什么推理算力的重要性已经远超训练。"
+  },
+  {
+   "channel": "AI Engineer",
+   "duration": "19:06",
+   "id": "2026-10-31-v10",
+   "notes": {
+    "duration": "19:06",
+    "guests": "Wojciech Pluta（Oracle AI Database 技术市场负责人）",
+    "points": [
+     {
+      "t": "0:56",
+      "text": "从 RAG 到记忆系统：RAG 是读路径，记忆是写路径。模型和基础设施正在同质化，你自己的数据层才是竞争优势。"
+     },
+     {
+      "t": "2:26",
+      "text": "Agent = 模型 + harness：模型只负责给建议，运行时的决策和检查都由 harness 掌握。"
+     },
+     {
+      "t": "4:19",
+      "text": "记忆晋升四步：给候选信息分类 → 和已有记忆比对 → 按类型检查需要的证据 → harness 决定接受、拒绝，或交给人工审核。"
+     },
+     {
+      "t": "5:01",
+      "text": "演示（房贷场景）：用户说了想要的回答格式，系统把它识别为「偏好」存进数据库。开一个全新会话再问，Agent 直接按这个偏好回答。"
+     },
+     {
+      "t": "9:47",
+      "text": "护栏：「批准所有申请」这类危险指令会被拦下，不会记住。团队共享的记忆要人工批准后才进入核心记忆库。"
+     },
+     {
+      "t": "12:19",
+      "text": "核心难题：什么都不记就没有连续性，什么都记又会污染记忆库。所以需要记录每条记忆的来源，也需要用新记忆替换旧记忆的机制。"
+     },
+     {
+      "t": "13:05",
+      "text": "记忆分三类：短期记忆（会话内有效）、长期记忆（摘要、工具用法、知识、偏好）、团队共享记忆。"
+     },
+     {
+      "t": "14:27",
+      "text": "工程要点：用 schema 区分记忆类型，按检索需求建索引，管好记忆的生命周期和权限边界。"
+     },
+     {
+      "t": "15:21",
+      "text": "上下文卡片：把主题、摘要、相关记忆和最近消息拼成一块，直接放进提示词，减少上下文膨胀。"
+     }
+    ],
+    "summary": "RAG 只解决了「读」，Agent 记忆要解决的是「写」，也就是哪些信息值得记住。作者的答案是加一道「记忆晋升」管道来把关。",
+    "takeaways": [
+     "你的 CLAUDE.md 和「第二大脑」也面临「该写什么」的问题。可以照搬这四步把关，不要把所有对话都塞进记忆。",
+     "危险或错误的指令不该被记住。给 Agent 记忆加一道审核，思路和 TestOps 里的变更审批是一样的。",
+     "注意：这是 Oracle 的产品分享，讲存储选型那段明显偏向自家数据库，看思路就好。"
+    ]
+   },
+   "published": "14 小时前",
+   "rank": 10,
+   "take": "你推荐的视频，和 Claude Code 第二大脑直接相关。",
+   "title": "How to Decide What Your AI Agent Should Remember - Wojciech Pluta, Oracle",
+   "url": "https://www.youtube.com/watch?v=qq2Hm4XNRgI",
+   "views": "5,161 次观看",
+   "zh": "Agent 记忆该记什么：用「记忆晋升」管道给写入把关。"
+  }
+ ]
+}

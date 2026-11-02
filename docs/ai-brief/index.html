@@ -1,0 +1,529 @@
+<!doctype html><html><head><meta charset=utf-8><title>AI 大牛早报</title><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;900&display=swap">
+<style>
+/* Layout: top tab bar (每日精选 / 稍后读 / 收藏 / 排行榜 / 武器库); daily view has a date rail; every item carries the same action strip */
+:root{
+  --bg:#f5f6f8; --surface:#ffffff; --fg:#1b2230; --muted:#5d6678; --line:#dde1e8;
+  --accent:#2b4fd8; --accent-soft:#e6ebfc; --star:#c27a00; --star-soft:#fbf0dc; --later:#1d7a52; --later-soft:#e1f2ea; --danger:#b3261e;
+  --f-display:"Noto Serif SC","Songti SC",serif;
+  --f-body:"IBM Plex Sans","Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#12151c; --surface:#1a1f29; --fg:#e4e8ef; --muted:#9aa3b4; --line:#2b3240;
+  --accent:#8aa6ff; --accent-soft:#232d4a; --star:#f0b04a; --star-soft:#3a2f1a; --later:#5cc79a; --later-soft:#1a3329; --danger:#ff8a80; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#12151c; --surface:#1a1f29; --fg:#e4e8ef; --muted:#9aa3b4; --line:#2b3240;
+  --accent:#8aa6ff; --accent-soft:#232d4a; --star:#f0b04a; --star-soft:#3a2f1a; --later:#5cc79a; --later-soft:#1a3329; --danger:#ff8a80; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-body);font-size:15px;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:24px 64px}
+a{color:var(--accent)}
+button{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+.shell{max-width:1080px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:10px;padding-bottom:14px}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(28px,5vw,40px);margin:0;letter-spacing:.02em;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px;margin:2px 0 0}
+.stamp{font-family:var(--f-mono);font-size:12px;color:var(--muted)}
+nav.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:22px}
+nav.tabs a{flex:none;text-decoration:none;color:var(--muted);padding:10px 14px;border-bottom:2px solid transparent;font-weight:500;font-size:14px;display:flex;align-items:center;gap:6px}
+nav.tabs a[aria-current="page"]{color:var(--fg);border-bottom-color:var(--accent)}
+.count{font-family:var(--f-mono);font-size:11px;background:var(--accent-soft);color:var(--accent);border-radius:999px;padding:0 7px;line-height:18px}
+.layout{display:grid;grid-template-columns:150px minmax(0,1fr);gap:36px}
+.rail{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);align-self:start}
+.rail h2,.lab{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;font-weight:600}
+.dates{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.dates button{all:unset;cursor:pointer;display:flex;justify-content:space-between;gap:8px;width:100%;box-sizing:border-box;padding:6px 10px;border-radius:6px;font-family:var(--f-mono);font-size:13px}
+.dates button:hover{background:var(--accent-soft)}
+.dates button[aria-current="true"]{background:var(--accent);color:var(--surface)}
+.dates .wd{opacity:.7}
+main{min-width:0}
+.dayhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 14px;margin-bottom:12px}
+.dayhead h2,.viewhead h2{font-family:var(--f-display);font-size:24px;margin:0}
+.viewhead{margin-bottom:16px}.viewhead p{color:var(--muted);margin:4px 0 0;font-size:13.5px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.chips button{all:unset;cursor:pointer;font-size:12px;padding:3px 10px;border:1px solid var(--line);border-radius:999px;color:var(--muted)}
+.chips button[aria-pressed="true"]{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.brief{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin-bottom:24px}
+.brief ol{margin:0;padding-left:20px;display:grid;gap:10px}
+.brief .en{color:var(--muted);font-size:13px;display:block}
+.section-title{font-family:var(--f-display);font-size:18px;margin:28px 0 4px}
+.list{list-style:none;margin:0;padding:0}
+.item{display:grid;grid-template-columns:40px minmax(0,1fr);gap:4px 14px;padding:18px 0;border-top:1px solid var(--line)}
+.rank{font-family:var(--f-mono);font-size:20px;font-weight:500;color:var(--muted);line-height:1.2;font-variant-numeric:tabular-nums}
+.item.top3 .rank{color:var(--accent)}
+.meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:12px;color:var(--muted)}
+.chip{font-size:11px;font-weight:600;padding:1px 8px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.item h4{margin:6px 0 8px;font-size:17px;line-height:1.4;font-weight:600;text-wrap:balance}
+.item h4 a{color:inherit;text-decoration:none}.item h4 a:hover{color:var(--accent)}
+.bi{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.bi p{margin:0}.bi .en{font-size:13.5px;color:var(--muted)}
+.bi .tag{display:block;font-family:var(--f-mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.take{margin:10px 0 0;font-size:13.5px;padding-left:10px;border-left:2px solid var(--star)}
+.take b{color:var(--star);font-weight:600}
+.acts{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;align-items:center}
+.act{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:5px;font-size:12.5px;padding:4px 10px;border:1px solid var(--line);border-radius:6px;color:var(--muted);background:var(--surface);font-variant-numeric:tabular-nums}
+.act:hover{border-color:var(--accent);color:var(--fg)}
+.act[disabled]{cursor:default;opacity:.85}.act[disabled]:hover{border-color:var(--line);color:var(--muted)}
+.act.on-later{background:var(--later-soft);border-color:var(--later);color:var(--later)}
+.act.on-fav{background:var(--star-soft);border-color:var(--star);color:var(--star)}
+.act.on-up{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.act.on-lib{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);opacity:1}
+.act.danger{color:var(--danger)}
+.yt{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 18px 10px;margin-bottom:26px}
+.yt-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px;padding:12px 0 4px}
+.yt-head h3{font-family:var(--f-display);font-size:20px;margin:0}
+.yt-head span{font-size:12.5px;color:var(--muted)}
+.vrow{display:grid;grid-template-columns:34px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+.vrow:first-of-type{border-top:0}
+.vrow .n{font-family:var(--f-mono);font-size:18px;color:var(--muted);font-variant-numeric:tabular-nums;line-height:1.3}
+.vrow.has-notes .n{color:var(--accent)}
+.vrow h4{margin:2px 0 4px;font-size:16px;line-height:1.4;font-weight:600}
+.vrow h4 a{color:inherit;text-decoration:none;display:inline-flex;gap:6px;align-items:baseline}.vrow h4 a:hover{color:var(--accent)}
+.vrow h4 svg{width:13px;height:13px;color:var(--danger);flex:none;transform:translateY(1px)}
+.vmeta{font-size:12px;color:var(--muted);font-family:var(--f-mono);display:flex;flex-wrap:wrap;gap:4px 10px}
+.vrow p{margin:6px 0 0;font-size:13.5px}
+.summary{margin-top:8px;font-size:14px;background:var(--accent-soft);border-radius:8px;padding:8px 12px}
+.summary b{color:var(--accent);font-weight:600;margin-right:6px}
+.vnotes{margin-top:10px;border:1px solid var(--line);border-radius:8px;padding:12px 14px;background:var(--bg)}
+.vnotes h5{margin:0 0 6px;font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.vnotes ol{list-style:none;margin:0 0 12px;padding:0;display:grid;gap:7px}
+.vnotes ol li{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;font-size:13.5px}
+.vnotes ol li a{font-family:var(--f-mono);font-size:12px;text-decoration:none;padding-top:1px}
+.vnotes ul{margin:0;padding-left:18px;display:grid;gap:5px;font-size:13.5px}
+.act.on-open{border-color:var(--accent);color:var(--accent)}
+.vcard2{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.vcard2 h4{margin:0 0 4px;font-size:17px;line-height:1.4}
+.vcard2 h4 a{color:inherit;text-decoration:none;display:inline-flex;gap:6px;align-items:baseline}.vcard2 h4 a:hover{color:var(--accent)}
+.vcard2 h4 svg{width:13px;height:13px;color:var(--danger);flex:none}
+.terms{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px;margin:0 0 12px;padding:0;list-style:none}
+.terms li{background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 10px;font-size:13px}
+.terms b{display:block;font-size:13px;color:var(--accent)}
+.mmwrap{margin-top:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);overflow-x:auto;padding:16px 12px}
+.mm{display:flex;align-items:center;min-width:max-content}
+.mm ul{list-style:none;margin:0;padding:0 0 0 22px;display:flex;flex-direction:column;gap:6px;position:relative}
+.mm li{display:flex;align-items:center;position:relative;padding-left:16px}
+.mm li::before{content:"";position:absolute;left:0;top:50%;width:14px;border-top:1.5px solid var(--muted);opacity:.45}
+.mm li::after{content:"";position:absolute;left:0;top:-3px;bottom:-3px;border-left:1.5px solid var(--muted);opacity:.45}
+.mm li:first-child::after{top:50%}
+.mm li:last-child::after{bottom:50%}
+.mm li:only-child::after{display:none}
+.mm ul::before{content:"";position:absolute;left:0;top:50%;width:22px;border-top:1.5px solid var(--muted);opacity:.45}
+.mm .nd{max-width:260px;font-size:13px;line-height:1.4;padding:5px 10px;border-radius:7px;border:1px solid var(--line);background:var(--surface)}
+.mm .d0{background:var(--accent);color:var(--surface);border-color:var(--accent);font-weight:600;font-size:14.5px;max-width:200px;padding:8px 12px}
+.mm .d1{background:var(--accent-soft);border-color:var(--accent);color:var(--fg);font-weight:600}
+.mm .d3{border-style:dashed;color:var(--muted);font-size:12.5px}
+.mmhint{font-size:12px;color:var(--muted);margin:6px 0 0}
+.pimg{display:block;margin-top:6px;max-width:min(520px,100%);border:1px solid var(--line);border-radius:6px}
+.frames{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px;margin:0 0 12px;padding:0;list-style:none}
+.frames li{background:var(--surface);border:1px solid var(--line);border-radius:8px;overflow:hidden;font-size:12.5px}
+.frames img{display:block;width:100%;aspect-ratio:16/9;object-fit:cover;background:var(--bg)}
+.frames figcaption{padding:6px 8px;display:flex;gap:6px}
+.frames figcaption a{font-family:var(--f-mono);font-size:11.5px;text-decoration:none;flex:none}
+.act svg{width:14px;height:14px;flex:none}
+.src{font-size:12.5px;font-family:var(--f-mono);margin-left:auto}
+.notes{margin-top:10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+.notes ul{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}
+.notes li{font-size:13.5px;display:flex;gap:8px;align-items:flex-start}
+.notes li time{font-family:var(--f-mono);font-size:11px;color:var(--muted);flex:none;padding-top:2px}
+.notes li span{flex:1;min-width:0;white-space:pre-wrap;word-break:break-word}
+.notes li button{all:unset;cursor:pointer;color:var(--muted);font-size:12px}
+.notes form{display:flex;gap:8px;align-items:flex-end}
+textarea,input,select{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:7px 9px;width:100%}
+textarea{resize:vertical;min-height:38px}
+.btn{all:unset;cursor:pointer;background:var(--accent);color:var(--surface);padding:7px 14px;border-radius:6px;font-size:13px;font-weight:600;flex:none}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.row{display:grid;grid-template-columns:28px minmax(0,1fr);gap:4px 12px;padding:14px 0;border-top:1px solid var(--line)}
+.row .n{font-family:var(--f-mono);color:var(--muted);font-size:15px;padding-top:1px;font-variant-numeric:tabular-nums}
+.row h4{margin:2px 0 2px;font-size:15.5px;font-weight:600;line-height:1.4}
+.row h4 a{color:inherit;text-decoration:none}.row h4 a:hover{color:var(--accent)}
+.row p.d{margin:4px 0 0;font-size:13.5px;color:var(--muted)}
+.row.done h4{color:var(--muted);text-decoration:line-through;text-decoration-thickness:1px}
+.score{font-family:var(--f-mono);font-weight:500;font-size:20px;color:var(--accent);line-height:1.1;font-variant-numeric:tabular-nums}
+.empty{padding:32px 0;color:var(--muted);border-top:1px solid var(--line)}
+.empty b{color:var(--fg)}
+.addform{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:20px;display:grid;grid-template-columns:140px 1fr;gap:10px 12px;align-items:center}
+.addform label{font-size:13px;color:var(--muted)}
+.addform .full{grid-column:1/-1;display:flex;gap:8px;justify-content:flex-end}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+.vcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.vcard a.t{font-weight:600;color:var(--fg);text-decoration:none;line-height:1.4}.vcard a.t:hover{color:var(--accent)}
+.vcard .ch{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.vcard p{margin:0;font-size:13px}
+.note{font-size:12px;color:var(--muted);margin-top:10px}
+.readonly{font-size:12.5px;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:8px;padding:8px 12px;margin-bottom:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);padding:8px 14px;border-radius:8px;font-size:13px;z-index:20}
+@media (max-width:760px){
+  .layout{grid-template-columns:minmax(0,1fr);gap:16px}
+  .rail{position:static}
+  .dates{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px}
+  .dates button{width:auto;white-space:nowrap;border:1px solid var(--line)}
+  .bi{grid-template-columns:1fr}
+  .item{grid-template-columns:30px minmax(0,1fr)}
+  .rank{font-size:17px}
+  .addform{grid-template-columns:1fr}
+  .src{margin-left:0}
+}
+</style>
+
+<div class="shell">
+  <header class="top">
+    <div>
+      <h1>AI 大牛早报</h1>
+      <p class="sub">我的 AI 武器库 · 每日 YouTube Top 10（附中文笔记）· Anthropic / OpenAI / 大牛文章 20 条</p>
+    </div>
+    <span class="stamp" id="stamp">正在载入…</span>
+  </header>
+  <nav class="tabs" aria-label="视图">
+    <a href="#today" data-v="today">每日精选</a>
+    <a href="#vnotes" data-v="vnotes">学习笔记 <span class="count" id="c-vn">0</span></a>
+    <a href="#later" data-v="later">稍后读 <span class="count" id="c-later">0</span></a>
+    <a href="#favs" data-v="favs">收藏 <span class="count" id="c-favs">0</span></a>
+    <a href="#rank" data-v="rank">排行榜</a>
+    <a href="#arsenal" data-v="arsenal">武器库 <span class="count" id="c-lib">0</span></a>
+  </nav>
+  <div id="ro" class="readonly">这是 GitHub 公开版：内容每天自动同步。你在这里点的稍后读、收藏、+1、笔记和新加的武器库条目只保存在当前浏览器里。</div>
+  <div id="view"><div class="empty">每天早上 7 点前，这里会出现当天的 20 条精选。</div></div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+const ICON = {
+  later:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="6.2"/><path d="M8 4.6V8l2.3 1.5"/></svg>',
+  fav:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>',
+  favOn:'<svg viewBox="0 0 16 16" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z"/></svg>',
+  up:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M8 13V3.5M3.8 7.6L8 3.4l4.2 4.2"/></svg>',
+  note:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.5 3h11v7.5H7l-3 2.5v-2.5H2.5z"/></svg>',
+  lib:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 2.5h10v11L8 10.8 3 13.5z"/></svg>',
+  libOn:'<svg viewBox="0 0 16 16" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 2.5h10v11L8 10.8 3 13.5z"/></svg>',
+  play:'<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5v9l7.5-4.5z"/></svg>'
+};
+const FOCUS = new Set(["Anthropic","OpenAI","大牛观点","Agent 工程","第二大脑"]);
+const LIBTYPES = ["Skill","MCP","Workflow","视频","文章","工具","提示词"];
+const WD = ["日","一","二","三","四","五","六"];
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl = u => /^https:\/\//.test(u||"") ? u : "";
+const wd = d => { const t = new Date(d+"T12:00:00Z"); return isNaN(t) ? "" : "周"+WD[t.getUTCDay()]; };
+const fmt = ms => { const t = new Date(ms); return isNaN(t) ? "" : `${t.getMonth()+1}/${t.getDate()} ${String(t.getHours()).padStart(2,"0")}:${String(t.getMinutes()).padStart(2,"0")}`; };
+
+const S = { days:[], marks:new Map(), lib:[], view:"today", date:null, cat:"全部", laterTab:"todo", libType:"全部", canWrite:false, open:new Set(), touched:new Set(), vnType:"全部", confirm:null, ready:false };
+const REG = new Map(); // id -> snapshot of the item for denormalized marks
+let db = null;
+const queues = new Map();
+
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.hidden=false; clearTimeout(toast.h); toast.h=setTimeout(()=>t.hidden=true,2200); }
+function markOf(id){ return S.marks.get(id) || null; }
+function blankMark(id){ const r = REG.get(id) || {}; return { id, kind:r.kind||"item", date:r.date||"", title:r.title||"", url:r.url||"", category:r.category||"", author:r.author||"", later:false, laterAt:0, done:false, fav:false, favAt:0, votes:0, notes:[], updatedAt:0 }; }
+function patch(id, fn){
+  if(!S.canWrite || !db) return;
+  const base = structuredClone(markOf(id) || blankMark(id));
+  const r = REG.get(id); if(r){ Object.assign(base, {kind:r.kind, date:r.date, title:r.title, url:r.url, category:r.category, author:r.author}); }
+  const next = fn(base); next.updatedAt = Date.now();
+  S.marks.set(id, next); render();
+  const prev = queues.get(id) || Promise.resolve();
+  const job = prev.then(() => db.collection("marks").doc(id).set(next)).catch(e => { toast("没保存上，请重试"); console.error(e); });
+  queues.set(id, job);
+}
+
+function actions(id, opts={}){
+  const m = markOf(id) || {};
+  const ro = S.canWrite ? "" : " disabled";
+  const votes = m.votes||0, nn = (m.notes||[]).length;
+  const r = REG.get(id);
+  let h = `<div class="acts">
+    <button class="act ${m.later&&!m.done?"on-later":""}" data-act="later" data-id="${esc(id)}" aria-pressed="${!!(m.later&&!m.done)}"${ro}>${ICON.later}${m.later&&!m.done?"已加入稍后读":"稍后读"}</button>
+    <button class="act ${m.fav?"on-fav":""}" data-act="fav" data-id="${esc(id)}" aria-pressed="${!!m.fav}"${ro}>${m.fav?ICON.favOn:ICON.fav}${m.fav?"已收藏":"收藏"}</button>
+    <button class="act ${votes?"on-up":""}" data-act="up" data-id="${esc(id)}" title="加一分，进入排行榜"${ro}>${ICON.up}+1${votes?` · ${votes}`:""}</button>
+    <button class="act" data-act="notes" data-id="${esc(id)}" aria-expanded="${S.open.has(id)}">${ICON.note}笔记${nn?` · ${nn}`:""}</button>`;
+  if(opts.toLib && r && r.kind!=="lib"){
+    const inLib = S.lib.some(l => (l.src && l.src===id) || (l.url && r.url && l.url===r.url));
+    if(inLib) h += `<button class="act on-lib" disabled aria-pressed="true">${ICON.libOn}已在武器库</button>`;
+    else if(S.canWrite) h += `<button class="act" data-act="tolib" data-id="${esc(id)}">${ICON.lib}存入武器库</button>`;
+  }
+  if(opts.extra) h += opts.extra;
+  if(r && safeUrl(r.url) && opts.src!==false) h += `<a class="src" href="${esc(safeUrl(r.url))}" target="_blank" rel="noopener">打开原文 ↗</a>`;
+  h += `</div>`;
+  if(S.open.has(id)) h += notesBox(id);
+  return h;
+}
+function notesBox(id){
+  const notes = (markOf(id)?.notes)||[];
+  return `<div class="notes">
+    ${notes.length?`<ul>${notes.map((n,i)=>`<li><time>${fmt(n.at)}</time><span>${esc(n.t)}</span>${S.canWrite?`<button data-act="delnote" data-id="${esc(id)}" data-i="${i}" aria-label="删除这条笔记">删除</button>`:""}</li>`).join("")}</ul>`:`<p class="note" style="margin:0 0 8px">${S.canWrite?"还没有笔记。写下你的想法、可以怎么用到工作里。":"还没有笔记。"}</p>`}
+    ${S.canWrite?`<form data-form="note" data-id="${esc(id)}"><textarea id="note-${esc(id)}" maxlength="2000" rows="2" placeholder="写一条笔记…"></textarea><button class="btn" type="submit">保存</button></form>`:""}
+  </div>`;
+}
+
+function reg(id, o){ REG.set(id, o); }
+
+function viewToday(){
+  const d = S.days.find(x=>x.date===S.date);
+  const rail = `<nav class="rail" aria-label="按日期浏览"><h2>归档</h2><ul class="dates">${S.days.map(x=>`<li><button type="button" data-act="date" data-d="${esc(x.date)}" aria-current="${x.date===S.date}"><span>${esc(x.date.slice(5))}</span><span class="wd">${wd(x.date)}</span></button></li>`).join("")}</ul></nav>`;
+  if(!d) return `<div class="layout">${rail}<main><div class="empty">${S.ready?"<b>还没有内容。</b> 每天早上 7 点前，定时任务会把当天的 20 条精选放到这里。":"正在载入…"}</div></main></div>`;
+  const items = (d.items||[]).slice().sort((a,b)=>(a.rank||0)-(b.rank||0));
+  items.forEach(i=>reg(i.id,{kind:"item",date:d.date,title:i.title,url:i.url,category:i.category,author:i.author}));
+  (d.videos||[]).forEach(v=>reg(v.id,{kind:"video",date:d.date,title:v.title,url:v.url,category:"YouTube",author:v.channel}));
+  const cats = ["全部","重点", ...new Set(items.map(i=>i.category))];
+  const pass = i => S.cat==="全部" || (S.cat==="重点" ? FOCUS.has(i.category) : i.category===S.cat);
+  const card = i => `<li class="item ${i.rank<=3?"top3":""}">
+      <div class="rank">${String(i.rank).padStart(2,"0")}</div>
+      <div>
+        <div class="meta"><span class="chip">${esc(i.category)}</span><span>${esc(i.author)}</span><span>${esc(i.time)}</span></div>
+        <h4>${safeUrl(i.url)?`<a href="${esc(i.url)}" target="_blank" rel="noopener">${esc(i.title)}</a>`:esc(i.title)}</h4>
+        <div class="bi"><p><span class="tag">中文</span>${esc(i.zh)}</p><p class="en"><span class="tag">English</span>${esc(i.en)}</p></div>
+        ${i.take?`<p class="take"><b>点评</b>　${esc(i.take)}</p>`:""}
+        ${actions(i.id,{toLib:true,src:false})}
+      </div></li>`;
+  const top = items.filter(i=>i.rank<=10 && pass(i)), more = items.filter(i=>i.rank>10 && pass(i));
+  const vids = (d.videos||[]).slice().sort((a,b)=>(a.rank||99)-(b.rank||99));
+  const nNotes = vids.filter(v=>v.notes&&v.notes.summary).length;
+  return `<div class="layout">${rail}<main>
+    <div class="dayhead"><h2>${esc(d.date)} ${wd(d.date)}</h2><span class="stamp">${vids.length} 个视频 · ${items.length} 条资讯${d.mode?` · ${esc(d.mode)}`:""}</span></div>
+    ${vids.length?`<section class="yt" aria-label="YouTube Top 10"><div class="yt-head"><h3>YouTube Top ${vids.length}</h3><span>按热度和价值排序${nNotes?` · 前 ${nNotes} 个附中文笔记`:""}</span></div>
+      <ol class="list">${vids.map((v,i)=>videoRow(v,i+1)).join("")}</ol></section>`:""}
+    ${(d.highlights||[]).length?`<div class="brief"><h3 class="lab">今日要点 · Highlights</h3><ol>${d.highlights.map(h=>`<li>${esc(h.zh)}<span class="en">${esc(h.en)}</span></li>`).join("")}</ol></div>`:""}
+    <div class="chips" role="group" aria-label="按类别筛选">${cats.map(c=>`<button type="button" data-act="cat" data-c="${esc(c)}" aria-pressed="${c===S.cat}">${esc(c)}</button>`).join("")}</div>
+    ${top.length?`<h3 class="section-title">精选 Top 10</h3><ol class="list">${top.map(card).join("")}</ol>`:""}
+    ${more.length?`<h3 class="section-title">更多值得看</h3><ol class="list">${more.map(card).join("")}</ol>`:""}
+    ${!top.length&&!more.length?`<div class="empty">这一天没有这个类别的内容。</div>`:""}
+    ${d.note?`<p class="note">${esc(d.note)}</p>`:""}
+  </main></div>`;
+}
+
+function tsec(t){ const p=String(t||"").split(":").map(Number); if(p.some(isNaN)) return 0; return p.reduce((a,b)=>a*60+b,0); }
+function tlink(url, t){ const u=safeUrl(url); if(!u) return ""; return u + (u.includes("?")?"&":"?") + "t=" + tsec(t) + "s"; }
+function videoRow(v, n){
+  const nt = v.notes && v.notes.summary ? v.notes : null;
+  const key = "vn:"+v.id, open = S.open.has(key);
+  const meta = [v.channel, v.views, v.duration || (nt&&nt.duration), v.published].filter(Boolean).map(esc).join("</span><span>") || esc(v.meta||"");
+  return `<li class="vrow ${nt?"has-notes":""}">
+    <div class="n">${String(n).padStart(2,"0")}</div>
+    <div>
+      <h4>${safeUrl(v.url)?`<a href="${esc(v.url)}" target="_blank" rel="noopener">${ICON.play}<span>${esc(v.title)}</span></a>`:esc(v.title)}</h4>
+      <div class="vmeta"><span>${meta}</span>${nt&&nt.guests?`<span>${esc(nt.guests)}</span>`:""}</div>
+      ${nt?`<div class="summary"><b>一句话</b>${esc(nt.summary)}</div>`:(v.zh?`<p>${esc(v.zh)}</p>`:"")}
+      ${v.take?`<p class="take"><b>点评</b>　${esc(v.take)}</p>`:""}
+      ${nt&&open?`<div class="vnotes">
+        ${(nt.points||[]).length?`<h5>要点 · 点时间跳到视频对应位置</h5><ol>${nt.points.map(p=>`<li><a href="${esc(tlink(v.url,p.t))}" target="_blank" rel="noopener">${esc(p.t)}</a><span>${esc(p.text)}</span></li>`).join("")}</ol>`:""}
+        ${(nt.takeaways||[]).length?`<h5>对你的启发</h5><ul>${nt.takeaways.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+      </div>`:""}
+      ${actions(v.id,{toLib:true,src:false, extra: nt?`<button class="act ${open?"on-open":""}" data-act="vnotes" data-id="${esc(key)}" aria-expanded="${open}">${open?"收起笔记":"看完整笔记"}</button>`:""})}
+    </div></li>`;
+}
+
+function rowFor(m, n, opts={}){
+  reg(m.id, REG.get(m.id) || {kind:m.kind,date:m.date,title:m.title,url:m.url,category:m.category,author:m.author});
+  const r = REG.get(m.id);
+  const metaBits = [r.category && `<span class="chip">${esc(r.category)}</span>`, r.author && `<span>${esc(r.author)}</span>`, r.date && `<span>${esc(r.date)}</span>`, r.kind==="lib" && `<span>武器库</span>`].filter(Boolean).join("");
+  return `<li class="row ${opts.done?"done":""}">
+    <div class="${opts.score?"score":"n"}">${opts.score?esc(n):String(n).padStart(2,"0")}</div>
+    <div><div class="meta">${metaBits}</div>
+      <h4>${safeUrl(r.url)?`<a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.title)}</a>`:esc(r.title)}</h4>
+      ${opts.desc?`<p class="d">${esc(opts.desc)}</p>`:""}
+      ${actions(m.id,{extra:opts.extra||"",src:false})}
+    </div></li>`;
+}
+
+function viewLater(){
+  const all = [...S.marks.values()].filter(m=>m.later);
+  const todo = all.filter(m=>!m.done).sort((a,b)=>(a.laterAt||0)-(b.laterAt||0));
+  const done = all.filter(m=>m.done).sort((a,b)=>(b.updatedAt||0)-(a.updatedAt||0));
+  const list = S.laterTab==="todo" ? todo : done;
+  const extra = m => S.canWrite ? (m.done
+      ? `<button class="act" data-act="undone" data-id="${esc(m.id)}">放回待读</button><button class="act danger" data-act="unlater" data-id="${esc(m.id)}">移出</button>`
+      : `<button class="act" data-act="done" data-id="${esc(m.id)}">标记已读</button><button class="act danger" data-act="unlater" data-id="${esc(m.id)}">移出</button>`) : "";
+  return `<div class="viewhead"><h2>稍后读</h2><p>没空看的先丢进来，按加入顺序排队。读完标记已读，想再看就放回待读。</p></div>
+    <div class="chips" role="group" aria-label="稍后读状态"><button type="button" data-act="ltab" data-t="todo" aria-pressed="${S.laterTab==="todo"}">待读 ${todo.length}</button><button type="button" data-act="ltab" data-t="done" aria-pressed="${S.laterTab==="done"}">已读 ${done.length}</button></div>
+    ${list.length?`<ol class="list">${list.map((m,i)=>rowFor(m,i+1,{done:m.done,extra:extra(m)})).join("")}</ol>`:`<div class="empty">${S.laterTab==="todo"?"<b>池子是空的。</b> 在每日精选里点「稍后读」，文章就会排到这里。":"还没有读完的文章。"}</div>`}`;
+}
+function viewFavs(){
+  const favs = [...S.marks.values()].filter(m=>m.fav).sort((a,b)=>(b.favAt||0)-(a.favAt||0));
+  return `<div class="viewhead"><h2>收藏</h2><p>特别喜欢、值得反复看的内容，最新收藏在最前。</p></div>
+    ${favs.length?`<ol class="list">${favs.map((m,i)=>rowFor(m,i+1)).join("")}</ol>`:`<div class="empty"><b>还没有收藏。</b> 点任意一条的「收藏」就会出现在这里。</div>`}`;
+}
+function viewRank(){
+  const ranked = [...S.marks.values()].filter(m=>(m.votes||0)>0).sort((a,b)=>(b.votes-a.votes)||((b.updatedAt||0)-(a.updatedAt||0)));
+  const extra = m => S.canWrite ? `<button class="act" data-act="down" data-id="${esc(m.id)}" title="减一分">−1</button>` : "";
+  return `<div class="viewhead"><h2>排行榜</h2><p>每次觉得好就点 +1，分数高的排在前面。文章和武器库里的工具一起排。</p></div>
+    ${ranked.length?`<ol class="list">${ranked.map(m=>rowFor(m,m.votes,{score:true,extra:extra(m)})).join("")}</ol>`:`<div class="empty"><b>排行榜还是空的。</b> 给喜欢的内容点 +1，就会按分数排到这里。</div>`}`;
+}
+function viewArsenal(){
+  S.lib.forEach(l=>reg(l.id,{kind:"lib",date:"",title:l.title,url:l.url,category:l.type,author:(l.tags||[]).join(" · ")}));
+  const types = ["全部", ...LIBTYPES];
+  const list = S.lib.filter(l=>S.libType==="全部"||l.type===S.libType).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  const form = S.canWrite ? `<form class="addform" data-form="lib">
+      <label for="lib-type">类型</label><select id="lib-type">${LIBTYPES.map(t=>`<option>${t}</option>`).join("")}</select>
+      <label for="lib-title">名称</label><input id="lib-title" required maxlength="200" placeholder="例如：x-ai-daily-brief">
+      <label for="lib-url">链接</label><input id="lib-url" type="url" maxlength="500" placeholder="https://…（可不填）">
+      <label for="lib-desc">说明</label><textarea id="lib-desc" maxlength="2000" rows="2" placeholder="它做什么、怎么用、什么时候用"></textarea>
+      <label for="lib-tags">标签</label><input id="lib-tags" maxlength="200" placeholder="用空格分隔，例如：claude-code 自动化">
+      <div class="full"><button class="btn" type="submit">加入武器库</button></div>
+    </form>` : "";
+  const extra = l => (l.notes&&l.notes.summary?`<button class="act" data-act="gonotes" data-id="${esc(l.id)}">打开笔记和脑图</button>`:"") + (!S.canWrite ? "" : S.confirm===l.id
+      ? `<span class="note" style="margin:0">确定删除？</span><button class="act danger" data-act="dellib-yes" data-id="${esc(l.id)}">删除</button><button class="act" data-act="dellib-no">取消</button>`
+      : `<button class="act danger" data-act="dellib" data-id="${esc(l.id)}">删除</button>`);
+  return `<div class="viewhead"><h2>武器库</h2><p>沉淀学到的 Skill、MCP、Workflow、好文章和工具。每一项都能收藏、+1 和写笔记。</p></div>
+    ${form}
+    <div class="chips" role="group" aria-label="按类型筛选">${types.map(t=>`<button type="button" data-act="ltype" data-t="${esc(t)}" aria-pressed="${t===S.libType}">${esc(t)}${t!=="全部"?` ${S.lib.filter(l=>l.type===t).length}`:""}</button>`).join("")}</div>
+    ${list.length?`<ol class="list">${list.map((l,i)=>rowFor({id:l.id},i+1,{desc:l.desc,extra:extra(l)})).join("")}</ol>`:`<div class="empty">${S.lib.length?"这个类型下还没有内容。":"<b>武器库是空的。</b> 用上面的表单添加，或在每日精选里点「存入武器库」。"}</div>`}`;
+}
+
+function mmNode(n, d){
+  const kids = (n.children||[]).filter(Boolean);
+  return `<div class="nd d${Math.min(d,3)}">${esc(n.text)}</div>${kids.length?`<ul>${kids.map(c=>`<li>${mmNode(c,d+1)}</li>`).join("")}</ul>`:""}`;
+}
+const imgUrl = u => (/^https:\/\//.test(u||"") || /^assets\/[0-9a-f]{32}\.(jpg|png|webp)$/.test(u||"")) ? u : "";
+function framesBlock(url, frames){
+  const fs=(frames||[]).filter(f=>imgUrl(f.url));
+  if(!fs.length) return "";
+  return `<h5>关键截图 · 幻灯片、架构图、代码</h5><ul class="frames">${fs.map(f=>`<li><figure style="margin:0"><a href="${esc(imgUrl(f.url))}" target="_blank" rel="noopener"><img src="${esc(imgUrl(f.url))}" alt="${esc(f.caption||"视频截图")}" loading="lazy"></a><figcaption>${f.t?`<a href="${esc(tlink(url,f.t))}" target="_blank" rel="noopener">${esc(f.t)}</a>`:""}<span>${esc(f.caption||"")}</span></figcaption></figure></li>`).join("")}</ul>`;
+}
+function notesBlock(url, nt, frames){
+  return `<div class="vnotes">
+    ${framesBlock(url, frames)}
+    ${(nt.highlights||[]).length?`<h5>Highlights</h5><ul>${nt.highlights.map(h=>`<li>${esc(h)}</li>`).join("")}</ul><div style="height:12px"></div>`:""}
+    ${(nt.points||[]).length?(nt.points.some(p=>p.t)?`<h5>要点 · 点时间跳到视频对应位置</h5><ol>${nt.points.map(p=>`<li><a href="${esc(tlink(url,p.t))}" target="_blank" rel="noopener">${esc(p.t)}</a><span>${esc(p.text)}${imgUrl(p.img)?`<img class="pimg" src="${esc(imgUrl(p.img))}" alt="${esc(p.t)} 截图" loading="lazy">`:""}</span></li>`).join("")}</ol>`:`<h5>要点</h5><ul>${nt.points.map(p=>`<li>${esc(p.text)}</li>`).join("")}</ul><div style="height:12px"></div>`):""}
+    ${(nt.terms||[]).length?`<h5>关键概念</h5><ul class="terms">${nt.terms.map(t=>`<li><b>${esc(t.term)}</b>${esc(t.explain)}</li>`).join("")}</ul>`:""}
+    ${(nt.takeaways||[]).length?`<h5>对你的启发</h5><ul>${nt.takeaways.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+  </div>`;
+}
+function viewVNotes(){
+  const list = S.lib.filter(l=>l.notes && l.notes.summary).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  list.forEach(l=>reg(l.id,{kind:"lib",date:"",title:l.title,url:l.url,category:l.type||"视频",author:l.channel||""}));
+  const types=["全部",...new Set(list.map(l=>l.type||"视频"))];
+  const shown=list.filter(l=>S.vnType==="全部"||(l.type||"视频")===S.vnType);
+  return `<div class="viewhead"><h2>学习笔记</h2><p>丢给 Claude 的视频和文章都整理在这里：一句话总结、Highlights、完整笔记和脑图。</p></div>
+    ${types.length>2?`<div class="chips" role="group" aria-label="按类型筛选">${types.map(t=>`<button type="button" data-act="vntype" data-t="${esc(t)}" aria-pressed="${t===S.vnType}">${esc(t)}</button>`).join("")}</div>`:""}
+    ${shown.length?shown.map(l=>{
+      const nt=l.notes, kN="ln:"+l.id, kM="lm:"+l.id, oN=S.open.has(kN), oM=S.open.has(kM)||(!S.touched.has(kM)&&shown[0]===l&&l.mindmap);
+      const meta=[l.channel, nt.duration, l.views].filter(Boolean).map(esc).join(" · ");
+      return `<article class="vcard2" id="card-${esc(l.id)}">
+        <h4>${safeUrl(l.url)?`<a href="${esc(l.url)}" target="_blank" rel="noopener">${(l.type||"视频")==="视频"?ICON.play:""}<span>${esc(l.title)}</span></a>`:esc(l.title)}</h4>
+        <div class="vmeta"><span class="chip">${esc(l.type||"视频")}</span><span>${meta}</span>${nt.guests?`<span>${esc(nt.guests)}</span>`:""}</div>
+        <div class="summary"><b>一句话</b>${esc(nt.summary)}</div>
+        ${oM&&l.mindmap?`<div class="mmwrap"><div class="mm">${mmNode(l.mindmap,0)}</div></div><p class="mmhint">脑图较宽时可左右滑动查看。</p>`:""}
+        ${oN?notesBlock(l.url,nt,l.frames):""}
+        ${actions(l.id,{src:false, extra:`${l.mindmap?`<button class="act ${oM?"on-open":""}" data-act="toggle" data-id="${esc(kM)}" aria-expanded="${!!oM}">${oM?"收起脑图":"看脑图"}</button>`:""}<button class="act ${oN?"on-open":""}" data-act="toggle" data-id="${esc(kN)}" aria-expanded="${oN}">${oN?"收起笔记":"看完整笔记"}</button>`})}
+      </article>`;}).join(""):`<div class="empty"><b>还没有学习笔记。</b> 把 YouTube 或文章链接发给 Claude，说「存进第二大脑」，整理好的笔记会出现在这里。</div>`}`;
+}
+
+function counts(){
+  $("#c-vn").textContent = S.lib.filter(l=>l.notes&&l.notes.summary).length;
+  const ms=[...S.marks.values()];
+  $("#c-later").textContent = ms.filter(m=>m.later&&!m.done).length;
+  $("#c-favs").textContent = ms.filter(m=>m.fav).length;
+  $("#c-lib").textContent = S.lib.length;
+}
+function render(){
+  document.querySelectorAll("nav.tabs a").forEach(a=>a.setAttribute("aria-current", a.dataset.v===S.view?"page":"false"));
+  // keep any typed draft across re-render
+  const drafts = {}; document.querySelectorAll("textarea[id^='note-'],.addform [id]").forEach(el=>drafts[el.id]=el.value);
+  const active = document.activeElement?.id;
+  const v = {today:viewToday, vnotes:viewVNotes, later:viewLater, favs:viewFavs, rank:viewRank, arsenal:viewArsenal}[S.view] || viewToday;
+  $("#view").innerHTML = v();
+  Object.entries(drafts).forEach(([k,val])=>{ const el=document.getElementById(k); if(el) el.value=val; });
+  if(active){ const el=document.getElementById(active); if(el) el.focus(); }
+  counts();
+}
+
+function route(){
+  const h = location.hash.slice(1);
+  if(h.startsWith("d-")){ S.view="today"; S.date=h.slice(2); }
+  else S.view = ["today","vnotes","later","favs","rank","arsenal"].includes(h) ? h : "today";
+  render();
+}
+window.addEventListener("hashchange", route);
+
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-act]"); if(!b || b.disabled) return;
+  const id = b.dataset.id, act = b.dataset.act;
+  switch(act){
+    case "date": S.date=b.dataset.d; S.cat="全部"; try{history.replaceState(null,"","#d-"+S.date);}catch(_){} render(); window.scrollTo({top:0}); break;
+    case "cat": S.cat=b.dataset.c; render(); break;
+    case "ltab": S.laterTab=b.dataset.t; render(); break;
+    case "ltype": S.libType=b.dataset.t; render(); break;
+    case "notes": S.open.has(id)?S.open.delete(id):S.open.add(id); render(); setTimeout(()=>document.getElementById("note-"+id)?.focus(),0); break;
+    case "vnotes": S.open.has(id)?S.open.delete(id):S.open.add(id); render(); break;
+    case "toggle": { const wasOpen = S.open.has(id) || (b.getAttribute("aria-expanded")==="true"); S.touched.add(id); wasOpen?S.open.delete(id):S.open.add(id); render(); break; }
+    case "vntype": S.vnType=b.dataset.t; render(); break;
+    case "gonotes": location.hash="vnotes"; S.open.add("ln:"+id); setTimeout(()=>document.getElementById("card-"+id)?.scrollIntoView({block:"start"}),50); break;
+    case "later": patch(id, m => { const on = !(m.later && !m.done); m.later=on; m.done=false; if(on) m.laterAt=Date.now(); return m; }); toast((markOf(id)?.later)?"已加入稍后读":"已移出稍后读"); break;
+    case "fav": patch(id, m => { m.fav=!m.fav; if(m.fav) m.favAt=Date.now(); return m; }); toast(markOf(id)?.fav?"已收藏":"已取消收藏"); break;
+    case "up": patch(id, m => { m.votes=(m.votes||0)+1; return m; }); break;
+    case "down": patch(id, m => { m.votes=Math.max(0,(m.votes||0)-1); return m; }); break;
+    case "done": patch(id, m => { m.done=true; return m; }); toast("已标记已读"); break;
+    case "undone": patch(id, m => { m.done=false; m.laterAt=Date.now(); return m; }); toast("已放回待读"); break;
+    case "unlater": patch(id, m => { m.later=false; m.done=false; return m; }); toast("已移出稍后读"); break;
+    case "delnote": patch(id, m => { m.notes=(m.notes||[]).filter((_,i)=>i!==Number(b.dataset.i)); return m; }); break;
+    case "tolib": toLib(id); break;
+    case "dellib": S.confirm=id; render(); break;
+    case "dellib-no": S.confirm=null; render(); break;
+    case "dellib-yes": delLib(id); break;
+  }
+});
+document.addEventListener("submit", e => {
+  const f = e.target.closest("form[data-form]"); if(!f) return; e.preventDefault();
+  if(f.dataset.form==="note"){
+    const id=f.dataset.id, ta=document.getElementById("note-"+id), t=(ta?.value||"").trim(); if(!t) return;
+    ta.value=""; patch(id, m => { m.notes=[...(m.notes||[]), {t, at:Date.now()}]; return m; }); toast("笔记已保存");
+  } else if(f.dataset.form==="lib"){
+    const title=$("#lib-title").value.trim(); if(!title) return;
+    const url=$("#lib-url").value.trim();
+    addLib({ type:$("#lib-type").value, title, url: safeUrl(url)?url:"", desc:$("#lib-desc").value.trim(), tags:$("#lib-tags").value.trim().split(/\s+/).filter(Boolean).slice(0,8) });
+    ["lib-title","lib-url","lib-desc","lib-tags"].forEach(k=>{ const el=document.getElementById(k); if(el) el.value=""; });
+  }
+});
+
+async function addLib(o){
+  if(!S.canWrite||!db) return;
+  const id = "lib-"+Date.now().toString(36);
+  const doc = { id, createdAt:Date.now(), ...o };
+  S.lib = [...S.lib, doc]; render();
+  try{ await db.collection("library").doc(id).set(doc); toast("已加入武器库"); }catch(e){ toast("没保存上，请重试"); console.error(e); }
+}
+function toLib(id){
+  const r = REG.get(id); if(!r) return;
+  if(S.lib.some(l=>l.url && l.url===r.url)){ toast("武器库里已经有这一条了"); return; }
+  addLib({ type: r.kind==="video" ? "视频" : "文章", src:id, title:r.title, url:r.url, desc:`来自 ${r.date} 每日精选 · ${r.author||""}`.trim(), tags:[r.category].filter(Boolean) });
+}
+async function delLib(id){
+  S.confirm=null; S.lib=S.lib.filter(l=>l.id!==id); render();
+  try{ await db.collection("library").doc(id).delete(); toast("已删除"); }catch(e){ toast("删除失败，请重试"); }
+}
+
+// —— GitHub Pages 版：内容来自 data/days/*.json；稍后读、收藏、+1、笔记、武器库存在本浏览器（localStorage） ——
+const LS_KEY = "ai-daily-brief:v1";
+function lsLoad(){ try{ return JSON.parse(localStorage.getItem(LS_KEY)||"{}"); }catch(_){ return {}; } }
+function lsSave(st){ try{ localStorage.setItem(LS_KEY, JSON.stringify(st)); return true; }catch(_){ return false; } }
+const LOCAL = lsLoad(); LOCAL.marks = LOCAL.marks || {}; LOCAL.library = LOCAL.library || {};
+db = { collection: name => ({ doc: id => ({
+  set: async v => { LOCAL[name] = LOCAL[name] || {}; LOCAL[name][id] = v; if(!lsSave(LOCAL)) throw new Error("storage"); },
+  delete: async () => { if(LOCAL[name]) delete LOCAL[name][id]; lsSave(LOCAL); }
+}) }) };
+(async () => {
+  route();
+  const stamp = $("#stamp");
+  S.canWrite = true;
+  let shared = {};
+  try{ const arr = await (await fetch("data/marks.json",{cache:"no-cache"})).json(); (Array.isArray(arr)?arr:[]).forEach(m=>{ if(m&&m.id) shared[m.id]=m; }); }catch(_){}
+  S.marks = new Map(Object.entries({...shared, ...LOCAL.marks}));
+  try{
+    const sh = await (await fetch("data/library.json",{cache:"no-cache"})).json();
+    S.lib = [...(Array.isArray(sh)?sh:[]), ...Object.values(LOCAL.library)];
+  }catch(_){ S.lib = Object.values(LOCAL.library); }
+  try{
+    const idx = await (await fetch("data/days/index.json",{cache:"no-cache"})).json();
+    const dates = (idx.dates||[]).slice().sort().reverse().slice(0,120);
+    const docs = await Promise.all(dates.map(d => fetch(`data/days/${d}.json`,{cache:"no-cache"}).then(r=>r.ok?r.json():null).catch(()=>null)));
+    S.days = docs.filter(x=>x&&x.date).sort((a,b)=>a.date<b.date?1:-1);
+    if(!S.date || !S.days.some(d=>d.date===S.date)) S.date = S.days[0]?.date || null;
+    stamp.textContent = S.days.length ? `共 ${S.days.length} 期 · 最新 ${S.days[0].date}` : "还没有内容";
+  }catch(e){ stamp.textContent = "数据载入失败，请刷新页面"; console.error(e); }
+  S.ready = true; render();
+})();
+</script>
+
+</body></html>
