@@ -1,1 +1,559 @@
-{"date": "2026-11-04", "highlights": [{"en": "Anthropic's Message Threads beta cuts long-context TTFT ~35% by sending only new messages each turn.", "zh": "Anthropic 的 Message Threads 公测：长会话每轮只发新消息，长上下文首 token 延迟降约 35%，Claude Code 已默认开启。"}, {"en": "Anthropic's IPO valuation is pushed toward $1.5–1.6T while it touts Claude-designed chips and internal usage exceeding payroll.", "zh": "Anthropic IPO 进入定价拉锯：估值被压到约 1.5–1.6 万亿，内部 Claude 用量折算已超过全员薪酬，还用 Claude 设计自研芯片。"}, {"en": "OpenAI will pool ChatGPT and Codex usage from December; Altman's long interview covers contrarian bets and RSI-era risks.", "zh": "OpenAI：12 月起 ChatGPT 与 Codex 共用额度；Altman 长访谈谈非共识决策与 RSI 时代的两大风险。"}, {"en": "Agent engineering: compile skills into graphs for predictability; swyx favors low effort plus critique loops.", "zh": "Agent 工程：Graph Engineering 把 skill 编译成图让 Agent 可预测；swyx 主张低推理强度 + 批评循环。"}], "items": [{"author": "Claude Developers", "category": "Anthropic", "en": "Message threads in public beta: send only new messages per turn; ~35% lower median TTFT on 500k–1M-token requests", "id": "2026-11-04-01", "rank": 1, "take": "长跑 Agent 的直接提速，自建 harness 的可以马上试；注意 5 分钟过期后要重发全文。", "time": "11-03", "title": "Messages API 上线 Message Threads 公测：每轮只发新消息，长上下文首 token 延迟降约 35%", "url": "https://claude.com/resources/articles/message-threads", "zh": "服务器端缓存会话，后续请求只带新消息和上一条回复 ID；Claude Code 已默认开启。线程 5 分钟无请求即过期，token 计费不变。"}, {"author": "Anthropic", "category": "Anthropic", "en": "Invisible watermarks now applied to four older Claude models from Nov 3", "id": "2026-11-04-02", "rank": 2, "take": "用 Claude 生成对外文本的团队知悉即可；普通 API 用户无法自查水印。", "time": "11-03", "title": "11 月 3 日起 Mythos 5、Opus 4.7/4.6、Sonnet 4.6 输出加入隐形水印", "url": "https://dev.to/delimitter/anthropic-switches-on-invisible-watermarks-in-four-older-claude-models-from-november-3-385p", "zh": "为落实欧盟 AI 法案第 50 条，水印不增加 token、不影响价格和质量，全球生效不可关闭；检测接口只开放给监管、执法和研究方。"}, {"author": "The Information", "category": "Anthropic", "en": "Anthropic tells IPO investors Claude helps its 15-person team design custom chips", "id": "2026-11-04-03", "rank": 3, "take": "这是给投资人的说法、未经独立验证，但「Claude 参与造训练自己的芯片」是 RSI 叙事的又一块拼图。", "time": "11-03", "title": "Anthropic 向 IPO 投资人展示：15 人芯片团队用 Claude 设计自研芯片", "url": "https://aiweekly.co/alerts/anthropic-tells-ipo-investors-claude-helps-design-its-chips", "zh": "称比 Nvidia、AMD 的工程流程估算更快；不对外卖设计工具，仍坚持 Nvidia、AMD、Trainium、TPU 多芯片路线。"}, {"author": "Business Insider", "category": "Anthropic", "en": "Anthropic's internal Claude usage at retail rates now exceeds its employee pay", "id": "2026-11-04-04", "rank": 4, "take": "一个直观信号：在最前沿的团队里，「算力 > 人力」已经成真。", "time": "11-02", "title": "按零售价折算，Anthropic 员工内部用 Claude 的花费已超过全员薪酬", "url": "https://www.businessinsider.com/anthropic-claude-internal-ai-use-exceeds-employee-pay-tokens-2026-11", "zh": "员工的内部 token 消耗如果按 API 零售价计，已高于公司付给员工的薪酬总额；讨论区认为这是会计口径，不等于真实边际成本。"}, {"author": "Reuters / WSJ", "category": "Anthropic", "en": "IPO buyers push Anthropic's valuation toward $1.5–1.6T from $2T", "id": "2026-11-04-05", "rank": 5, "take": "IPO 预计本月进行，后续定价和上市首日表现值得关注。", "time": "11-02", "title": "IPO 机构买家把 Anthropic 估值从 2 万亿美元压到约 1.5–1.6 万亿", "url": "https://aiweekly.co/alerts/reuters-anthropic-ipo-investors-push-valuation-down-to-15t-from-2t-over-q3", "zh": "科技股回调加上 Q3 增速放缓，机构投资人要求下调发行估值；同周有评论文章呼吁 SEC 暂缓其 IPO。"}, {"author": "Bloomberg", "category": "Agent 工程", "en": "Goldman restricts Claude Code and Copilot to ~12,000 engineers, pulling them from traders and bankers", "id": "2026-11-04-06", "rank": 6, "take": "编码 Agent 在非工程岗位「全员铺开」后的第一次大规模收缩，治理和 ROI 评估开始落地。", "time": "11-02", "title": "高盛收回交易员和银行家的 Claude Code、Copilot 权限，只留约 1.2 万名工程师", "url": "https://www.bloomberg.com/news/articles/2026-11-02/goldman-restricts-traders-and-bankers-from-using-some-ai-tools", "zh": "10 月完成生产力与风险评估后更新内部规定，兼做量化的 strats 工程师保留权限。"}, {"author": "OpenAI", "category": "OpenAI", "en": "ChatGPT and Codex will share one usage allowance from December", "id": "2026-11-04-07", "rank": 7, "take": "重度 Codex 用户要留意：聊天用多了会挤占写代码的额度。", "time": "10-31", "title": "12 月起 ChatGPT 和 Codex 共用一个 token 额度", "url": "https://help.openai.com/en/articles/20001625-understanding-chatgpt-and-codex-usage-limits", "zh": "适用 Plus、Pro、Business；Instant 聊天不计入。帮助中心 10 月 31 日更新，没有发博客或推文。"}, {"author": "Axios / Yahoo Finance", "category": "OpenAI", "en": "OpenAI plans post-midterm policy push, rebranding data centers as 'AI compute campuses'; Altman visits Samsung and SK", "id": "2026-11-04-08", "rank": 8, "take": "算力和舆论两条线同时布局，芯片/存储供应链是 Altman 这次韩国行的重点。", "time": "11-01", "title": "OpenAI 准备中期选举后的政策攻势，把数据中心改称「AI 算力园区」；Altman 周末密访韩国三星、SK", "url": "https://finance.yahoo.com/technology/ai/articles/openai-tightens-chatgpt-codex-usage-050325946.html", "zh": "同时报道 OpenAI 融资目标从 300 亿降到 200 亿美元、token 价格半年降 35%。"}, {"author": "OpenAI", "category": "OpenAI", "en": "OpenAI expands ServiceNow partnership with a ServiceNow MCP plugin", "id": "2026-11-04-09", "rank": 9, "take": "运维工单接入 Agent 的官方路径，做 ITSM 的可以关注。", "time": "10-28", "title": "OpenAI 扩大与 ServiceNow 合作，插件市场上架 ServiceNow MCP 插件", "url": "https://openai.com/index/openai-servicenow-partnership-expansion/", "zh": "企业可以在 ChatGPT / Codex 里通过 MCP 直接操作 ServiceNow 工单和流程。"}, {"author": "OpenAI Community", "category": "OpenAI", "en": "Eligible ChatGPT Pro and Business plans can claim up to $500 in monthly API credits", "id": "2026-11-04-10", "rank": 10, "take": "有 Pro 订阅的话记得去领，拿来跑自己的 Agent 实验。", "time": "10-29", "title": "ChatGPT Pro 和 Business 订阅每月可领最多 500 美元 API 额度", "url": "https://community.openai.com/t/claim-up-to-500-in-api-credits-using-your-chatgpt-pro-or-business-subscription/1410579", "zh": "订阅用户可以把部分额度用在 API 上，降低自建 Agent 的试验成本。"}, {"author": "swyx", "category": "大牛观点", "en": "swyx: low effort plus a critique loop beats max-effort settings", "id": "2026-11-04-11", "rank": 11, "take": "典型 Loop Engineering 思路：与其单次求完美，不如设计好反馈回路。", "time": "11-01", "title": "swyx：低推理强度 + 批评循环，胜过一味拉满推理强度", "url": "https://x.com/swyx/status/2116773135668404286", "zh": "他提到 Karpathy 做 HackerTube 用的是 Opus 5.5 medium；在吞吐受限时，低强度跑 + 自动批评回路更划算，并开源了 babysit-runs skill。"}, {"author": "Simon Willison", "category": "大牛观点", "en": "Simon Willison ships llm 0.37 with GPT-6.1 models and an OpenAI-compatible endpoint command", "id": "2026-11-04-12", "rank": 12, "take": "用命令行批量调模型、做小实验的利器。", "time": "11-02", "title": "Simon Willison 发布 llm 0.37：支持 GPT-6.1 系列，新增 OpenAI 兼容端点命令", "url": "https://simonwillison.net/2026/Nov/2/llm/", "zh": "命令行 LLM 工具加入新模型，默认模型换成更便宜的版本。"}, {"author": "Simon Willison", "category": "大牛观点", "en": "Simon Willison finds Census Bureau AI-adoption data affected by the 'Super Intelligence' executive order", "id": "2026-11-04-13", "rank": 13, "take": "引用政府 AI 采用率数据时要注意口径变化。", "time": "11-03", "title": "Simon Willison：美国人口普查局的企业 AI 采用率数据受「超级智能」行政令影响", "url": "https://simonwillison.net/2026/Nov/2/census-bureau-super-intelligence/", "zh": "他用最新数据重画企业 AI 采用率曲线，发现统计口径被行政令干扰。"}, {"author": "Tech Policy Press", "category": "研究", "en": "Op-ed: the SEC should block Anthropic's IPO until two quarters of audited financials", "id": "2026-11-04-14", "rank": 14, "take": "代表一派批评声音，和 Ed Zitron 视频可一起看。", "time": "11-03", "title": "评论：SEC 应暂缓 Anthropic IPO，直到有两个季度审计报表", "url": "https://www.techpolicy.press/the-sec-should-block-anthropics-ipo-to-protect-the-public/", "zh": "作者称其近 9000 亿美元支出承诺对比 960 亿现金，5820 亿不可撤销算力合同实为表外负债。"}], "mode": "正式版（X 部分可用）", "note": "资讯覆盖 10/28–11/03，共 14 条，不凑满 20。X 只在少数几次搜索中加载出结果（其余疑似限流），拿到 ClaudeDevs、swyx、Simon Willison 的一手帖子；Anthropic、OpenAI 官方博客和吴恩达来信本期无新文章，openai.com 抓取失败，其余来自帮助中心、科技媒体和 WebSearch。YouTube 正常，前 5 个视频已读完整字幕写笔记。", "videos": [{"channel": "Raj Shamani", "duration": "1:08:00", "id": "2026-11-04-v1", "notes": {"duration": "1:08:00", "guests": "Sam Altman（OpenAI CEO，前 Y Combinator 总裁）；主持人 Raj Shamani（印度播客 Figuring Out）", "points": [{"t": "7:08", "text": "印度已是 OpenAI 用户最多、增长最快的市场，开发者用得很活跃。Altman 认为发展更快、供给更不足的经济体更欢迎 AI，美国舆论则偏悲观。"}, {"t": "9:36", "text": "他承认不持有 OpenAI 股权是个错误，因为这太反常，让外界一直猜他的真实动机。美国社会对科技权力的警惕有其道理，但他觉得现在有点过头。"}, {"t": "12:37", "text": "他最核心的洞见是“规模带来超线性回报”，这一点在公司、城市、YC 上都成立。2015–2021 年大家看着同样的数据却不加码，他认为是因为“扩大规模就能解决问题”听起来太简单；当年反方说模型只会预测下一个词、无法产生新知识，事实证明模型学到的是通用推理能力。"}, {"t": "16:43", "text": "最关键的决策：2022 年 8 月 GPT-4 训练完，他们看到了推理模型等新方向，于是拿整个公司押注大规模采购算力。他说如果模型只有 GPT-3.8 的水平，他们就不会有这份底气。"}, {"t": "18:34", "text": "他觉得自己听到的反对声还应该更多。对策是让老朋友和共事十年以上的人留在身边，并奖励敢于反驳的人。违背所有聪明人的建议去做一件事，应当看作昂贵、成功率低的高风险选择，很少这样做。"}, {"t": "24:06", "text": "找到非共识机会的关键是学会提出好问题。检验自己是不是一厢情愿：看能否说服一个聪明、自律但不懂这个领域的朋友。一个人都说服不了要警惕，所有人都同意则说明这事太显而易见。"}, {"t": "27:41", "text": "ChatGPT 上线时，领导层大多认为还太早。内部原型留存率只有约 5%，但这批用户非常喜爱它。他用 YC 的两条经验拍板：发第一版时不尴尬就是发得太晚；少数人深爱胜过很多人一般喜欢。如今企业级产品已接近关键基础设施，发布门槛要高得多。"}, {"t": "35:22", "text": "两种最坏的情况：人类把控制权交给远比自己强的 AI 后收不回来，或者某个人、公司、国家权力过大。他主张多家 AI 机构并存竞争。他认为众多出走者另起炉灶，是因为风险太高，只信任自己来做。"}, {"t": "49:01", "text": "他看创始人的标准：表达清晰、能让人在会后就想和他共事、能快速提出并改进想法、对世界有新颖且推理扎实的看法。成功路径多种多样，失败的反模式却很一致，比如缺乏驱动力、专注、清晰度和愿景。雄心可以通过同伴群体和难度逐级提升的挑战来培养。"}, {"t": "58:16", "text": "给创始人的总体建议是少听建议，把“做出人们想要的东西”放在首位。他最看重的是职业复利，不要把同样的一年重复二十次。当前最难的问题是 RSI 时代的进展节奏，以及治理、安全、监控与对齐；他的做法是从多个角度反复推敲，同时保持行动一致。最后谈到，他最想打造的是能加速科学发现的 AI；Navier-Stokes 方面的结果是他最近一次真正紧张的时刻。"}], "summary": "这期是 Raj Shamani 对 Sam Altman 的人物访谈，重点不在技术本身，而是他怎么想问题：如何下非共识的赌注（押注规模定律、GPT-4 之后重仓算力、顶着内部反对上线 ChatGPT），如何防止身边只剩附和的人，怎样评判创始人和培养雄心，以及进入 RSI（递归自我改进）时代后他对失控和权力过度集中这两类风险的担忧。核心观点：有证据支撑的信念可以违背共识，但这么做的代价很高，应当谨慎；职业成长要保持复利；AI 最让他兴奋的是加速科学发现。", "takeaways": ["“小规模见效就大胆扩大规模”与“用证据逐步积累信心”可以直接用到工程里：Agent 或 Claude Code 工作流先在小范围证明有效，再加大投入。没有证据时，“所有人都反对我也要做”应被看作高成本、低胜率的选择。", "ChatGPT 上线的逻辑适用于内部工具和 Agent：早点发出一个让自己有点尴尬的版本收集反馈，看重少数重度用户的深度使用，而不只是平均留存。但一旦成为关键基础设施（企业、生产环境），发布门槛和测试、运维标准必须明显提高，可以用“实验通道 vs 核心通道”分层管理。", "面向 RSI 时代，Altman 把失控与权力集中、安全监控与对齐看作当前最难的问题。对做 Agent 的工程师来说，权限边界、可观测性、人工审核和可回滚这些控制手段要从第一天就设计进系统，并持续从多个角度挑战自己的设计假设。"]}, "published": "1 天前", "rank": 1, "take": "本周播放最高的 OpenAI 一手访谈，少谈产品、多谈决策方法，ChatGPT 上线内幕和「实验通道 vs 关键基础设施」的发布门槛很有参考价值。", "title": "Sam Altman On AI Revolution, Superintelligence & Future Of Humanity | FO583 Raj Shamani", "url": "https://www.youtube.com/watch?v=TjPPIf-M6KE", "views": "76 万次观看", "zh": "Altman 长访谈：怎么下非共识的赌注（规模定律、GPT-4 后重仓算力、顶着反对上线 ChatGPT），以及 RSI 时代他最担心的失控与权力集中。"}, {"channel": "Sources Podcast (Alex Heath)", "duration": "1:24:20", "id": "2026-11-04-v2", "notes": {"duration": "1:24:20", "guests": "Tobi Lütke（Shopify 联合创始人兼 CEO、Meta 董事会成员）；主持人 Alex Heath（Sources 播客）", "points": [{"t": "0:00", "text": "Amazon 封锁 Meta 的 Muse Agent，Shopify 却公开欢迎。Tobi 认为这是两种电商哲学的延续：一边是聚合式的“万货商店”，一边是独立商家自己讲品牌故事。Shopify 没有广告业务也不做三方市场，所以始终站在商家这一边。"}, {"t": "3:49", "text": "他承认 Agent 冒充用户、browser use 还很粗糙，但它让很多事第一次变得可行。Shopify 在大量建设结账 API，下单的是真人还是代理人都支持。"}, {"t": "7:00", "text": "通过 Agent 的购物增长很快，主要是“项目型、高客单价”的采购，比如布置家庭健身房、给周末 3D 打印项目一次买齐材料。他判断现在 Agent 主要帮人把已有的事做得更好，下一阶段才会出现原本不可能的新玩法。"}, {"t": "14:06", "text": "他说软件第一次是“训练出来”而不是写出来的，做完还得像面试一样去摸清它会什么。他认为 AI 打开了新前沿，让人从零和思维回到正和思维；悲观听起来显得聪明，乐观听起来显得天真，所以舆论偏向悲观。"}, {"t": "22:10", "text": "AI 让创业门槛大幅降低：过去 Shopify 上约 80% 的成功商家身边都有人能 24 小时内回答创业问题（幸存者偏差），现在 AI 把这种顾问能力普及了。他自称 p(doom) 为零。"}, {"t": "44:59", "text": "创始人能做职业经理人做不到的事，比如直接发出“反射式使用 AI”的全员备忘录，要求找他要资源前先说明 AI 实验怎么失败的。这份备忘录在外界引发争议，内部却觉得理所当然。"}, {"t": "47:21", "text": "Shopify 不做年度计划，而是让每个人对所有输入“跑同一个函数”，每天决定下一步，方向一致但尽量松耦合。绩效评审里的 AI 问题更多是在给公司立一个需要活出来的名声。"}, {"t": "52:16", "text": "谈 Agent 创业公司的抽成模式：Shopify 约 3% 的费率大头要给卡组织，Agent 很难分到 2%。他建议别纠结抽成，先做到“好到无法忽视”。Shopify 自己看重的是毛利绝对额的增长，而不是费率高低。"}, {"t": "1:03:28", "text": "他眼中最大的风险是有人做出更好的 Shopify。所以他每年年初先设想“用魔杖从零重建的完美 Shopify”，再和现状跑 diff，用一年时间去补齐，避免沉没成本。"}, {"t": "1:11:36", "text": "广告会变形但不会消失：Agent 代表用户，如果它收钱去推荐商品就是背叛信任，需要新的发现与撮合市场。结尾他介绍在家用 Dell GB300 服务器搭的本地 Agent（claw），会汇总日程、Fitbit、定位等数据写简报。"}], "summary": "Tobi Lütke 谈 Agent 时代的电商与公司经营：Shopify 选择拥抱而不是封堵购物 Agent（与 Amazon 封锁 Muse 正好相反），强调 AI 是开辟新前沿的正和杠杆。他还讲了“反射式使用 AI”备忘录在公司内部怎样落地、Agent 创业公司的商业模式，以及他在家里本地运行的个人 Agent（claw）。", "takeaways": ["组织层面推广 AI 要靠“默认使用加上报告失败实验”，再把它写进评审，而不是靠单次培训。工程团队可以把“先让 Agent 出原型或测试”设为默认流程，同时记录失败案例来积累经验。", "模型和 Agent 是“训练出来、需要面试的软件”，能力边界要靠评测去发现。做 Agent 工程时应该把评测、回归测试和可观测性当作一等公民，也要特别防范 Agent 背离用户利益。", "面向 Agent 设计系统接口：Shopify 的选择是做好结账 API，不去封堵 browser use。用“魔杖重建版和现状跑 diff”的方法定期审视自己的系统和工具链；个人层面可以在本地跑私有 Agent，敏感数据不出本地。"]}, "published": "7 天前", "rank": 2, "take": "最激进拥抱 AI 的大公司 CEO 一手分享：组织怎么推 AI、怎么为 Agent 设计接口、「魔杖重建版 vs 现状跑 diff」的自我颠覆方法。", "title": "Shopify CEO on why using AI isn't optional", "url": "https://www.youtube.com/watch?v=r9SHzCW9zxo", "views": "17.5 万次观看", "zh": "Tobi Lütke 谈 Agent 购物：Shopify 为什么欢迎而不是封堵购物 Agent，「反射式用 AI」备忘录在公司内部怎么落地，以及他在家跑的本地个人 Agent。"}, {"channel": "AI Engineer", "duration": "20:35", "id": "2026-11-04-v3", "notes": {"duration": "0:20:35", "guests": "Zachary Blumenfeld，Neo4j（在 AI Engineer 大会上的演讲）", "points": [{"t": "0:36", "text": "「图工程」被看作提示词工程、上下文工程之后的下一步。但它背后的状态机、工作流图、知识图谱都是老东西，新的只是拿来服务 Agent。"}, {"t": "1:22", "text": "定义：把 Agent 的工作设计成显式的图，节点干活、边传递状态。图分三类：执行图（工作流和路由）、上下文图（决策轨迹及其与领域数据的关联）、程序性图（把 skill 或流程拆成步骤图）。"}, {"t": "2:57", "text": "图给 Agent 带来三点好处：可预测（约束执行路径）、可治理和审计（能控制、引导、复盘）、可移植（图可以存进知识层，在不同运行时之间复用）。"}, {"t": "4:40", "text": "Neo4j 的思路是建一个知识层，夹在 Databricks、BigQuery、Snowflake、文档和 Obsidian 等记录系统与 Agent 之间，让任何运行时都能用上图工程流程。"}, {"t": "6:06", "text": "上下文图里有短期记忆、长期记忆和推理/决策轨迹。团队的论文把 SKILL.md 及其脚本、参考资料编译成图结构，把文字规则变成确定性脚本并强制 Agent 按图执行，任务得分明显提升，小模型（Sonnet、Haiku）也能完成难任务。"}, {"t": "8:13", "text": "更进一步，可以从历史决策记忆里提炼出 skill，并和过往轨迹、数据保持连接：每一步能追溯来源、有版本记录、能监测漂移，人也可以审阅修改。"}, {"t": "9:21", "text": "客户案例：咨询公司帮资管机构做合规审计报告，需要跨库对齐实体；Uber 用配置图表达各地区司机和车辆的合规规则。"}, {"t": "11:19", "text": "演示贷款审批：Agent 遍历业务计划 PDF、交易数据、借贷政策和历史决策组成的图给出结论，但多次运行路径不一致，置信度也没有校准。"}, {"t": "14:28", "text": "把成功运行的轨迹编译成图形 YAML skill，外面包一层 CLI，路由由程序决定：硬规则→类型安全的决策模型评风险→是否升级人工→写报告并检查。每次运行存回图里，可统计哪些分支从没走过，用于治理。"}, {"t": "19:08", "text": "效果：加上编译后的流程耗时接近减半；再换成 Haiku，平均实际耗时从约 7.5 分钟降到 2 分钟以内，成本也大降。"}], "summary": "演讲把「图工程」定义为把 Agent 的工作设计成显式的图：节点负责干活，边负责传递状态。重点讲上下文图（决策轨迹）和程序性图（把 skill 编译成图）。核心观点是：把执行逻辑编译成可移植的图形 skill，和数据一起放在知识层里，就能让 Agent 更可预测、可治理、可审计，同时更快、更便宜，还能换用更小的模型。", "takeaways": ["别让 LLM 每次自己决定流程：把验证过的运行轨迹或 skill 编译成显式的图或状态机，LLM 只负责真正需要判断的节点。结果更稳定，也能换成小模型降本提速。", "把执行流程当作数据存下来并持久化每次运行，可以统计分支覆盖率、发现漂移、做版本对比——等于给 Agent 加上测试覆盖和运维可观测性。", "程序性知识放在和运行时无关的知识层，用 skill + CLI 交付，可在不同 Agent 框架间复用；高风险决策用硬规则、校准模型和人工升级三层兜底。"]}, "published": "1 天前", "rank": 3, "take": "「Graph Engineering」正是你关注的前沿概念；把 skill 编译成状态机、统计分支覆盖率的思路可以直接用到 Claude Code skill 和测试上。", "title": "Make Your AI Agents Predictable With Graph Engineering - Zachary Blumenfeld, Neo4j", "url": "https://www.youtube.com/watch?v=g_NgCLTibiM", "views": "4.5 万次观看", "zh": "把 Agent 的工作编译成显式的图：把 SKILL.md 和成功运行轨迹编译成图形 skill，让 Agent 更可预测、可审计，还能换成 Haiku 降本提速。"}, {"channel": "StarTalk Plus", "duration": "9:27", "id": "2026-11-04-v4", "notes": {"duration": "0:09:27", "guests": "Geoffrey Hinton（深度学习先驱，图灵奖、诺贝尔物理学奖得主）；主持 Neil deGrasse Tyson 及 StarTalk 联合主持人", "points": [{"t": "1:32", "text": "Hinton 纠正说 AI 不是一个人造出来的，并特别提到重新发明反向传播的 David Rumelhart 得到的认可太少。"}, {"t": "3:20", "text": "谁会赢得 AI 竞赛？他最看好 Google（坦言有利益关联），也认为 Anthropic、OpenAI 有机会，微软和 Meta 可能性较低，关键在于谁能招到合适的人。"}, {"t": "4:34", "text": "泡沫分两种：一种是 AI 能力不及预期；另一种是公司收不回巨额投资。他认为后一种更可能。"}, {"t": "5:04", "text": "公司的逻辑是卖替代人力的 AI，但没考虑社会后果：大规模失业会让没人有钱买产品，还可能让社会分裂成两个阶层。"}, {"t": "6:05", "text": "拖拉机替代的是体力，人还能转去做脑力工作；AI 替代的是智力本身，比如呼叫中心员工就无处可去，因为新岗位 AI 也能做。"}, {"t": "7:23", "text": "人类史是不断摆脱限制的过程，现在人类即将摆脱“必须自己思考”的限制，之后会怎样并不清楚。"}, {"t": "8:13", "text": "全民基本收入越来越必要，但有两个难题：很多人的自我价值来自工作；工人被取代后政府失去税基，需要向 AI 征税，而大公司会反对。"}], "summary": "StarTalk Plus 短剪辑。Hinton 认为比起“AI 其实不好用”，更可能出现的 AI 泡沫是“投资收不回来”：各家押注用 AI 替代大量工作来赚钱，却没算到大规模失业的社会后果和需求萎缩；这一轮替代的是智力本身，被替代的人不像过去那样有别的行业可去。", "takeaways": ["“能力泡沫”和“回报泡沫”要分开看：评估 Agent 项目时，“技术上能替代人”和“替代后组织能否承接”是两个独立问题。", "AI 替代的是认知劳动本身，工程师应主动站到“定义问题、设计约束、验收结果”的位置：写测试规范、搭评估体系、对运维事故兜底。", "在测试和运维中引入 Agent 自动化时，要配套度量和治理：替代了哪些环节、出问题谁负责、成本收益怎么算。"]}, "published": "5 天前", "rank": 4, "take": "10 分钟听完 AI 教父对「泡沫」的分类和 UBI 难题，适合配合本周 Anthropic IPO 估值争议一起看。", "title": "Geoffrey Hinton: The AI Bubble Isn't What You Think", "url": "https://www.youtube.com/watch?v=UJ5QpCQ4_34", "views": "55 万次观看", "zh": "Hinton 认为真正的 AI 泡沫不是技术不行，而是公司押注替代人力却收不回投资、没算到大规模失业的后果。"}, {"channel": "Y Combinator", "duration": "1:05:43", "id": "2026-11-04-v5", "notes": {"duration": "1:05:43", "guests": "Marvin Schwaibold（Shopify 产品设计工作室负责人）；主持人为 YC《Design Review》栏目主持人", "points": [{"t": "0:29", "text": "设计流程还是反复迭代，但工具从 Figma 静态稿转向 Codex、Claude Code 和终端，很快能做出在手机或电脑上可测的 demo。"}, {"t": "1:38", "text": "人负责驾驭 AI：把复杂需求拆成子任务交给 agent，再严格挑选结果。设计师更像编辑——AI 会写代码，但分不清好看和难看。"}, {"t": "4:45", "text": "Shopify 设计分两条线：重做整个 admin 界面，以及做 Sidekick（AI 层），让商家通过对话操作和自动化店铺。"}, {"t": "14:06", "text": "能跑的原型比任何 PRD 都有说服力，在公司里传得很快；一两个人借助 AI 就能干完以前一个团队的活。"}, {"t": "15:52", "text": "演示 Sidekick 建议流：首页推送优化建议，点开后自动和 Sidekick 对话，直接改后台并预览、发布；多名设计师在同一原型环境里叠加想法。"}, {"t": "20:04", "text": "Codex 做的手势动画不能被打断，他在 Figma 画了几个彩色方块示意交互，模型看图后就理解了想要的动效。"}, {"t": "24:32", "text": "接入 DialKit 把参数做成可调滑块，既方便细调，也暴露了 AI 几轮之前就理解错的地形图；一个轮播实验前后用了 91 轮提示。"}, {"t": "29:17", "text": "给创始人和设计师的建议：把 AI 当无限耐心的协作者，给它参考网站、截图和色板，通过模仿经典交互来学习。"}, {"t": "30:59", "text": "官网点评（Mintlify 等 6 家）：首页只推一个主目标和主 CTA；别做 scroll-jacking，交互要能随时打断；轮播要能拖能点；克制显得可信。"}], "summary": "Shopify 设计负责人展示现在的设计流程：Figma 只当草稿本，主要靠 Codex、Claude Code 直接做出能跑的原型，设计师因此变成“全栈”，人的角色变成编辑和把关。后半段点评 6 个创业公司官网，核心观点是 AI 让产出不再稀缺，难点在于取舍、拆小任务、只突出一件事。", "takeaways": ["做 agent 工程时把复杂任务拆小步，用草图、截图、结构图代替难说清的文字；人的价值在定标准和取舍。", "把可调参数和中间结构做成调试面板，能尽早发现 agent 在早先几轮留下的隐性错误——给 AI 产出补上可观测性和可测试性。", "可运行的原型比文档更能推动决策：用 Claude Code 或 Codex 搭一个大家都能分叉、叠加的共享 demo 环境，加快对齐。"]}, "published": "9 天前", "rank": 5, "take": "看一线团队怎么把 Agent 用进日常：拆小任务、用草图代替文字、给 AI 产出做可调试面板——工程师同样适用。", "title": "The New Full-Stack Designer", "url": "https://www.youtube.com/watch?v=eojywvxqoLc", "views": "12 万次观看", "zh": "Shopify 设计负责人现场演示：Figma 只当草稿本，用 Codex、Claude Code 直接做能跑的原型；后半段点评 6 个创业公司官网。"}, {"channel": "AI Engineer", "duration": "17:13", "id": "2026-11-04-v6", "published": "1 天前", "rank": 6, "take": "银行等强监管场景部署 Agent 的身份与算力隔离方案，运维视角很实用。", "title": "Your AI Agents Shouldn't Care Where They Run - Nikhil Harithas, Factory", "url": "https://www.youtube.com/watch?v=XIHZpZtYCzo", "views": "3412 次观看", "zh": "Factory 讲如何重构编码 Agent Droid，让它跑在客户自己的云里，不再借用个人身份、跑在别人机器上。"}, {"channel": "AI Engineer", "duration": "16:29", "id": "2026-11-04-v7", "published": "1 天前", "rank": 7, "take": "做 Agent 记忆/第二大脑检索层的人值得看，数据说服力强。", "title": "Better Search Took This AI Agent From 36% to 98% Accuracy - Aamir Shakir, Mixedbread", "url": "https://www.youtube.com/watch?v=3Ad73Onx3Aw", "views": "4511 次观看", "zh": "Mixedbread 认为 Agent 缺的不是智力而是找对数据：OCR+切块+向量库会丢信息，改用多模态 late-interaction 检索后准确率从 36% 到 98%。"}, {"channel": "Latent Space", "duration": "34:48", "id": "2026-11-04-v8", "published": "刚刚", "rank": 8, "take": "Loop Engineering 的真实落地样本，新上线播放量还低但内容硬。", "title": "⚡️ The 2026 Software Factory Standard — Zach Lloyd, Warp.dev", "url": "https://www.youtube.com/watch?v=LL0YmIyBKSU", "views": "124 次观看", "zh": "Warp CEO 演示他们的「软件工厂」：从 Slack 需求到 PR，共享 Agent 轨迹、按成本和吞吐打分、持续改进流程本身。"}, {"channel": "AI Engineer", "duration": "19:42", "id": "2026-11-04-v9", "published": "刚刚", "rank": 9, "take": "正好对应 Anthropic 今天的 Message Threads；控成本必看。", "title": "Without Caching, Your AI Agent Costs 10x More - George Cameron, Artificial Analysis", "url": "https://www.youtube.com/watch?v=prGP0huECPo", "views": "250 次观看", "zh": "Artificial Analysis 拆解 2026 年 Agent 成本：输入 token、缓存命中率和步数决定一切，同一任务有无缓存相差约 10 倍。"}, {"channel": "The Tech Report", "duration": "39:08", "id": "2026-11-04-v10", "published": "5 天前", "rank": 10, "take": "高播放的反方声音，帮你看清 IPO 叙事的另一面（观点偏激，批判着看）。", "title": "AI Bubble: This is bad for Anthropic on every level | Ed Zitron", "url": "https://www.youtube.com/watch?v=884dTvxSk4c", "views": "103 万次观看", "zh": "知名 AI 怀疑派 Ed Zitron 逐条批评 Anthropic IPO：垃圾级信用评级、巨额算力承诺和增速放缓。"}]}
+{
+  "date": "2026-11-04",
+  "highlights": [
+    {
+      "en": "Anthropic's Message Threads beta cuts long-context TTFT ~35% by sending only new messages each turn.",
+      "zh": "Anthropic 的 Message Threads 公测：长会话每轮只发新消息，长上下文首 token 延迟降约 35%，Claude Code 已默认开启。"
+    },
+    {
+      "en": "Anthropic's IPO valuation is pushed toward $1.5–1.6T while it touts Claude-designed chips and internal usage exceeding payroll.",
+      "zh": "Anthropic IPO 进入定价拉锯：估值被压到约 1.5–1.6 万亿，内部 Claude 用量折算已超过全员薪酬，还用 Claude 设计自研芯片。"
+    },
+    {
+      "en": "OpenAI will pool ChatGPT and Codex usage from December; Altman's long interview covers contrarian bets and RSI-era risks.",
+      "zh": "OpenAI：12 月起 ChatGPT 与 Codex 共用额度；Altman 长访谈谈非共识决策与 RSI 时代的两大风险。"
+    },
+    {
+      "en": "Agent engineering: compile skills into graphs for predictability; swyx favors low effort plus critique loops.",
+      "zh": "Agent 工程：Graph Engineering 把 skill 编译成图让 Agent 可预测；swyx 主张低推理强度 + 批评循环。"
+    }
+  ],
+  "items": [
+    {
+      "author": "Claude Developers",
+      "category": "Anthropic",
+      "en": "Message threads in public beta: send only new messages per turn; ~35% lower median TTFT on 500k–1M-token requests",
+      "id": "2026-11-04-01",
+      "rank": 1,
+      "take": "长跑 Agent 的直接提速，自建 harness 的可以马上试；注意 5 分钟过期后要重发全文。",
+      "time": "11-03",
+      "title": "Messages API 上线 Message Threads 公测：每轮只发新消息，长上下文首 token 延迟降约 35%",
+      "url": "https://claude.com/resources/articles/message-threads",
+      "zh": "服务器端缓存会话，后续请求只带新消息和上一条回复 ID；Claude Code 已默认开启。线程 5 分钟无请求即过期，token 计费不变。"
+    },
+    {
+      "author": "Anthropic",
+      "category": "Anthropic",
+      "en": "Invisible watermarks now applied to four older Claude models from Nov 3",
+      "id": "2026-11-04-02",
+      "rank": 2,
+      "take": "用 Claude 生成对外文本的团队知悉即可；普通 API 用户无法自查水印。",
+      "time": "11-03",
+      "title": "11 月 3 日起 Mythos 5、Opus 4.7/4.6、Sonnet 4.6 输出加入隐形水印",
+      "url": "https://dev.to/delimitter/anthropic-switches-on-invisible-watermarks-in-four-older-claude-models-from-november-3-385p",
+      "zh": "为落实欧盟 AI 法案第 50 条，水印不增加 token、不影响价格和质量，全球生效不可关闭；检测接口只开放给监管、执法和研究方。"
+    },
+    {
+      "author": "The Information",
+      "category": "Anthropic",
+      "en": "Anthropic tells IPO investors Claude helps its 15-person team design custom chips",
+      "id": "2026-11-04-03",
+      "rank": 3,
+      "take": "这是给投资人的说法、未经独立验证，但「Claude 参与造训练自己的芯片」是 RSI 叙事的又一块拼图。",
+      "time": "11-03",
+      "title": "Anthropic 向 IPO 投资人展示：15 人芯片团队用 Claude 设计自研芯片",
+      "url": "https://aiweekly.co/alerts/anthropic-tells-ipo-investors-claude-helps-design-its-chips",
+      "zh": "称比 Nvidia、AMD 的工程流程估算更快；不对外卖设计工具，仍坚持 Nvidia、AMD、Trainium、TPU 多芯片路线。"
+    },
+    {
+      "author": "Business Insider",
+      "category": "Anthropic",
+      "en": "Anthropic's internal Claude usage at retail rates now exceeds its employee pay",
+      "id": "2026-11-04-04",
+      "rank": 4,
+      "take": "一个直观信号：在最前沿的团队里，「算力 > 人力」已经成真。",
+      "time": "11-02",
+      "title": "按零售价折算，Anthropic 员工内部用 Claude 的花费已超过全员薪酬",
+      "url": "https://www.businessinsider.com/anthropic-claude-internal-ai-use-exceeds-employee-pay-tokens-2026-11",
+      "zh": "员工的内部 token 消耗如果按 API 零售价计，已高于公司付给员工的薪酬总额；讨论区认为这是会计口径，不等于真实边际成本。"
+    },
+    {
+      "author": "Reuters / WSJ",
+      "category": "Anthropic",
+      "en": "IPO buyers push Anthropic's valuation toward $1.5–1.6T from $2T",
+      "id": "2026-11-04-05",
+      "rank": 5,
+      "take": "IPO 预计本月进行，后续定价和上市首日表现值得关注。",
+      "time": "11-02",
+      "title": "IPO 机构买家把 Anthropic 估值从 2 万亿美元压到约 1.5–1.6 万亿",
+      "url": "https://aiweekly.co/alerts/reuters-anthropic-ipo-investors-push-valuation-down-to-15t-from-2t-over-q3",
+      "zh": "科技股回调加上 Q3 增速放缓，机构投资人要求下调发行估值；同周有评论文章呼吁 SEC 暂缓其 IPO。"
+    },
+    {
+      "author": "Bloomberg",
+      "category": "Agent 工程",
+      "en": "Goldman restricts Claude Code and Copilot to ~12,000 engineers, pulling them from traders and bankers",
+      "id": "2026-11-04-06",
+      "rank": 6,
+      "take": "编码 Agent 在非工程岗位「全员铺开」后的第一次大规模收缩，治理和 ROI 评估开始落地。",
+      "time": "11-02",
+      "title": "高盛收回交易员和银行家的 Claude Code、Copilot 权限，只留约 1.2 万名工程师",
+      "url": "https://www.bloomberg.com/news/articles/2026-11-02/goldman-restricts-traders-and-bankers-from-using-some-ai-tools",
+      "zh": "10 月完成生产力与风险评估后更新内部规定，兼做量化的 strats 工程师保留权限。"
+    },
+    {
+      "author": "OpenAI",
+      "category": "OpenAI",
+      "en": "ChatGPT and Codex will share one usage allowance from December",
+      "id": "2026-11-04-07",
+      "rank": 7,
+      "take": "重度 Codex 用户要留意：聊天用多了会挤占写代码的额度。",
+      "time": "10-31",
+      "title": "12 月起 ChatGPT 和 Codex 共用一个 token 额度",
+      "url": "https://help.openai.com/en/articles/20001625-understanding-chatgpt-and-codex-usage-limits",
+      "zh": "适用 Plus、Pro、Business；Instant 聊天不计入。帮助中心 10 月 31 日更新，没有发博客或推文。"
+    },
+    {
+      "author": "Axios / Yahoo Finance",
+      "category": "OpenAI",
+      "en": "OpenAI plans post-midterm policy push, rebranding data centers as 'AI compute campuses'; Altman visits Samsung and SK",
+      "id": "2026-11-04-08",
+      "rank": 8,
+      "take": "算力和舆论两条线同时布局，芯片/存储供应链是 Altman 这次韩国行的重点。",
+      "time": "11-01",
+      "title": "OpenAI 准备中期选举后的政策攻势，把数据中心改称「AI 算力园区」；Altman 周末密访韩国三星、SK",
+      "url": "https://finance.yahoo.com/technology/ai/articles/openai-tightens-chatgpt-codex-usage-050325946.html",
+      "zh": "同时报道 OpenAI 融资目标从 300 亿降到 200 亿美元、token 价格半年降 35%。"
+    },
+    {
+      "author": "OpenAI",
+      "category": "OpenAI",
+      "en": "OpenAI expands ServiceNow partnership with a ServiceNow MCP plugin",
+      "id": "2026-11-04-09",
+      "rank": 9,
+      "take": "运维工单接入 Agent 的官方路径，做 ITSM 的可以关注。",
+      "time": "10-28",
+      "title": "OpenAI 扩大与 ServiceNow 合作，插件市场上架 ServiceNow MCP 插件",
+      "url": "https://openai.com/index/openai-servicenow-partnership-expansion/",
+      "zh": "企业可以在 ChatGPT / Codex 里通过 MCP 直接操作 ServiceNow 工单和流程。"
+    },
+    {
+      "author": "OpenAI Community",
+      "category": "OpenAI",
+      "en": "Eligible ChatGPT Pro and Business plans can claim up to $500 in monthly API credits",
+      "id": "2026-11-04-10",
+      "rank": 10,
+      "take": "有 Pro 订阅的话记得去领，拿来跑自己的 Agent 实验。",
+      "time": "10-29",
+      "title": "ChatGPT Pro 和 Business 订阅每月可领最多 500 美元 API 额度",
+      "url": "https://community.openai.com/t/claim-up-to-500-in-api-credits-using-your-chatgpt-pro-or-business-subscription/1410579",
+      "zh": "订阅用户可以把部分额度用在 API 上，降低自建 Agent 的试验成本。"
+    },
+    {
+      "author": "swyx",
+      "category": "大牛观点",
+      "en": "swyx: low effort plus a critique loop beats max-effort settings",
+      "id": "2026-11-04-11",
+      "rank": 11,
+      "take": "典型 Loop Engineering 思路：与其单次求完美，不如设计好反馈回路。",
+      "time": "11-01",
+      "title": "swyx：低推理强度 + 批评循环，胜过一味拉满推理强度",
+      "url": "https://x.com/swyx/status/2116773135668404286",
+      "zh": "他提到 Karpathy 做 HackerTube 用的是 Opus 5.5 medium；在吞吐受限时，低强度跑 + 自动批评回路更划算，并开源了 babysit-runs skill。"
+    },
+    {
+      "author": "Simon Willison",
+      "category": "大牛观点",
+      "en": "Simon Willison ships llm 0.37 with GPT-6.1 models and an OpenAI-compatible endpoint command",
+      "id": "2026-11-04-12",
+      "rank": 12,
+      "take": "用命令行批量调模型、做小实验的利器。",
+      "time": "11-02",
+      "title": "Simon Willison 发布 llm 0.37：支持 GPT-6.1 系列，新增 OpenAI 兼容端点命令",
+      "url": "https://simonwillison.net/2026/Nov/2/llm/",
+      "zh": "命令行 LLM 工具加入新模型，默认模型换成更便宜的版本。"
+    },
+    {
+      "author": "Simon Willison",
+      "category": "大牛观点",
+      "en": "Simon Willison finds Census Bureau AI-adoption data affected by the 'Super Intelligence' executive order",
+      "id": "2026-11-04-13",
+      "rank": 13,
+      "take": "引用政府 AI 采用率数据时要注意口径变化。",
+      "time": "11-03",
+      "title": "Simon Willison：美国人口普查局的企业 AI 采用率数据受「超级智能」行政令影响",
+      "url": "https://simonwillison.net/2026/Nov/2/census-bureau-super-intelligence/",
+      "zh": "他用最新数据重画企业 AI 采用率曲线，发现统计口径被行政令干扰。"
+    },
+    {
+      "author": "Tech Policy Press",
+      "category": "研究",
+      "en": "Op-ed: the SEC should block Anthropic's IPO until two quarters of audited financials",
+      "id": "2026-11-04-14",
+      "rank": 14,
+      "take": "代表一派批评声音，和 Ed Zitron 视频可一起看。",
+      "time": "11-03",
+      "title": "评论：SEC 应暂缓 Anthropic IPO，直到有两个季度审计报表",
+      "url": "https://www.techpolicy.press/the-sec-should-block-anthropics-ipo-to-protect-the-public/",
+      "zh": "作者称其近 9000 亿美元支出承诺对比 960 亿现金，5820 亿不可撤销算力合同实为表外负债。"
+    }
+  ],
+  "mode": "正式版（X 部分可用）",
+  "note": "资讯覆盖 10/28–11/03，共 14 条，不凑满 20。X 只在少数几次搜索中加载出结果（其余疑似限流），拿到 ClaudeDevs、swyx、Simon Willison 的一手帖子；Anthropic、OpenAI 官方博客和吴恩达来信本期无新文章，openai.com 抓取失败，其余来自帮助中心、科技媒体和 WebSearch。YouTube 正常，前 5 个视频已读完整字幕写笔记。",
+  "videos": [
+    {
+      "channel": "Raj Shamani",
+      "duration": "1:08:00",
+      "id": "2026-11-04-v1",
+      "notes": {
+        "duration": "1:08:00",
+        "guests": "Sam Altman（OpenAI CEO，前 Y Combinator 总裁）；主持人 Raj Shamani（印度播客 Figuring Out）",
+        "points": [
+          {
+            "t": "7:08",
+            "text": "印度已是 OpenAI 用户最多、增长最快的市场，开发者用得很活跃。Altman 认为发展更快、供给更不足的经济体更欢迎 AI，美国舆论则偏悲观。"
+          },
+          {
+            "t": "9:36",
+            "text": "他承认不持有 OpenAI 股权是个错误，因为这太反常，让外界一直猜他的真实动机。美国社会对科技权力的警惕有其道理，但他觉得现在有点过头。"
+          },
+          {
+            "t": "12:37",
+            "text": "他最核心的洞见是“规模带来超线性回报”，这一点在公司、城市、YC 上都成立。2015–2021 年大家看着同样的数据却不加码，他认为是因为“扩大规模就能解决问题”听起来太简单；当年反方说模型只会预测下一个词、无法产生新知识，事实证明模型学到的是通用推理能力。"
+          },
+          {
+            "t": "16:43",
+            "text": "最关键的决策：2022 年 8 月 GPT-4 训练完，他们看到了推理模型等新方向，于是拿整个公司押注大规模采购算力。他说如果模型只有 GPT-3.8 的水平，他们就不会有这份底气。"
+          },
+          {
+            "t": "18:34",
+            "text": "他觉得自己听到的反对声还应该更多。对策是让老朋友和共事十年以上的人留在身边，并奖励敢于反驳的人。违背所有聪明人的建议去做一件事，应当看作昂贵、成功率低的高风险选择，很少这样做。"
+          },
+          {
+            "t": "24:06",
+            "text": "找到非共识机会的关键是学会提出好问题。检验自己是不是一厢情愿：看能否说服一个聪明、自律但不懂这个领域的朋友。一个人都说服不了要警惕，所有人都同意则说明这事太显而易见。"
+          },
+          {
+            "t": "27:41",
+            "text": "ChatGPT 上线时，领导层大多认为还太早。内部原型留存率只有约 5%，但这批用户非常喜爱它。他用 YC 的两条经验拍板：发第一版时不尴尬就是发得太晚；少数人深爱胜过很多人一般喜欢。如今企业级产品已接近关键基础设施，发布门槛要高得多。"
+          },
+          {
+            "t": "35:22",
+            "text": "两种最坏的情况：人类把控制权交给远比自己强的 AI 后收不回来，或者某个人、公司、国家权力过大。他主张多家 AI 机构并存竞争。他认为众多出走者另起炉灶，是因为风险太高，只信任自己来做。"
+          },
+          {
+            "t": "49:01",
+            "text": "他看创始人的标准：表达清晰、能让人在会后就想和他共事、能快速提出并改进想法、对世界有新颖且推理扎实的看法。成功路径多种多样，失败的反模式却很一致，比如缺乏驱动力、专注、清晰度和愿景。雄心可以通过同伴群体和难度逐级提升的挑战来培养。"
+          },
+          {
+            "t": "58:16",
+            "text": "给创始人的总体建议是少听建议，把“做出人们想要的东西”放在首位。他最看重的是职业复利，不要把同样的一年重复二十次。当前最难的问题是 RSI 时代的进展节奏，以及治理、安全、监控与对齐；他的做法是从多个角度反复推敲，同时保持行动一致。最后谈到，他最想打造的是能加速科学发现的 AI；Navier-Stokes 方面的结果是他最近一次真正紧张的时刻。"
+          }
+        ],
+        "summary": "这期是 Raj Shamani 对 Sam Altman 的人物访谈，重点不在技术本身，而是他怎么想问题：如何下非共识的赌注（押注规模定律、GPT-4 之后重仓算力、顶着内部反对上线 ChatGPT），如何防止身边只剩附和的人，怎样评判创始人和培养雄心，以及进入 RSI（递归自我改进）时代后他对失控和权力过度集中这两类风险的担忧。核心观点：有证据支撑的信念可以违背共识，但这么做的代价很高，应当谨慎；职业成长要保持复利；AI 最让他兴奋的是加速科学发现。",
+        "takeaways": [
+          "“小规模见效就大胆扩大规模”与“用证据逐步积累信心”可以直接用到工程里：Agent 或 Claude Code 工作流先在小范围证明有效，再加大投入。没有证据时，“所有人都反对我也要做”应被看作高成本、低胜率的选择。",
+          "ChatGPT 上线的逻辑适用于内部工具和 Agent：早点发出一个让自己有点尴尬的版本收集反馈，看重少数重度用户的深度使用，而不只是平均留存。但一旦成为关键基础设施（企业、生产环境），发布门槛和测试、运维标准必须明显提高，可以用“实验通道 vs 核心通道”分层管理。",
+          "面向 RSI 时代，Altman 把失控与权力集中、安全监控与对齐看作当前最难的问题。对做 Agent 的工程师来说，权限边界、可观测性、人工审核和可回滚这些控制手段要从第一天就设计进系统，并持续从多个角度挑战自己的设计假设。"
+        ]
+      },
+      "published": "1 天前",
+      "rank": 1,
+      "take": "本周播放最高的 OpenAI 一手访谈，少谈产品、多谈决策方法，ChatGPT 上线内幕和「实验通道 vs 关键基础设施」的发布门槛很有参考价值。",
+      "title": "Sam Altman On AI Revolution, Superintelligence & Future Of Humanity | FO583 Raj Shamani",
+      "url": "https://www.youtube.com/watch?v=TjPPIf-M6KE",
+      "views": "76 万次观看",
+      "zh": "Altman 长访谈：怎么下非共识的赌注（规模定律、GPT-4 后重仓算力、顶着反对上线 ChatGPT），以及 RSI 时代他最担心的失控与权力集中。"
+    },
+    {
+      "channel": "Sources Podcast (Alex Heath)",
+      "duration": "1:24:20",
+      "id": "2026-11-04-v2",
+      "notes": {
+        "duration": "1:24:20",
+        "guests": "Tobi Lütke（Shopify 联合创始人兼 CEO、Meta 董事会成员）；主持人 Alex Heath（Sources 播客）",
+        "points": [
+          {
+            "t": "0:00",
+            "text": "Amazon 封锁 Meta 的 Muse Agent，Shopify 却公开欢迎。Tobi 认为这是两种电商哲学的延续：一边是聚合式的“万货商店”，一边是独立商家自己讲品牌故事。Shopify 没有广告业务也不做三方市场，所以始终站在商家这一边。"
+          },
+          {
+            "t": "3:49",
+            "text": "他承认 Agent 冒充用户、browser use 还很粗糙，但它让很多事第一次变得可行。Shopify 在大量建设结账 API，下单的是真人还是代理人都支持。"
+          },
+          {
+            "t": "7:00",
+            "text": "通过 Agent 的购物增长很快，主要是“项目型、高客单价”的采购，比如布置家庭健身房、给周末 3D 打印项目一次买齐材料。他判断现在 Agent 主要帮人把已有的事做得更好，下一阶段才会出现原本不可能的新玩法。"
+          },
+          {
+            "t": "14:06",
+            "text": "他说软件第一次是“训练出来”而不是写出来的，做完还得像面试一样去摸清它会什么。他认为 AI 打开了新前沿，让人从零和思维回到正和思维；悲观听起来显得聪明，乐观听起来显得天真，所以舆论偏向悲观。"
+          },
+          {
+            "t": "22:10",
+            "text": "AI 让创业门槛大幅降低：过去 Shopify 上约 80% 的成功商家身边都有人能 24 小时内回答创业问题（幸存者偏差），现在 AI 把这种顾问能力普及了。他自称 p(doom) 为零。"
+          },
+          {
+            "t": "44:59",
+            "text": "创始人能做职业经理人做不到的事，比如直接发出“反射式使用 AI”的全员备忘录，要求找他要资源前先说明 AI 实验怎么失败的。这份备忘录在外界引发争议，内部却觉得理所当然。"
+          },
+          {
+            "t": "47:21",
+            "text": "Shopify 不做年度计划，而是让每个人对所有输入“跑同一个函数”，每天决定下一步，方向一致但尽量松耦合。绩效评审里的 AI 问题更多是在给公司立一个需要活出来的名声。"
+          },
+          {
+            "t": "52:16",
+            "text": "谈 Agent 创业公司的抽成模式：Shopify 约 3% 的费率大头要给卡组织，Agent 很难分到 2%。他建议别纠结抽成，先做到“好到无法忽视”。Shopify 自己看重的是毛利绝对额的增长，而不是费率高低。"
+          },
+          {
+            "t": "1:03:28",
+            "text": "他眼中最大的风险是有人做出更好的 Shopify。所以他每年年初先设想“用魔杖从零重建的完美 Shopify”，再和现状跑 diff，用一年时间去补齐，避免沉没成本。"
+          },
+          {
+            "t": "1:11:36",
+            "text": "广告会变形但不会消失：Agent 代表用户，如果它收钱去推荐商品就是背叛信任，需要新的发现与撮合市场。结尾他介绍在家用 Dell GB300 服务器搭的本地 Agent（claw），会汇总日程、Fitbit、定位等数据写简报。"
+          }
+        ],
+        "summary": "Tobi Lütke 谈 Agent 时代的电商与公司经营：Shopify 选择拥抱而不是封堵购物 Agent（与 Amazon 封锁 Muse 正好相反），强调 AI 是开辟新前沿的正和杠杆。他还讲了“反射式使用 AI”备忘录在公司内部怎样落地、Agent 创业公司的商业模式，以及他在家里本地运行的个人 Agent（claw）。",
+        "takeaways": [
+          "组织层面推广 AI 要靠“默认使用加上报告失败实验”，再把它写进评审，而不是靠单次培训。工程团队可以把“先让 Agent 出原型或测试”设为默认流程，同时记录失败案例来积累经验。",
+          "模型和 Agent 是“训练出来、需要面试的软件”，能力边界要靠评测去发现。做 Agent 工程时应该把评测、回归测试和可观测性当作一等公民，也要特别防范 Agent 背离用户利益。",
+          "面向 Agent 设计系统接口：Shopify 的选择是做好结账 API，不去封堵 browser use。用“魔杖重建版和现状跑 diff”的方法定期审视自己的系统和工具链；个人层面可以在本地跑私有 Agent，敏感数据不出本地。"
+        ]
+      },
+      "published": "7 天前",
+      "rank": 2,
+      "take": "最激进拥抱 AI 的大公司 CEO 一手分享：组织怎么推 AI、怎么为 Agent 设计接口、「魔杖重建版 vs 现状跑 diff」的自我颠覆方法。",
+      "title": "Shopify CEO on why using AI isn't optional",
+      "url": "https://www.youtube.com/watch?v=r9SHzCW9zxo",
+      "views": "17.5 万次观看",
+      "zh": "Tobi Lütke 谈 Agent 购物：Shopify 为什么欢迎而不是封堵购物 Agent，「反射式用 AI」备忘录在公司内部怎么落地，以及他在家跑的本地个人 Agent。"
+    },
+    {
+      "channel": "AI Engineer",
+      "duration": "20:35",
+      "id": "2026-11-04-v3",
+      "notes": {
+        "duration": "0:20:35",
+        "guests": "Zachary Blumenfeld，Neo4j（在 AI Engineer 大会上的演讲）",
+        "points": [
+          {
+            "t": "0:36",
+            "text": "「图工程」被看作提示词工程、上下文工程之后的下一步。但它背后的状态机、工作流图、知识图谱都是老东西，新的只是拿来服务 Agent。"
+          },
+          {
+            "t": "1:22",
+            "text": "定义：把 Agent 的工作设计成显式的图，节点干活、边传递状态。图分三类：执行图（工作流和路由）、上下文图（决策轨迹及其与领域数据的关联）、程序性图（把 skill 或流程拆成步骤图）。"
+          },
+          {
+            "t": "2:57",
+            "text": "图给 Agent 带来三点好处：可预测（约束执行路径）、可治理和审计（能控制、引导、复盘）、可移植（图可以存进知识层，在不同运行时之间复用）。"
+          },
+          {
+            "t": "4:40",
+            "text": "Neo4j 的思路是建一个知识层，夹在 Databricks、BigQuery、Snowflake、文档和 Obsidian 等记录系统与 Agent 之间，让任何运行时都能用上图工程流程。"
+          },
+          {
+            "t": "6:06",
+            "text": "上下文图里有短期记忆、长期记忆和推理/决策轨迹。团队的论文把 SKILL.md 及其脚本、参考资料编译成图结构，把文字规则变成确定性脚本并强制 Agent 按图执行，任务得分明显提升，小模型（Sonnet、Haiku）也能完成难任务。"
+          },
+          {
+            "t": "8:13",
+            "text": "更进一步，可以从历史决策记忆里提炼出 skill，并和过往轨迹、数据保持连接：每一步能追溯来源、有版本记录、能监测漂移，人也可以审阅修改。"
+          },
+          {
+            "t": "9:21",
+            "text": "客户案例：咨询公司帮资管机构做合规审计报告，需要跨库对齐实体；Uber 用配置图表达各地区司机和车辆的合规规则。"
+          },
+          {
+            "t": "11:19",
+            "text": "演示贷款审批：Agent 遍历业务计划 PDF、交易数据、借贷政策和历史决策组成的图给出结论，但多次运行路径不一致，置信度也没有校准。"
+          },
+          {
+            "t": "14:28",
+            "text": "把成功运行的轨迹编译成图形 YAML skill，外面包一层 CLI，路由由程序决定：硬规则→类型安全的决策模型评风险→是否升级人工→写报告并检查。每次运行存回图里，可统计哪些分支从没走过，用于治理。"
+          },
+          {
+            "t": "19:08",
+            "text": "效果：加上编译后的流程耗时接近减半；再换成 Haiku，平均实际耗时从约 7.5 分钟降到 2 分钟以内，成本也大降。"
+          }
+        ],
+        "summary": "演讲把「图工程」定义为把 Agent 的工作设计成显式的图：节点负责干活，边负责传递状态。重点讲上下文图（决策轨迹）和程序性图（把 skill 编译成图）。核心观点是：把执行逻辑编译成可移植的图形 skill，和数据一起放在知识层里，就能让 Agent 更可预测、可治理、可审计，同时更快、更便宜，还能换用更小的模型。",
+        "takeaways": [
+          "别让 LLM 每次自己决定流程：把验证过的运行轨迹或 skill 编译成显式的图或状态机，LLM 只负责真正需要判断的节点。结果更稳定，也能换成小模型降本提速。",
+          "把执行流程当作数据存下来并持久化每次运行，可以统计分支覆盖率、发现漂移、做版本对比——等于给 Agent 加上测试覆盖和运维可观测性。",
+          "程序性知识放在和运行时无关的知识层，用 skill + CLI 交付，可在不同 Agent 框架间复用；高风险决策用硬规则、校准模型和人工升级三层兜底。"
+        ]
+      },
+      "published": "1 天前",
+      "rank": 3,
+      "take": "「Graph Engineering」正是你关注的前沿概念；把 skill 编译成状态机、统计分支覆盖率的思路可以直接用到 Claude Code skill 和测试上。",
+      "title": "Make Your AI Agents Predictable With Graph Engineering - Zachary Blumenfeld, Neo4j",
+      "url": "https://www.youtube.com/watch?v=g_NgCLTibiM",
+      "views": "4.5 万次观看",
+      "zh": "把 Agent 的工作编译成显式的图：把 SKILL.md 和成功运行轨迹编译成图形 skill，让 Agent 更可预测、可审计，还能换成 Haiku 降本提速。"
+    },
+    {
+      "channel": "StarTalk Plus",
+      "duration": "9:27",
+      "id": "2026-11-04-v4",
+      "notes": {
+        "duration": "0:09:27",
+        "guests": "Geoffrey Hinton（深度学习先驱，图灵奖、诺贝尔物理学奖得主）；主持 Neil deGrasse Tyson 及 StarTalk 联合主持人",
+        "points": [
+          {
+            "t": "1:32",
+            "text": "Hinton 纠正说 AI 不是一个人造出来的，并特别提到重新发明反向传播的 David Rumelhart 得到的认可太少。"
+          },
+          {
+            "t": "3:20",
+            "text": "谁会赢得 AI 竞赛？他最看好 Google（坦言有利益关联），也认为 Anthropic、OpenAI 有机会，微软和 Meta 可能性较低，关键在于谁能招到合适的人。"
+          },
+          {
+            "t": "4:34",
+            "text": "泡沫分两种：一种是 AI 能力不及预期；另一种是公司收不回巨额投资。他认为后一种更可能。"
+          },
+          {
+            "t": "5:04",
+            "text": "公司的逻辑是卖替代人力的 AI，但没考虑社会后果：大规模失业会让没人有钱买产品，还可能让社会分裂成两个阶层。"
+          },
+          {
+            "t": "6:05",
+            "text": "拖拉机替代的是体力，人还能转去做脑力工作；AI 替代的是智力本身，比如呼叫中心员工就无处可去，因为新岗位 AI 也能做。"
+          },
+          {
+            "t": "7:23",
+            "text": "人类史是不断摆脱限制的过程，现在人类即将摆脱“必须自己思考”的限制，之后会怎样并不清楚。"
+          },
+          {
+            "t": "8:13",
+            "text": "全民基本收入越来越必要，但有两个难题：很多人的自我价值来自工作；工人被取代后政府失去税基，需要向 AI 征税，而大公司会反对。"
+          }
+        ],
+        "summary": "StarTalk Plus 短剪辑。Hinton 认为比起“AI 其实不好用”，更可能出现的 AI 泡沫是“投资收不回来”：各家押注用 AI 替代大量工作来赚钱，却没算到大规模失业的社会后果和需求萎缩；这一轮替代的是智力本身，被替代的人不像过去那样有别的行业可去。",
+        "takeaways": [
+          "“能力泡沫”和“回报泡沫”要分开看：评估 Agent 项目时，“技术上能替代人”和“替代后组织能否承接”是两个独立问题。",
+          "AI 替代的是认知劳动本身，工程师应主动站到“定义问题、设计约束、验收结果”的位置：写测试规范、搭评估体系、对运维事故兜底。",
+          "在测试和运维中引入 Agent 自动化时，要配套度量和治理：替代了哪些环节、出问题谁负责、成本收益怎么算。"
+        ]
+      },
+      "published": "5 天前",
+      "rank": 4,
+      "take": "10 分钟听完 AI 教父对「泡沫」的分类和 UBI 难题，适合配合本周 Anthropic IPO 估值争议一起看。",
+      "title": "Geoffrey Hinton: The AI Bubble Isn't What You Think",
+      "url": "https://www.youtube.com/watch?v=UJ5QpCQ4_34",
+      "views": "55 万次观看",
+      "zh": "Hinton 认为真正的 AI 泡沫不是技术不行，而是公司押注替代人力却收不回投资、没算到大规模失业的后果。"
+    },
+    {
+      "channel": "Y Combinator",
+      "duration": "1:05:43",
+      "id": "2026-11-04-v5",
+      "notes": {
+        "duration": "1:05:43",
+        "guests": "Marvin Schwaibold（Shopify 产品设计工作室负责人）；主持人为 YC《Design Review》栏目主持人",
+        "points": [
+          {
+            "t": "0:29",
+            "text": "设计流程还是反复迭代，但工具从 Figma 静态稿转向 Codex、Claude Code 和终端，很快能做出在手机或电脑上可测的 demo。"
+          },
+          {
+            "t": "1:38",
+            "text": "人负责驾驭 AI：把复杂需求拆成子任务交给 agent，再严格挑选结果。设计师更像编辑——AI 会写代码，但分不清好看和难看。"
+          },
+          {
+            "t": "4:45",
+            "text": "Shopify 设计分两条线：重做整个 admin 界面，以及做 Sidekick（AI 层），让商家通过对话操作和自动化店铺。"
+          },
+          {
+            "t": "14:06",
+            "text": "能跑的原型比任何 PRD 都有说服力，在公司里传得很快；一两个人借助 AI 就能干完以前一个团队的活。"
+          },
+          {
+            "t": "15:52",
+            "text": "演示 Sidekick 建议流：首页推送优化建议，点开后自动和 Sidekick 对话，直接改后台并预览、发布；多名设计师在同一原型环境里叠加想法。"
+          },
+          {
+            "t": "20:04",
+            "text": "Codex 做的手势动画不能被打断，他在 Figma 画了几个彩色方块示意交互，模型看图后就理解了想要的动效。"
+          },
+          {
+            "t": "24:32",
+            "text": "接入 DialKit 把参数做成可调滑块，既方便细调，也暴露了 AI 几轮之前就理解错的地形图；一个轮播实验前后用了 91 轮提示。"
+          },
+          {
+            "t": "29:17",
+            "text": "给创始人和设计师的建议：把 AI 当无限耐心的协作者，给它参考网站、截图和色板，通过模仿经典交互来学习。"
+          },
+          {
+            "t": "30:59",
+            "text": "官网点评（Mintlify 等 6 家）：首页只推一个主目标和主 CTA；别做 scroll-jacking，交互要能随时打断；轮播要能拖能点；克制显得可信。"
+          }
+        ],
+        "summary": "Shopify 设计负责人展示现在的设计流程：Figma 只当草稿本，主要靠 Codex、Claude Code 直接做出能跑的原型，设计师因此变成“全栈”，人的角色变成编辑和把关。后半段点评 6 个创业公司官网，核心观点是 AI 让产出不再稀缺，难点在于取舍、拆小任务、只突出一件事。",
+        "takeaways": [
+          "做 agent 工程时把复杂任务拆小步，用草图、截图、结构图代替难说清的文字；人的价值在定标准和取舍。",
+          "把可调参数和中间结构做成调试面板，能尽早发现 agent 在早先几轮留下的隐性错误——给 AI 产出补上可观测性和可测试性。",
+          "可运行的原型比文档更能推动决策：用 Claude Code 或 Codex 搭一个大家都能分叉、叠加的共享 demo 环境，加快对齐。"
+        ]
+      },
+      "published": "9 天前",
+      "rank": 5,
+      "take": "看一线团队怎么把 Agent 用进日常：拆小任务、用草图代替文字、给 AI 产出做可调试面板——工程师同样适用。",
+      "title": "The New Full-Stack Designer",
+      "url": "https://www.youtube.com/watch?v=eojywvxqoLc",
+      "views": "12 万次观看",
+      "zh": "Shopify 设计负责人现场演示：Figma 只当草稿本，用 Codex、Claude Code 直接做能跑的原型；后半段点评 6 个创业公司官网。"
+    },
+    {
+      "channel": "AI Engineer",
+      "duration": "17:13",
+      "id": "2026-11-04-v6",
+      "published": "1 天前",
+      "rank": 6,
+      "take": "银行等强监管场景部署 Agent 的身份与算力隔离方案，运维视角很实用。",
+      "title": "Your AI Agents Shouldn't Care Where They Run - Nikhil Harithas, Factory",
+      "url": "https://www.youtube.com/watch?v=XIHZpZtYCzo",
+      "views": "3412 次观看",
+      "zh": "Factory 讲如何重构编码 Agent Droid，让它跑在客户自己的云里，不再借用个人身份、跑在别人机器上。"
+    },
+    {
+      "channel": "AI Engineer",
+      "duration": "16:29",
+      "id": "2026-11-04-v7",
+      "published": "1 天前",
+      "rank": 7,
+      "take": "做 Agent 记忆/第二大脑检索层的人值得看，数据说服力强。",
+      "title": "Better Search Took This AI Agent From 36% to 98% Accuracy - Aamir Shakir, Mixedbread",
+      "url": "https://www.youtube.com/watch?v=3Ad73Onx3Aw",
+      "views": "4511 次观看",
+      "zh": "Mixedbread 认为 Agent 缺的不是智力而是找对数据：OCR+切块+向量库会丢信息，改用多模态 late-interaction 检索后准确率从 36% 到 98%。"
+    },
+    {
+      "channel": "Latent Space",
+      "duration": "34:48",
+      "id": "2026-11-04-v8",
+      "published": "刚刚",
+      "rank": 8,
+      "take": "Loop Engineering 的真实落地样本，新上线播放量还低但内容硬。",
+      "title": "⚡️ The 2026 Software Factory Standard — Zach Lloyd, Warp.dev",
+      "url": "https://www.youtube.com/watch?v=LL0YmIyBKSU",
+      "views": "124 次观看",
+      "zh": "Warp CEO 演示他们的「软件工厂」：从 Slack 需求到 PR，共享 Agent 轨迹、按成本和吞吐打分、持续改进流程本身。"
+    },
+    {
+      "channel": "AI Engineer",
+      "duration": "19:42",
+      "id": "2026-11-04-v9",
+      "published": "刚刚",
+      "rank": 9,
+      "take": "正好对应 Anthropic 今天的 Message Threads；控成本必看。",
+      "title": "Without Caching, Your AI Agent Costs 10x More - George Cameron, Artificial Analysis",
+      "url": "https://www.youtube.com/watch?v=prGP0huECPo",
+      "views": "250 次观看",
+      "zh": "Artificial Analysis 拆解 2026 年 Agent 成本：输入 token、缓存命中率和步数决定一切，同一任务有无缓存相差约 10 倍。"
+    },
+    {
+      "channel": "The Tech Report",
+      "duration": "39:08",
+      "id": "2026-11-04-v10",
+      "published": "5 天前",
+      "rank": 10,
+      "take": "高播放的反方声音，帮你看清 IPO 叙事的另一面（观点偏激，批判着看）。",
+      "title": "AI Bubble: This is bad for Anthropic on every level | Ed Zitron",
+      "url": "https://www.youtube.com/watch?v=884dTvxSk4c",
+      "views": "103 万次观看",
+      "zh": "知名 AI 怀疑派 Ed Zitron 逐条批评 Anthropic IPO：垃圾级信用评级、巨额算力承诺和增速放缓。"
+    }
+  ]
+}
