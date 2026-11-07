@@ -326,6 +326,12 @@ body.picking #map{cursor:crosshair}
 }
 @media (min-width:901px){.grab,.mchips{display:none}}
 /* ---- footprints ---- */
+.tchips{display:flex;gap:6px;overflow-x:auto;margin:0 0 8px;scrollbar-width:none}
+.tchips button{flex:none;font-size:12px;padding:6px 11px;border-radius:999px;border:1px solid var(--hair-2);color:var(--ink-2);white-space:nowrap}
+.tchips button[aria-pressed="true"]{border-color:var(--gold);color:var(--gold-hi);background:rgba(216,180,106,.12)}
+.bases.shut .brow,.bases.shut .bnote{display:none}
+.bases h4{cursor:pointer}
+
 .trail-btn{position:fixed;z-index:1060;left:calc(min(420px,34vw) + 44px);bottom:28px;display:flex;align-items:center;gap:7px;padding:10px 16px;border-radius:999px;border:1px solid rgba(216,180,106,.55);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--gold-hi);font-size:13.5px;letter-spacing:.04em;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer}
 .trail-btn[aria-pressed="true"]{background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:#1a1408;border-color:transparent;font-weight:500}
 .tcard{position:fixed;z-index:1250;left:calc(min(420px,34vw) + 44px);bottom:84px;width:min(420px,calc(100% - 32px));max-height:min(70vh,640px);overflow:auto;border-radius:22px;background:rgba(17,18,25,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--hair);box-shadow:0 30px 80px rgba(0,0,0,.6);padding:18px 18px 14px;color:var(--ink)}
@@ -369,7 +375,14 @@ body.picking #map{cursor:crosshair}
 .dlbl{transform:translate(-50%,-50%);white-space:nowrap;font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(12,13,18,.85);color:#cfe0ff;border:1px solid rgba(143,176,255,.35)}
 @media (max-width:760px){
   .trail-btn{left:max(14px,env(safe-area-inset-left,0px));bottom:calc(138px + env(safe-area-inset-bottom,0px));padding:9px 14px;font-size:13px}
-  .tcard{left:8px;right:8px;width:auto;bottom:calc(186px + env(safe-area-inset-bottom,0px));max-height:52vh;padding:16px 14px 12px}
+  .tcard{left:8px;right:8px;width:auto;bottom:calc(8px + env(safe-area-inset-bottom,0px));max-height:46vh;padding:14px 12px 10px;border-radius:18px}
+  .tcard h3{font-size:17px}
+  .tcard .sub{margin-bottom:8px}
+  .tstop{padding:9px 10px 9px 40px;margin-bottom:8px}
+  .tstop .n{left:8px;top:10px;width:24px;height:24px}
+  .tstop b{font-size:14.5px;margin:1px 0 4px}
+  .dist div{font-size:11.5px;gap:6px}
+  body.trailing .rail,body.trailing .mlist-btn,body.trailing .trail-btn{display:none}
 }
 </style>
 
@@ -868,7 +881,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='Escape'){ if(selected) closeSheet(); else $('#panel').classList.remove('open'); }
 });
 /* ---------- Footprints (足迹) ---------- */
-let footprints=[], trailOn=false, trailLayer=null, trailSel=null, bases={}, bEdit=null;
+let bOpen=false, footprints=[], trailOn=false, trailLayer=null, trailSel=null, bases={}, bEdit=null;
 const LT=(zh,en)=>lang==='zh'?zh:en;
 const BASES=[['hotel','🏨','酒店','Hotel'],['hq','🏢','HQ Tower','HQ Tower'],['ep','🏙️','EP Tower','EP Tower']];
 function loadBases(){ try{ bases=JSON.parse(localStorage.getItem('es-bases')||'{}')||{}; }catch(e){ bases={}; }
@@ -886,7 +899,7 @@ function distRows(p){
   const set=BASES.filter(([k])=>bases[k]&&typeof bases[k].lat==='number');
   if(!set.length) return `<span class="none">${esc(LT('在下面设置酒店 / HQ Tower / EP Tower，就能看到距离','Set your hotel / HQ Tower / EP Tower below to see distances'))}</span>`;
   return set.map(([k,ic,zh,en])=>{ const d=km(bases[k],p), e=estimates(d);
-    return `<div><span>${ic} ${esc(bases[k].label||LT(zh,en))}</span><span>${esc(LT('地铁','Transit'))}≈${e.transit}${esc(LT('分','m'))} · ${esc(LT('打车','Taxi'))}≈${e.taxi}${esc(LT('分','m'))}</span><strong>${d<1?Math.round(d*1000)+' m':d.toFixed(1)+' km'}</strong></div>`; }).join('');
+    return `<div><span>${ic} ${esc(bases[k].label||LT(zh,en))}</span><span>${esc(LT('地铁','Transit'))}${e.transit}${esc(LT('分','m'))} · ${esc(LT('打车','Taxi'))}${e.taxi}${esc(LT('分','m'))}</span><strong>${d<1?Math.round(d*1000)+' m':d.toFixed(1)+' km'}</strong></div>`; }).join('');
 }
 function renderTrailCard(){
   let card=$('#tcard'); if(!trailOn){ card&&card.remove(); return; }
@@ -894,14 +907,15 @@ function renderTrailCard(){
   const L=fpList(), n=L.filter(f=>fpStatus(f)==='past').length;
   card.innerHTML=`<button class="x" data-trail-close aria-label="close">×</button>
     <h3>👣 ${esc(LT('我的足迹','My footprints'))} <small>${n} ${esc(LT('站已到达','visited'))}${L.length>n?` · ${L.length-n} ${esc(LT('站计划中','planned'))}`:''}</small></h3>
-    <p class="sub">${esc(LT('距离为直线距离，时间为粗略估算','Straight-line distance; times are rough estimates'))}</p>
-    ${L.slice().reverse().map((f,i)=>{ const st=fpStatus(f), idx=L.indexOf(f)+1;
+    <p class="sub">${esc(LT('直线距离；时间为粗估。点一下卡片看连线，再点打开餐厅','Straight-line distance, rough times. Tap a card for lines, tap again to open'))}</p>
+    ${isPhone()&&L.length>1?`<div class="tchips">${L.map((f,i)=>`<button data-fp="${esc(f.place_id)}" aria-pressed="${trailSel===f.place_id}">${i+1} · ${esc(pname(f.p))}</button>`).join('')}</div>`:''}
+    ${L.slice().reverse().filter(f=>!isPhone()||!trailSel||f.place_id===trailSel).map((f,i)=>{ const st=fpStatus(f), idx=L.indexOf(f)+1;
       return `<div class="tstop ${st!=='past'?'next':''} ${trailSel===f.place_id?'on':''}" data-fp="${esc(f.place_id)}">
         <span class="n">${idx}</span>
         <div class="d">${esc(fmtDate(f))}${st==='today'?`<em>${esc(LT('今天','Today'))}</em>`:st==='future'?`<em>${esc(LT('计划','Planned'))}</em>`:''}</div>
         <b>${esc(pname(f.p))}<i>${'★'.repeat(f.p.stars||0)}</i></b>
         <div class="dist">${distRows(f.p)}</div></div>`; }).join('')}
-    <div class="bases"><h4>${esc(LT('我的据点（只保存在这台设备上，别人看不到）','My places (saved on this device only — others can’t see them)'))}</h4>
+    <div class="bases ${isPhone()&&!bOpen&&!bEdit?'shut':''}"><h4 data-btoggle>${esc(LT('我的据点（只保存在这台设备上，别人看不到）','My places (saved on this device only — others can’t see them)'))}${isPhone()?` <span>${bOpen||bEdit?'▾':'▸'}</span>`:''}</h4>
       ${BASES.map(([k,ic,zh,en])=>{ const b=bases[k];
         return `<div class="brow"><span class="ic">${ic}</span><span class="nm">${esc(LT(zh,en))}<small>${b?esc(b.addr||`${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}`):esc(LT('未设置','Not set'))}</small></span>
           <button data-bedit="${k}">${esc(b?LT('修改','Edit'):LT('设置','Set'))}</button>${b?`<button data-bdel="${k}" aria-label="remove">×</button>`:''}</div>
@@ -928,15 +942,16 @@ function drawTrail(){
 }
 function fitTrail(){ if(!map) return; const pts=fpList().map(f=>[f.p.lat,f.p.lng]).concat(BASES.map(([k])=>bases[k]).filter(b=>b&&typeof b.lat==='number').map(b=>[b.lat,b.lng]));
   if(!pts.length) return; const ph=isPhone();
-  map.fitBounds(pts,{paddingTopLeft:ph?[30,140]:[$('#panel').offsetWidth+40+440,60],paddingBottomRight:ph?[30,Math.round(innerHeight*.55)]:[80,60],maxZoom:14.5}); }
-function selectFp(id){ trailSel=trailSel===id?null:id; renderTrailCard(); drawTrail(); }
+  map.fitBounds(pts,{paddingTopLeft:ph?[30,140]:[$('#panel').offsetWidth+40+440,60],paddingBottomRight:ph?[30,Math.round(innerHeight*.5)]:[80,60],maxZoom:14.5}); }
+function selectFp(id){ trailSel=(trailSel===id&&!isPhone())?null:id; renderTrailCard(); drawTrail(); }
 function setTrail(on){ trailOn=on; if(!on){ trailSel=null; bEdit=null; } else if(!trailSel){ const F=fpList(); const nx=F.find(f=>fpStatus(f)!=='past')||F[F.length-1]; trailSel=nx?nx.place_id:null; }
-  $('#trailBtn').setAttribute('aria-pressed',on); renderTrailCard(); drawTrail(); if(on) fitTrail(); }
+  $('#trailBtn').setAttribute('aria-pressed',on); document.body.classList.toggle('trailing',on); renderTrailCard(); drawTrail(); if(on) fitTrail(); }
 function renderTrailBtn(){ $('#trailBtn').innerHTML=`👣 ${esc(LT('足迹','Footprints'))}`; $('#trailBtn').setAttribute('aria-pressed',trailOn); }
 document.addEventListener('click',e=>{
   const g=k=>e.target.closest(k);
   if(g('#trailBtn')){ setTrail(!trailOn); return; }
   if(g('[data-trail-close]')){ setTrail(false); return; }
+  if(g('[data-btoggle]')){ bOpen=!bOpen; renderTrailCard(); return; }
   let el;
   if((el=g('[data-bedit]'))){ bEdit=bEdit===el.dataset.bedit?null:el.dataset.bedit; renderTrailCard(); setTimeout(()=>$('#bIn')?.focus(),50); return; }
   if((el=g('[data-bdel]'))){ delete bases[el.dataset.bdel]; saveBases(); renderTrailCard(); drawTrail(); return; }
@@ -946,7 +961,7 @@ document.addEventListener('click',e=>{
     bases[k]={lat:o.lat,lng:o.lng,addr:o.name}; saveBases(); bEdit=null; renderTrailCard(); drawTrail(); fitTrail(); return; }
   if((el=g('[data-bpick]'))){ const k=el.dataset.bpick; $('#tcard').style.display='none';
     startPick(ll=>{ bases[k]={lat:+ll.lat.toFixed(6),lng:+ll.lng.toFixed(6)}; saveBases(); bEdit=null; $('#tcard').style.display=''; renderTrailCard(); drawTrail(); }); return; }
-  if((el=g('[data-fp]'))){ if(e.detail>1||trailSel===el.dataset.fp){ openPlace(el.dataset.fp); return; } selectFp(el.dataset.fp);
+  if((el=g('[data-fp]'))){ if(el.classList.contains('tstop')&&(e.detail>1||trailSel===el.dataset.fp)){ openPlace(el.dataset.fp); return; } selectFp(el.dataset.fp);
     const p=byId[el.dataset.fp]; map&&map.panTo([p.lat,p.lng]); return; }
 });
 window.addEventListener('hashchange',()=>{ const id=location.hash.slice(1); id&&byId[id]?openPlace(id,true):(selected&&closeSheet()); });
