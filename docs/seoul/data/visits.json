@@ -500,8 +500,8 @@
     ]
    },
    {
-    "en": "Duck",
-    "zh": "鸭胸",
+    "en": "Duck · Persimmon · Radish",
+    "zh": "鸭胸 · 柿子 · 萝卜",
     "ko": "오리",
     "media": [
      {
@@ -644,6 +644,7 @@
    "zh": "整只蟹壳立在紫色海藻上",
    "en": "The whole shell standing on purple seaweed"
   },
-  "review": null
+  "review": null,
+  "menu_note_zh": "餐厅没有正式菜名，只给了原材料手绘图；菜名是按照片和原材料整理的。"
  }
 ]
