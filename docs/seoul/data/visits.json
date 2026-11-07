@@ -644,7 +644,13 @@
    "zh": "整只蟹壳立在紫色海藻上",
    "en": "The whole shell standing on purple seaweed"
   },
-  "review": null,
+  "review": {
+   "score": 4,
+   "headline_zh": "只有漂亮：分量少，味道一般",
+   "headline_en": "Pretty and nothing more: small portions, ordinary flavours",
+   "body_zh": "摆盘确实漂亮，但也只有漂亮。分量少，味道一般，4 分，不能再多了。（开会迟到 45 分钟，整顿饭压缩在一个半小时里吃完。）",
+   "body_en": "The plating really is beautiful, but that's all it is. Small portions and ordinary flavours: 4 out of 10, no more. (A meeting made me 45 minutes late, so dinner was squeezed into an hour and a half.)"
+  },
   "menu_note_zh": "餐厅没有正式菜名，只给了原材料手绘图；菜名是按照片和原材料整理的。"
  }
 ]
