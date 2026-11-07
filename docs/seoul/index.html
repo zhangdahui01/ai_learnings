@@ -653,7 +653,7 @@ function renderSheet(id){
       ${menu.length?`<p class="lbl-s">${esc(t('menu'))}</p>
         ${dishMedia?'':`<p class="menu-hint">${esc(t('dishHint'))}</p>`}
         <ol class="courses">${menu.map((m,i)=>`<li class="${rv.best===i?'fav':''}">
-          <div class="c-h"><span class="c-n">${String(i+1).padStart(2,'0')}</span><div><div class="c-name">${esc(m.en)}${rv.best===i?' <i>★</i>':''}</div>${m.ko?`<div class="c-ko">${esc(m.ko)}</div>`:''}</div></div>
+          <div class="c-h"><span class="c-n">${String(i+1).padStart(2,'0')}</span><div><div class="c-name">${esc(m.en)}${rv.best===i?' <i>★</i>':''}</div>${(lang==='zh'&&m.zh)||m.ko?`<div class="c-ko">${esc([lang==='zh'?m.zh:'',m.ko].filter(Boolean).join(' · '))}</div>`:''}</div></div>
           ${L2(m,'note')?`<p class="c-note">${esc(L2(m,'note'))}</p>`:''}
           ${(m.media||[]).length?`<div class="strip">${m.media.map(x=>tile(x,'mt')).join('')}</div>`:''}
         </li>`).join('')}</ol>`:''}

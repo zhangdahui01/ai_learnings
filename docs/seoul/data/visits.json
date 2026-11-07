@@ -392,5 +392,252 @@
    "revisit_zh": "朋友来首尔会带去，自己不会再去",
    "revisit_en": "Yes with visiting friends; not again on my own"
   }
+ },
+ {
+  "place_id": "evett",
+  "date": "2026-11-07",
+  "meal": "dinner",
+  "menu": [
+   {
+    "en": "Pumpkin & Barley",
+    "zh": "南瓜 · 大麦",
+    "ko": "",
+    "media": [
+     {
+      "src": "photos/evett/c1-pumpkin.jpg",
+      "thumb": "photos/evett/c1-pumpkin-t.jpg",
+      "zh": "晒干的南瓜片围着大麦与南瓜籽，中间一小碗清汤",
+      "en": "Dried pumpkin shards around barley and pumpkin seeds, a small bowl of broth in the middle"
+     }
+    ]
+   },
+   {
+    "en": "Flower Petals",
+    "zh": "花瓣小食",
+    "ko": "",
+    "media": [
+     {
+      "src": "photos/evett/c2-branch.jpg",
+      "thumb": "photos/evett/c2-branch-t.jpg",
+      "zh": "插在白色枝条上上桌",
+      "en": "Served on a white branch"
+     },
+     {
+      "src": "photos/evett/c2-petals.jpg",
+      "thumb": "photos/evett/c2-petals-t.jpg",
+      "zh": "三色花瓣层层叠叠",
+      "en": "Layers of purple, orange and yellow petals"
+     },
+     {
+      "src": "photos/evett/c2-petals-top.jpg",
+      "thumb": "photos/evett/c2-petals-top-t.jpg",
+      "zh": "放到石盘上的样子",
+      "en": "On the stone plate"
+     }
+    ]
+   },
+   {
+    "en": "Blue Crab",
+    "zh": "花蟹",
+    "ko": "꽃게",
+    "media": [
+     {
+      "src": "photos/evett/c3-crab-salad.jpg",
+      "thumb": "photos/evett/c3-crab-salad-t.jpg",
+      "zh": "蟹肉、绿叶与一朵白花，配香槟",
+      "en": "Crab, greens and a white flower, with champagne"
+     },
+     {
+      "src": "photos/evett/c3-crab-snow.jpg",
+      "thumb": "photos/evett/c3-crab-snow-t.jpg",
+      "zh": "撒上白色的“雪”",
+      "en": "Finished with white “snow”"
+     },
+     {
+      "src": "photos/evett/c3-crab-shell.jpg",
+      "thumb": "photos/evett/c3-crab-shell-t.jpg",
+      "zh": "整只蟹壳立在紫色海藻上",
+      "en": "The whole shell standing on purple seaweed"
+     },
+     {
+      "src": "photos/evett/c3-crab-open.jpg",
+      "thumb": "photos/evett/c3-crab-open-t.jpg",
+      "zh": "蟹壳里是蟹黄和一颗球",
+      "en": "Inside: crab roe and a sphere"
+     }
+    ]
+   },
+   {
+    "en": "Sea Urchin",
+    "zh": "海胆",
+    "ko": "성게",
+    "media": [
+     {
+      "src": "photos/evett/c4-plate.jpg",
+      "thumb": "photos/evett/c4-plate-t.jpg",
+      "zh": "先上一只空盘",
+      "en": "An empty bowl arrives first"
+     },
+     {
+      "src": "photos/evett/c4-uni.jpg",
+      "thumb": "photos/evett/c4-uni-t.jpg",
+      "zh": "海胆酱与黑色脆片",
+      "en": "Sea-urchin sauce under black crisps"
+     }
+    ]
+   },
+   {
+    "en": "Sorbet",
+    "zh": "红色雪葩",
+    "ko": "",
+    "media": [
+     {
+      "src": "photos/evett/c5-sorbet.jpg",
+      "thumb": "photos/evett/c5-sorbet-t.jpg",
+      "zh": "石碗里的红色雪葩",
+      "en": "Red sorbet in a stone bowl"
+     }
+    ]
+   },
+   {
+    "en": "Duck",
+    "zh": "鸭胸",
+    "ko": "오리",
+    "media": [
+     {
+      "src": "photos/evett/c6-duck.jpg",
+      "thumb": "photos/evett/c6-duck-t.jpg",
+      "zh": "鸭胸、酱汁，配柿子与白色根菜片",
+      "en": "Duck breast and jus, with persimmon and white root slices"
+     },
+     {
+      "src": "photos/evett/c6-duck-2.jpg",
+      "thumb": "photos/evett/c6-duck-2-t.jpg",
+      "zh": "另一角度",
+      "en": "Another angle"
+     }
+    ]
+   },
+   {
+    "en": "Hanwoo & Rice",
+    "zh": "韩牛 · 米饭",
+    "ko": "한우",
+    "media": [
+     {
+      "src": "photos/evett/c7-beef.jpg",
+      "thumb": "photos/evett/c7-beef-t.jpg",
+      "zh": "黑色外皮包着的韩牛，下面是灰色酱",
+      "en": "Hanwoo in a dark crust over a grey sauce"
+     },
+     {
+      "src": "photos/evett/c7-beef-top.jpg",
+      "thumb": "photos/evett/c7-beef-top-t.jpg",
+      "zh": "俯视",
+      "en": "From above"
+     },
+     {
+      "src": "photos/evett/c7-rice.jpg",
+      "thumb": "photos/evett/c7-rice-t.jpg",
+      "zh": "Woobo 农场的本土米 Guido，用酱油结晶调味",
+      "en": "Native Guido rice from Woobo Farm, seasoned with a jang crystal"
+     }
+    ]
+   },
+   {
+    "en": "Dessert",
+    "zh": "甜品",
+    "ko": "",
+    "media": [
+     {
+      "src": "photos/evett/c8-dessert-plate.jpg",
+      "thumb": "photos/evett/c8-dessert-plate-t.jpg",
+      "zh": "镶贝壳山景的木盘",
+      "en": "On a wooden plate inlaid with mother-of-pearl mountains"
+     },
+     {
+      "src": "photos/evett/c8-dessert.jpg",
+      "thumb": "photos/evett/c8-dessert-t.jpg",
+      "zh": "冰淇淋、黑色薄片与白色细丝",
+      "en": "Ice cream with dark shards and white threads"
+     }
+    ]
+   },
+   {
+    "en": "Tea",
+    "zh": "茶",
+    "ko": "",
+    "media": [
+     {
+      "src": "photos/evett/c9-tea-box.jpg",
+      "thumb": "photos/evett/c9-tea-box-t.jpg",
+      "zh": "八角木盒里的花茶与谷物，自己选",
+      "en": "An octagonal box of dried flowers and grains to choose from"
+     }
+    ]
+   }
+  ],
+  "photos": [
+   {
+    "src": "photos/evett/20261107-01.jpg",
+    "thumb": "photos/evett/20261107-01-t.jpg",
+    "zh": "去吃饭的路上，过汉江时的晚霞",
+    "en": "Sunset over the Han River on the way"
+   },
+   {
+    "src": "photos/evett/20261107-02.jpg",
+    "thumb": "photos/evett/20261107-02-t.jpg",
+    "zh": "餐厅全景，中间是圆形开放厨房",
+    "en": "The dining room around the round open kitchen"
+   },
+   {
+    "src": "photos/evett/20261107-03.jpg",
+    "thumb": "photos/evett/20261107-03-t.jpg",
+    "zh": "另一个角度",
+    "en": "Another view"
+   },
+   {
+    "src": "photos/evett/menu-art.jpg",
+    "thumb": "photos/evett/menu-art-t.jpg",
+    "zh": "菜单内页的手绘食材",
+    "en": "Hand-drawn ingredients in the menu"
+   },
+   {
+    "src": "photos/evett/menu-origin.jpg",
+    "thumb": "photos/evett/menu-origin-t.jpg",
+    "zh": "食材全部产自韩国",
+    "en": "Origin label: all ingredients from Korea"
+   },
+   {
+    "src": "photos/evett/cutlery.jpg",
+    "thumb": "photos/evett/cutlery-t.jpg",
+    "zh": "金色餐具",
+    "en": "Gold cutlery"
+   },
+   {
+    "src": "photos/evett/wine-bottle.jpg",
+    "thumb": "photos/evett/wine-bottle-t.jpg",
+    "zh": "Duval-Leroy Brut Réserve 香槟",
+    "en": "Duval-Leroy Brut Réserve Champagne"
+   },
+   {
+    "src": "photos/evett/wine-glass.jpg",
+    "thumb": "photos/evett/wine-glass-t.jpg",
+    "zh": "香槟",
+    "en": "A glass of champagne"
+   }
+  ],
+  "ratings": null,
+  "notes_zh": "开会迟到了 45 分钟，整顿饭压缩到一个半小时吃完。",
+  "notes_en": "A meeting made me 45 minutes late, so dinner was squeezed into an hour and a half.",
+  "spend": null,
+  "revisit": null,
+  "cover": null,
+  "cover_src": {
+   "src": "photos/evett/c3-crab-shell.jpg",
+   "thumb": "photos/evett/c3-crab-shell-t.jpg",
+   "zh": "整只蟹壳立在紫色海藻上",
+   "en": "The whole shell standing on purple seaweed"
+  },
+  "review": null
  }
 ]
