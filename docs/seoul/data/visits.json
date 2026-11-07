@@ -408,6 +408,13 @@
       "thumb": "photos/evett/c1-pumpkin-t.jpg",
       "zh": "晒干的南瓜片围着大麦与南瓜籽，中间一小碗清汤",
       "en": "Dried pumpkin shards around barley and pumpkin seeds, a small bowl of broth in the middle"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c01.mp4",
+      "poster": "media/evett/c01.jpg",
+      "zh": "小食上桌",
+      "en": "The snacks arrive"
      }
     ]
    },
@@ -433,13 +440,20 @@
       "thumb": "photos/evett/c2-petals-top-t.jpg",
       "zh": "放到石盘上的样子",
       "en": "On the stone plate"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c01.mp4",
+      "poster": "media/evett/c01.jpg",
+      "zh": "小食上桌",
+      "en": "The snacks arrive"
      }
     ]
    },
    {
-    "en": "Blue Crab",
-    "zh": "花蟹",
-    "ko": "꽃게",
+    "en": "Blue Crab Cold Noodles · Crab Shell Broth",
+    "zh": "花蟹冷面 · 蟹壳汤",
+    "ko": "꽃게 냉면",
     "media": [
      {
       "src": "photos/evett/c3-crab-salad.jpg",
@@ -464,13 +478,45 @@
       "thumb": "photos/evett/c3-crab-open-t.jpg",
       "zh": "蟹壳里是蟹黄和一颗球",
       "en": "Inside: crab roe and a sphere"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c02.mp4",
+      "poster": "media/evett/c02.jpg",
+      "zh": "服务员讲解蟹肉冷面",
+      "en": "The server explains the crab cold noodles"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c03.mp4",
+      "poster": "media/evett/c03.jpg",
+      "zh": "蟹壳汤的吃法",
+      "en": "How to finish the crab shell broth"
      }
-    ]
+    ],
+    "note_zh": "服务员说韩国有句话“以冷治冷”，所以冬天吃冷面；最后把蟹壳里的汤喝掉收尾。",
+    "note_en": "\"Fight ice with ice\": cold noodles in the cold months, finished by drinking the broth from the shell."
    },
    {
-    "en": "Sea Urchin",
-    "zh": "海胆",
-    "ko": "성게",
+    "en": "Okdom · Red Tilefish",
+    "zh": "济州玉鲷",
+    "ko": "옥돔",
+    "media": [
+     {
+      "type": "video",
+      "src": "media/evett/c04.mp4",
+      "poster": "media/evett/c04.jpg",
+      "zh": "带鳞烹制的玉鲷",
+      "en": "Tilefish cooked with the scales on"
+     }
+    ],
+    "note_zh": "带鳞烹制，鳞片很脆；看着像黄油的酱汁其实是用韩式炸鸡做的。",
+    "note_en": "Cooked with the scales on; the 'butter' sauce is actually made from Korean fried chicken."
+   },
+   {
+    "en": "Abalone · Abalone Liver · Onion",
+    "zh": "鲍鱼 · 鲍鱼肝 · 洋葱",
+    "ko": "전복",
     "media": [
      {
       "src": "photos/evett/c4-plate.jpg",
@@ -481,27 +527,45 @@
      {
       "src": "photos/evett/c4-uni.jpg",
       "thumb": "photos/evett/c4-uni-t.jpg",
-      "zh": "海胆酱与黑色脆片",
-      "en": "Sea-urchin sauce under black crisps"
+      "zh": "鲍鱼肝酱与海苔脆片",
+      "en": "Abalone-liver sauce under seaweed crisps"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c05.mp4",
+      "poster": "media/evett/c05.jpg",
+      "zh": "倒扣的“笠”帽碗",
+      "en": "Served in an upside-down gat"
      }
-    ]
+    ],
+    "note_zh": "上面是海苔脆片，敲开往下挖；碗是倒过来的韩国传统帽子“笠”（갓）。",
+    "note_en": "Crack the seaweed crisp on top and dig down; the bowl is an upside-down gat, the traditional Korean hat."
    },
    {
-    "en": "Sorbet",
-    "zh": "红色雪葩",
-    "ko": "",
+    "en": "Black-rice Sikhye Sorbet",
+    "zh": "黑米食醯雪葩",
+    "ko": "식혜",
     "media": [
      {
       "src": "photos/evett/c5-sorbet.jpg",
       "thumb": "photos/evett/c5-sorbet-t.jpg",
       "zh": "石碗里的红色雪葩",
       "en": "Red sorbet in a stone bowl"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c06.mp4",
+      "poster": "media/evett/c06.jpg",
+      "zh": "黑米食醯雪葩",
+      "en": "Black-rice sikhye sorbet"
      }
-    ]
+    ],
+    "note_zh": "食醯是韩国传统米饮，这里用黑米做成粉色，下面是白葡萄醋。",
+    "note_en": "Sikhye, a traditional rice drink, made with black rice for the pink colour, over white grape vinegar."
    },
    {
-    "en": "Duck · Persimmon · Radish",
-    "zh": "鸭胸 · 柿子 · 萝卜",
+    "en": "Korean Duck · Persimmon · Radish",
+    "zh": "韩国鸭 · 柿子 · 萝卜",
     "ko": "오리",
     "media": [
      {
@@ -515,12 +579,21 @@
       "thumb": "photos/evett/c6-duck-2-t.jpg",
       "zh": "另一角度",
       "en": "Another angle"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c07.mp4",
+      "poster": "media/evett/c07.jpg",
+      "zh": "韩国鸭与翅膀",
+      "en": "Korean duck and the wing"
      }
-    ]
+    ],
+    "note_zh": "风干后在炭火上收尾，旁边还有一只可以拿着“把手”吃的翅膀。",
+    "note_en": "Dried, then finished on the fire, with a wing you hold by its \"handle\"."
    },
    {
-    "en": "Hanwoo & Rice",
-    "zh": "韩牛 · 米饭",
+    "en": "Hanwoo · Eggplant · Rice",
+    "zh": "韩牛 · 茄子 · 米饭",
     "ko": "한우",
     "media": [
      {
@@ -540,12 +613,19 @@
       "thumb": "photos/evett/c7-rice-t.jpg",
       "zh": "Woobo 农场的本土米 Guido，用酱油结晶调味",
       "en": "Native Guido rice from Woobo Farm, seasoned with a jang crystal"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c08.mp4",
+      "poster": "media/evett/c08.jpg",
+      "zh": "韩牛、茄子和米饭",
+      "en": "Beef, eggplant and rice"
      }
     ]
    },
    {
-    "en": "Dessert",
-    "zh": "甜品",
+    "en": "Pine Mushroom Dessert",
+    "zh": "松茸冰淇淋 · 松茸焦糖",
     "ko": "",
     "media": [
      {
@@ -559,12 +639,21 @@
       "thumb": "photos/evett/c8-dessert-t.jpg",
       "zh": "冰淇淋、黑色薄片与白色细丝",
       "en": "Ice cream with dark shards and white threads"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c09.mp4",
+      "poster": "media/evett/c09.jpg",
+      "zh": "松茸冰淇淋与焦糖",
+      "en": "Pine-mushroom ice cream and caramel"
      }
-    ]
+    ],
+    "note_zh": "松茸冰淇淋配两种松茸焦糖，上面是松花菌和焦黑核桃。",
+    "note_en": "Pine-mushroom ice cream with two pine-mushroom caramels, topped with songhwa mushroom and blackened walnut."
    },
    {
-    "en": "Tea",
-    "zh": "茶",
+    "en": "Marshmallow in the Kitchen · Tea",
+    "zh": "厨房炭火棉花糖 · 茶",
     "ko": "",
     "media": [
      {
@@ -572,8 +661,17 @@
       "thumb": "photos/evett/c9-tea-box-t.jpg",
       "zh": "八角木盒里的花茶与谷物，自己选",
       "en": "An octagonal box of dried flowers and grains to choose from"
+     },
+     {
+      "type": "video",
+      "src": "media/evett/c10.mp4",
+      "poster": "media/evett/c10.jpg",
+      "zh": "进厨房自己烤棉花糖",
+      "en": "Toasting a marshmallow in the kitchen"
      }
-    ]
+    ],
+    "note_zh": "最后被请进厨房，自己在炭火上烤棉花糖。",
+    "note_en": "The last bite: toasting your own marshmallow over the kitchen fire."
    }
   ],
   "photos": [
@@ -666,8 +764,105 @@
    "revisit_zh": "不会再来",
    "revisit_en": "Not coming back"
   },
-  "menu_note_zh": "餐厅没有正式菜名，只给了原材料手绘图；菜名是按照片和原材料整理的。",
   "spend_note_zh": "晚餐套餐约 ¥1,500；餐厅不接受单人预约，只能订 2 人位，同伴没来，被收 1 人违约费约 ¥500（₩100,000，从 ₩200,000 定金里扣）。",
-  "spend_note_en": "Dinner course about ¥1,500, plus a no-show fee of about ¥500 (₩100,000, taken from the ₩200,000 deposit): solo bookings aren't accepted, so it was booked for two and the second guest couldn't come."
+  "spend_note_en": "Dinner course about ¥1,500, plus a no-show fee of about ¥500 (₩100,000, taken from the ₩200,000 deposit): solo bookings aren't accepted, so it was booked for two and the second guest couldn't come.",
+  "film": {
+   "title_zh": "EVETT 晚餐短片",
+   "title_en": "Dinner at EVETT",
+   "duration": "4:59",
+   "chapters": [
+    {
+     "id": "intro",
+     "zh": "开场",
+     "en": "Arrival",
+     "src": "media/evett/intro.mp4",
+     "poster": "media/evett/intro.jpg"
+    },
+    {
+     "id": "c01",
+     "zh": "小食",
+     "en": "Snacks",
+     "src": "media/evett/c01.mp4",
+     "poster": "media/evett/c01.jpg"
+    },
+    {
+     "id": "champ",
+     "zh": "香槟",
+     "en": "Champagne",
+     "src": "media/evett/champ.mp4",
+     "poster": "media/evett/champ.jpg"
+    },
+    {
+     "id": "c02",
+     "zh": "花蟹冷面",
+     "en": "Crab cold noodles",
+     "src": "media/evett/c02.mp4",
+     "poster": "media/evett/c02.jpg"
+    },
+    {
+     "id": "c03",
+     "zh": "蟹壳汤",
+     "en": "Crab shell broth",
+     "src": "media/evett/c03.mp4",
+     "poster": "media/evett/c03.jpg"
+    },
+    {
+     "id": "c04",
+     "zh": "济州玉鲷",
+     "en": "Jeju tilefish",
+     "src": "media/evett/c04.mp4",
+     "poster": "media/evett/c04.jpg"
+    },
+    {
+     "id": "talk",
+     "zh": "“分量太少”",
+     "en": "\"The portions are small\"",
+     "src": "media/evett/talk.mp4",
+     "poster": "media/evett/talk.jpg"
+    },
+    {
+     "id": "c05",
+     "zh": "鲍鱼",
+     "en": "Abalone",
+     "src": "media/evett/c05.mp4",
+     "poster": "media/evett/c05.jpg"
+    },
+    {
+     "id": "c06",
+     "zh": "食醯雪葩",
+     "en": "Sikhye sorbet",
+     "src": "media/evett/c06.mp4",
+     "poster": "media/evett/c06.jpg"
+    },
+    {
+     "id": "c07",
+     "zh": "韩国鸭",
+     "en": "Korean duck",
+     "src": "media/evett/c07.mp4",
+     "poster": "media/evett/c07.jpg"
+    },
+    {
+     "id": "c08",
+     "zh": "韩牛",
+     "en": "Hanwoo",
+     "src": "media/evett/c08.mp4",
+     "poster": "media/evett/c08.jpg"
+    },
+    {
+     "id": "c09",
+     "zh": "松茸甜品",
+     "en": "Pine mushroom dessert",
+     "src": "media/evett/c09.mp4",
+     "poster": "media/evett/c09.jpg"
+    },
+    {
+     "id": "c10",
+     "zh": "厨房棉花糖",
+     "en": "Marshmallow in the kitchen",
+     "src": "media/evett/c10.mp4",
+     "poster": "media/evett/c10.jpg"
+    }
+   ]
+  }
  }
 ]
