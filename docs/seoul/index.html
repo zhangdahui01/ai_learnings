@@ -78,8 +78,8 @@ a{color:var(--gold-hi)}
 .pin.t3{transform:translate(-26px,-26px)}
 .pin.lit .av{border-color:var(--gold-hi);box-shadow:0 0 0 3px rgba(244,217,153,.25),0 0 26px 6px var(--gold-glow)}
 .pin.lit .tag{border-color:rgba(244,217,153,.45);background:linear-gradient(90deg,rgba(80,62,28,.92),rgba(30,28,24,.9))}
-.pin.lit::after{content:"";position:absolute;left:-6px;top:-6px;width:56px;height:56px;border-radius:50%;border:1px solid var(--gold-hi);animation:ring 2.4s ease-out infinite;pointer-events:none}
-.pin.t3.lit::after{width:64px;height:64px}
+.pin.lit.latest::after{content:"";position:absolute;left:-6px;top:-6px;width:56px;height:56px;border-radius:50%;border:1px solid var(--gold-hi);animation:ring 2.4s ease-out infinite;pointer-events:none}
+.pin.t3.lit.latest::after{width:64px;height:64px}
 @keyframes ring{from{transform:scale(.85);opacity:.9}to{transform:scale(1.6);opacity:0}}
 .pin.compact .tag{opacity:0;pointer-events:none}
 .pin.compact .av{transform:scale(.42);border-width:3px}
@@ -87,7 +87,7 @@ a{color:var(--gold-hi)}
 .pin.compact:hover .av,.pin.sel .av{transform:none}
 .pin.sel .av{border-color:var(--gold-hi);transform:scale(1.12)}
 .pin:hover{z-index:10}
-@media (prefers-reduced-motion:reduce){.pin.lit::after{animation:none;opacity:.5}}
+@media (prefers-reduced-motion:reduce){.pin.lit.latest::after{animation:none;opacity:.5}}
 
 /* ---------- Generated cover (unvisited) ---------- */
 .cv{position:relative;width:100%;height:100%;overflow:hidden;
@@ -275,6 +275,14 @@ a{color:var(--gold-hi)}
 body.picking #map{cursor:crosshair}
 .sheet.peek{transform:translateX(calc(100% + 40px))}
 .d-cat{font-family:var(--f-body);font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);text-shadow:none}
+.latest-bar{position:fixed;z-index:1055;left:calc(min(420px,34vw) + 44px);top:20px;display:flex;align-items:center;gap:12px;padding:8px 16px 8px 8px;border-radius:999px;background:var(--glass-2);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border:1px solid rgba(244,217,153,.55);box-shadow:0 0 24px rgba(244,200,100,.25),0 12px 30px rgba(0,0,0,.45);color:var(--ink);cursor:pointer;max-width:calc(100% - 32px)}
+.latest-bar img{width:44px;height:44px;border-radius:50%;object-fit:cover;border:1.5px solid var(--gold-hi)}
+.latest-bar small{display:block;font-size:10.5px;letter-spacing:.16em;color:var(--gold)}
+.latest-bar b{font-weight:500;font-size:14.5px}
+.latest-bar i{font-style:normal;color:var(--gold-hi);margin-left:6px;font-size:12px}
+.latest-bar .x{margin-left:4px;color:var(--ink-3);font-size:16px;padding:0 4px}
+@media (max-width:900px){.latest-bar{left:12px;right:12px;top:auto;bottom:calc(196px + env(safe-area-inset-bottom,0px));max-width:none}}
+body.trailing .latest-bar{display:none}
 .lit-badge.want{color:#f0b7c0;border-color:rgba(240,183,192,.5)}
 .tier-c{grid-template-columns:76px 1fr 36px}
 .tier-c .st{letter-spacing:.04em;font-size:11px}
@@ -437,7 +445,7 @@ const T = {
   zh:{tagline:"首尔 · 米其林星图 2026",tabM:"米其林 ★",tabS:"有趣地点",lit:"已点亮",search:"搜索…",
       all:"全部",visited:"已点亮",todo:"未去",g3:"三星",g2:"二星",g1:"一星",none:"没有符合条件的餐厅",
       foot:"名单：MICHELIN Guide Seoul 2026（2026.3.5 发布）· 价格以餐厅为准 · 地图为示意",
-      notYet:"尚未点亮",litOn:"已点亮",lunch:"午餐",dinner:"晚餐",
+      notYet:"尚未点亮",litOn:"已点亮",newest:"最新",latestH:"最近点亮",lunch:"午餐",dinner:"晚餐",
       chef:"主厨",addr:"地址",price:"价格",booking:"预约",phone:"电话",web:"官网",michelin:"米其林",
       naver:"Naver 地图",kakao:"Kakao 地图",google:"Google 地图",copy:"复制",copied:"已复制",
       visit:"我的到访",menu:"当日菜单",feel:"感受",notesPending:"感受还没写。吃完后把几句话发给 Claude，就会出现在这里。",
@@ -449,7 +457,7 @@ const T = {
   en:{tagline:"Seoul · Michelin star map 2026",tabM:"Michelin ★",tabS:"Places",lit:"lit",search:"Search…",
       all:"All",visited:"Lit up",todo:"To go",g3:"Three stars",g2:"Two stars",g1:"One star",none:"No restaurants match",
       foot:"MICHELIN Guide Seoul 2026 (released 5 Mar 2026) · prices may change · stylised map",
-      notYet:"Not yet visited",litOn:"Lit up",lunch:"Lunch",dinner:"Dinner",
+      notYet:"Not yet visited",litOn:"Lit up",newest:"Latest",latestH:"Latest visit",lunch:"Lunch",dinner:"Dinner",
       chef:"Chef",addr:"Address",price:"Price",booking:"Booking",phone:"Phone",web:"Website",michelin:"MICHELIN",
       naver:"Naver Map",kakao:"Kakao Map",google:"Google Maps",copy:"Copy",copied:"Copied",
       visit:"My visit",menu:"Menu of the day",feel:"Notes",notesPending:"No notes yet. Send Claude a few lines after the meal and they'll appear here.",
@@ -478,6 +486,9 @@ async function load(){
   visits.forEach(v=>(visitsBy[v.place_id] ||= []).push(v));
 }
 const isLit=id=>!!visitsBy[id]||byId[id]?.status==='visited';
+const lastDate=id=>(visitsBy[id]||[])[0]?.date||byId[id]?.visited_date||'';
+const latestId=()=>{ const v=visits.slice().sort((a,b)=>b.date.localeCompare(a.date))[0]; return v?v.place_id:null; };
+const recency=(a,b)=>(isLit(b.id)-isLit(a.id))||lastDate(b.id).localeCompare(lastDate(a.id));
 const isSpot=p=>!!p&&!p.stars&&!!p.category;
 const CAT={palace:['宫',8],river:['江',212],neighborhood:['街',28],view:['景',262],museum:['馆',190],market:['市',340],nature:['山',140]};
 const catLabel=p=>t('cat_'+p.category);
@@ -520,7 +531,7 @@ function drawPins(){
   if(!pinLayer) return; pinLayer.clearLayers(); markers={};
   visible().filter(p=>typeof p.lat==='number').forEach(p=>{
     const lit=isLit(p.id);
-    const html=`<div class="pin t${p.stars||1} ${lit?'lit':''} ${selected===p.id?'sel':''}" data-id="${esc(p.id)}"><span class="av">${cover(p)}</span><span class="tag"><b>${esc(pname(p))}</b><i>${isSpot(p)?esc(catLabel(p))+(p.status==='want'?' · '+esc(t('want')):''):stars(p.stars)}</i></span></div>`;
+    const html=`<div class="pin t${p.stars||1} ${lit?'lit':''} ${p.id===latestId()?'latest':''} ${selected===p.id?'sel':''}" data-id="${esc(p.id)}"><span class="av">${cover(p)}</span><span class="tag"><b>${esc(pname(p))}</b><i>${isSpot(p)?esc(catLabel(p))+(p.status==='want'?' · '+esc(t('want')):''):stars(p.stars)}</i></span></div>`;
     const m=L.marker([p.lat,p.lng],{icon:L.divIcon({className:'',iconSize:[0,0],html}),zIndexOffset:(lit?3000:0)+(p.stars||1)*500+(selected===p.id?6000:0),title:p.name_en,keyboard:true}).on('click',e=>{L.DomEvent.stopPropagation(e);openPlace(p.id);});
     m.addTo(pinLayer); markers[p.id]=m;
   });
@@ -577,7 +588,7 @@ function chipsHtml(withSearch){
 function cardHtml(p,cls){
   const lit=isLit(p.id), v=(visitsBy[p.id]||[])[0]||null;
   const meta=[isSpot(p)?catLabel(p):L2(p,'cuisine'),area(p)].filter(Boolean).join(' · ');
-  const badge=lit?(v?`★ ${esc(v.date.slice(5).replace('-','.'))}`:`★ ${esc(t('been'))}`):(p.status==='want'?`♡ ${esc(t('want'))}`:'');
+  const badge=lit?(v?`${p.id===latestId()?esc(t('newest'))+' · ':'★ '}${esc(v.date.slice(5).replace('-','.'))}`:`★ ${esc(t('been'))}`):(p.status==='want'?`♡ ${esc(t('want'))}`:'');
   return `<button class="${cls} ${selected===p.id?'active':''}" data-open="${esc(p.id)}">
     <span class="cover">${cover(p)}${badge?`<span class="lit-badge ${lit?'':'want'}">${badge}</span>`:''}</span>
     <span class="info"><span class="stars">${isSpot(p)?esc(catLabel(p)):stars(p.stars)}</span><h3>${esc(pname(p))}${p.new_2026?'<span class="new">NEW</span>':''}</h3><span class="ko">${esc([lang==='zh'&&p.name_zh?p.name_en:'',p.name_ko].filter(Boolean).join(' · '))}</span><span class="meta">${esc(meta)}</span></span></button>`;
@@ -592,13 +603,13 @@ function renderCards(){
   const el=$('#cards');
   if(layer==='spots'){
     if(!spots.length){ el.innerHTML=`<div class="empty"><h4>${esc(t('spotsEmptyH'))}</h4><p>${esc(t('spotsEmpty'))}</p></div>`; return; }
-    const out=[]; Object.keys(CAT).forEach(c=>{ const items=spots.filter(p=>p.category===c&&matches(p)).sort((a,b)=>(isLit(b.id)-isLit(a.id))||((b.status==='want')-(a.status==='want'))||pname(a).localeCompare(pname(b)));
+    const out=[]; Object.keys(CAT).forEach(c=>{ const items=spots.filter(p=>p.category===c&&matches(p)).sort((a,b)=>recency(a,b)||((b.status==='want')-(a.status==='want'))||pname(a).localeCompare(pname(b)));
       if(!items.length) return; out.push(`<div class="sec"><span>${esc(t('cat_'+c))}</span><span>${items.length}</span></div>`); items.forEach(p=>out.push(cardHtml(p,'card'))); });
     el.innerHTML=out.join('')||emptySearch(); return; }
   if(!places.length){ el.innerHTML=`<div class="empty">${esc(t('noData'))}</div>`; return; }
   const out=[];
   [3,2,1].forEach(s=>{
-    const items=places.filter(p=>p.stars===s&&matches(p)).sort((a,b)=>(isLit(b.id)-isLit(a.id))||a.name_en.localeCompare(b.name_en));
+    const items=places.filter(p=>p.stars===s&&matches(p)).sort((a,b)=>recency(a,b)||a.name_en.localeCompare(b.name_en));
     if(!items.length) return;
     out.push(`<div class="sec"><span><span class="st">${stars(s)}</span>${esc(t('g'+s))}</span><span>${items.length}</span></div>`);
     items.forEach(p=>out.push(cardHtml(p,'card')));
@@ -606,8 +617,15 @@ function renderCards(){
   el.innerHTML=out.join('')||emptySearch();
 }
 function emptySearch(){ return `<div class="empty">${esc(t('none'))}${query?`<p style="margin-top:12px"><a href="https://map.kakao.com/link/search/${encodeURIComponent(query)}" target="_blank" rel="noopener">${esc(t('searchAll'))}「${esc(query)}」↗</a></p>`:''}</div>`; }
-function railOrder(){ return visible().slice().sort((a,b)=>(isLit(b.id)-isLit(a.id))||((b.stars||0)-(a.stars||0))||pname(a).localeCompare(pname(b))); }
-function renderRail(){ $('#rail').innerHTML=railOrder().map(p=>cardHtml(p,'rc')).join(''); }
+function railOrder(){ return visible().slice().sort((a,b)=>recency(a,b)||((b.stars||0)-(a.stars||0))||pname(a).localeCompare(pname(b))); }
+function renderLatest(){ let el=$('#latestBar'); const id=latestId(), p=id&&byId[id], v=p&&(visitsBy[id]||[])[0];
+  if(!p||latestClosed||layer!=='michelin'||selected){ el&&el.remove(); return; }
+  if(!el){ el=document.createElement('div'); el.id='latestBar'; el.className='latest-bar'; el.setAttribute('role','button'); document.body.appendChild(el); }
+  const c=v.cover_src||v.photos?.[0]; el.dataset.open=id;
+  el.innerHTML=`${c?`<img src="${esc(c.thumb||c.src)}" alt="">`:''}<span><small>${esc(t('latestH'))} · ${esc(v.date.slice(5).replace('-','/'))}</small><b>${esc(pname(p))}</b><i>${'★'.repeat(p.stars||0)}</i>${v.review?.score!=null?`<i>${esc(v.review.score)}/10</i>`:''}</span><span class="x" data-latest-x aria-label="close">×</span>`; }
+let latestClosed=false;
+document.addEventListener('click',e=>{ if(e.target.closest('[data-latest-x]')){ e.stopPropagation(); latestClosed=true; renderLatest(); } },true);
+function renderRail(){ $('#rail').innerHTML=railOrder().map(p=>cardHtml(p,'rc')).join(''); renderLatest(); }
 function renderStatic(){
   document.documentElement.lang=lang==='zh'?'zh-CN':'en';
   $('#tagline').textContent=t(layer==='spots'?'spotsTag':'tagline'); $('#tabM').textContent=t('tabM'); $('#tabS').textContent=t('tabS'); $('#foot').textContent=t(layer==='spots'?'spotsFoot':'foot');
@@ -727,12 +745,12 @@ function openPlace(id,fromHash){
     const pt=map.project([p.lat,p.lng],z).subtract(off); map.flyTo(map.unproject(pt,z),z,{duration:.8});
   }
   $$('.card,.rc').forEach(c=>c.classList.toggle('active',c.dataset.open===id));
-  drawPins();
+  drawPins();  renderLatest();
 }
 function closeSheet(){ $('#filmVid')?.pause(); if(routeLayer){ routeLayer.remove(); routeLayer=null; } formOpen=false;
   selected=null; $('#sheet').classList.remove('open'); $('#sheet').setAttribute('aria-hidden','true');
   if(location.hash) history.replaceState(null,'',location.pathname+location.search);
-  $$('.card,.rc').forEach(c=>c.classList.remove('active')); drawPins();
+  $$('.card,.rc').forEach(c=>c.classList.remove('active')); drawPins(); renderLatest();
 }
 function showLb(){ const n=lbList.length; if(!n) return; lbIdx=(lbIdx+n)%n; const x=lbList[lbIdx], img=$('#lbImg'), vid=$('#lbVid');
   vid.pause(); if(x.type==='video'){ img.hidden=true; vid.hidden=false; vid.poster=x.poster||''; vid.src=x.src; } else { vid.hidden=true; vid.removeAttribute('src'); img.hidden=false; img.src=x.src; img.alt=x[lang]||x.en||''; }
@@ -986,6 +1004,7 @@ window.addEventListener('resize',()=>{ map&&map.invalidateSize(); declutter(); }
   loadBases();
   if(map) fitAll();
   renderAll();
+  if(map&&!location.hash&&latestId()){ const p=byId[latestId()]; setTimeout(()=>map.flyTo([p.lat,p.lng],Math.max(map.getZoom(),13.5),{duration:1.2}),600); }
   if(trailOn) setTrail(true);
   const id=location.hash.slice(1); if(id&&byId[id]) openPlace(id,true);
 })();
