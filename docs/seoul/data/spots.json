@@ -642,7 +642,9 @@
    "预约日落前约30分钟的时段，可以看日景到夜景",
    "之后绕楼下的石村湖散步（4月樱花很美）"
   ],
-  "website": "https://seoulsky.lotteworld.com"
+  "website": "https://seoulsky.lotteworld.com",
+  "status": "visited",
+  "visited_date": "2026-10-04"
  },
  {
   "id": "naksan-park",
