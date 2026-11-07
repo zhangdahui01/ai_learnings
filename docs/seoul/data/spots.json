@@ -115,7 +115,8 @@
    "这里是居民住宅，请保持安静；北村路11街是著名的屋顶观景点",
    "顺路去三清洞的画廊、咖啡馆，或国立现代美术馆首尔馆"
   ],
-  "website": null
+  "website": null,
+  "status": "visited"
  },
  {
   "id": "seochon",
