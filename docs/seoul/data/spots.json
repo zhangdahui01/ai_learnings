@@ -27,7 +27,8 @@
    "往西步行约10分钟就是首尔林，可以一起逛"
   ],
   "website": null,
-  "status": "visited"
+  "status": "visited",
+  "visited_date": "2026-10-11"
  },
  {
   "id": "hannam-dong",
@@ -116,7 +117,8 @@
    "顺路去三清洞的画廊、咖啡馆，或国立现代美术馆首尔馆"
   ],
   "website": null,
-  "status": "visited"
+  "status": "visited",
+  "visited_date": "2026-10-17"
  },
  {
   "id": "seochon",
@@ -494,7 +496,8 @@
    "离圣水洞很近，江边散步后可以去那边吃晚饭"
   ],
   "website": "https://hangang.seoul.go.kr",
-  "status": "visited"
+  "status": "visited",
+  "visited_date": "2026-10-11"
  },
  {
   "id": "nanji-hangang-park",

@@ -904,7 +904,8 @@ function fpStatus(f){ if(!f.date) return 'past'; const td=today(), when=f.date+'
   if(when<=nowKST()) return 'past'; return f.date===td?'today':'future'; }
 function fmtDate(f){ if(!f.date) return LT('去过','Visited')+(isSpot(f.p)?' · '+catLabel(f.p):''); const wdI=new Date(f.date+'T12:00:00Z').getUTCDay(), wd=(lang==='zh'?'日一二三四五六'.split(''):['Sun','Mon','Tue','Wed','Thu','Fri','Sat'])[wdI];
   const md=`${+f.date.slice(5,7)}/${+f.date.slice(8,10)}`, meal=LT({lunch:'午餐',dinner:'晚餐'}[f.meal]||'',f.meal||'');
-  return lang==='zh'?`${md} 周${wd} ${f.time||''} ${meal}`:`${wd} ${md} ${f.time||''} ${meal}`; }
+  const tail=meal||(isSpot(f.p)?catLabel(f.p):'');
+  return lang==='zh'?`${md} 周${wd} ${f.time||''} ${tail}`.replace(/  +/g,' '):`${wd} ${md} ${f.time||''} ${tail}`.replace(/  +/g,' '); }
 function distRows(p){
   const set=BASES.filter(([k])=>bases[k]&&typeof bases[k].lat==='number');
   if(!set.length) return `<span class="none">${esc(LT('在下面设置酒店 / HJ Tower / EP Tower，就能看到距离','Set your hotel / HJ Tower / EP Tower below to see distances'))}</span>`;
