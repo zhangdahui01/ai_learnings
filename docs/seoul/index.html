@@ -884,7 +884,7 @@ document.addEventListener('keydown',e=>{
 /* ---------- Footprints (足迹) ---------- */
 let bOpen=false, footprints=[], trailOn=false, trailLayer=null, trailSel=null, bases={}, bEdit=null;
 const LT=(zh,en)=>lang==='zh'?zh:en;
-const BASES=[['hotel','🏨','酒店','Hotel'],['hq','🏢','HQ Tower','HQ Tower'],['ep','🏙️','EP Tower','EP Tower']];
+const BASES=[['hotel','🏨','酒店','Hotel'],['hq','🏢','HJ Tower','HJ Tower'],['ep','🏙️','EP Tower','EP Tower']];
 function loadBases(){ try{ bases=JSON.parse(localStorage.getItem('es-bases')||'{}')||{}; }catch(e){ bases={}; }
   const m=location.hash.match(/bases=([A-Za-z0-9_\-]+)/);
   if(m){ try{ const s=atob(m[1].replace(/-/g,'+').replace(/_/g,'/')); const j=JSON.parse(decodeURIComponent(escape(s)));
@@ -898,7 +898,7 @@ function fmtDate(f){ const wdI=new Date(f.date+'T12:00:00Z').getUTCDay(), wd=(la
   return lang==='zh'?`${md} 周${wd} ${f.time||''} ${meal}`:`${wd} ${md} ${f.time||''} ${meal}`; }
 function distRows(p){
   const set=BASES.filter(([k])=>bases[k]&&typeof bases[k].lat==='number');
-  if(!set.length) return `<span class="none">${esc(LT('在下面设置酒店 / HQ Tower / EP Tower，就能看到距离','Set your hotel / HQ Tower / EP Tower below to see distances'))}</span>`;
+  if(!set.length) return `<span class="none">${esc(LT('在下面设置酒店 / HJ Tower / EP Tower，就能看到距离','Set your hotel / HJ Tower / EP Tower below to see distances'))}</span>`;
   return set.map(([k,ic,zh,en])=>{ const d=km(bases[k],p), e=estimates(d);
     return `<div><span>${ic} ${esc(bases[k].label||LT(zh,en))}</span><span>${esc(LT('地铁','Transit'))}${e.transit}${esc(LT('分','m'))} · ${esc(LT('打车','Taxi'))}${e.taxi}${esc(LT('分','m'))}</span><strong>${d<1?Math.round(d*1000)+' m':d.toFixed(1)+' km'}</strong></div>`; }).join('');
 }
