@@ -325,6 +325,52 @@ body.picking #map{cursor:crosshair}
   .dbody{padding:0 max(20px,env(safe-area-inset-left,0px)) 48px}
 }
 @media (min-width:901px){.grab,.mchips{display:none}}
+/* ---- footprints ---- */
+.trail-btn{position:fixed;z-index:1060;left:calc(min(420px,34vw) + 44px);bottom:28px;display:flex;align-items:center;gap:7px;padding:10px 16px;border-radius:999px;border:1px solid rgba(216,180,106,.55);background:var(--glass);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:var(--gold-hi);font-size:13.5px;letter-spacing:.04em;box-shadow:0 10px 30px rgba(0,0,0,.45);cursor:pointer}
+.trail-btn[aria-pressed="true"]{background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:#1a1408;border-color:transparent;font-weight:500}
+.tcard{position:fixed;z-index:1250;left:calc(min(420px,34vw) + 44px);bottom:84px;width:min(420px,calc(100% - 32px));max-height:min(70vh,640px);overflow:auto;border-radius:22px;background:rgba(17,18,25,.94);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--hair);box-shadow:0 30px 80px rgba(0,0,0,.6);padding:18px 18px 14px;color:var(--ink)}
+.tcard h3{margin:0 0 2px;font-family:var(--serif,inherit);font-weight:500;font-size:20px;letter-spacing:.02em;display:flex;align-items:center;gap:8px}
+.tcard h3 small{font-size:12px;color:var(--ink-3);font-family:inherit;letter-spacing:.06em}
+.tcard .x{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:50%;color:var(--ink-2);font-size:18px}
+.tcard .sub{font-size:12px;color:var(--ink-3);margin:0 0 12px}
+.tstop{position:relative;padding:12px 12px 12px 46px;border-radius:16px;border:1px solid var(--hair-2);margin-bottom:10px;cursor:pointer;transition:border-color .2s}
+.tstop:hover,.tstop.on{border-color:rgba(216,180,106,.6)}
+.tstop .n{position:absolute;left:10px;top:12px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:13px;background:rgba(216,180,106,.15);color:var(--gold-hi);border:1px solid rgba(216,180,106,.5)}
+.tstop.next .n{background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:#1a1408}
+.tstop .d{font-size:11.5px;letter-spacing:.06em;color:var(--gold)}
+.tstop .d em{font-style:normal;margin-left:6px;padding:1px 7px;border-radius:999px;background:rgba(216,180,106,.18);color:var(--gold-hi)}
+.tstop b{display:block;font-size:15.5px;font-weight:500;margin:2px 0 6px}
+.tstop b i{font-style:normal;color:var(--gold);font-size:12px;margin-left:6px;letter-spacing:.1em}
+.dist{display:grid;gap:5px}
+.dist div{display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:baseline;font-size:12.5px;color:var(--ink-2)}
+.dist div span:first-child{color:var(--ink)}
+.dist div strong{font-weight:500;color:var(--gold-hi);font-variant-numeric:tabular-nums}
+.dist .none{display:block;font-size:12px;color:var(--ink-3)}
+.bases{border-top:1px solid var(--hair);margin-top:6px;padding-top:12px}
+.bases h4{margin:0 0 8px;font-size:12px;letter-spacing:.14em;color:var(--ink-3);font-weight:400}
+.brow{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:13px}
+.brow .ic{width:28px;height:28px;border-radius:9px;display:grid;place-items:center;background:var(--night-2);border:1px solid var(--hair-2)}
+.brow .nm{flex:1;min-width:0}
+.brow .nm small{display:block;color:var(--ink-3);font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brow button{font-size:12px;padding:6px 10px;border-radius:10px;border:1px solid var(--hair-2);color:var(--ink-2)}
+.bform{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 8px 36px}
+.bform input{flex:1 1 180px;min-width:0;padding:8px 10px;border-radius:10px;border:1px solid var(--hair-2);background:var(--night-2);color:var(--ink);font:inherit;font-size:12.5px}
+.bform button{font-size:12px;padding:7px 10px;border-radius:10px;border:1px solid var(--hair-2);color:var(--ink-2)}
+.bform button.p{background:linear-gradient(180deg,var(--gold-hi),var(--gold));color:#1a1408;border-color:transparent}
+.bnote{font-size:11.5px;color:var(--ink-3);margin:8px 0 0;line-height:1.5}
+.fp{position:relative;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;display:grid;place-items:center;font-size:17px;background:radial-gradient(circle at 35% 30%,#3a2f17,#16120a);border:1.5px solid var(--gold);box-shadow:0 0 0 4px rgba(216,180,106,.15),0 6px 18px rgba(0,0,0,.6)}
+.fp.next{border-style:dashed;animation:fpPulse 1.8s ease-in-out infinite}
+.fp i{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;border-radius:9px;font-style:normal;font-size:11px;display:grid;place-items:center;background:var(--gold);color:#1a1408;font-weight:600}
+@keyframes fpPulse{0%,100%{box-shadow:0 0 0 4px rgba(216,180,106,.15),0 6px 18px rgba(0,0,0,.6)}50%{box-shadow:0 0 0 10px rgba(216,180,106,.05),0 6px 18px rgba(0,0,0,.6)}}
+@media (prefers-reduced-motion:reduce){.fp.next{animation:none}}
+.step{font-size:12px;opacity:.75;transform:translate(-50%,-50%);filter:sepia(1) saturate(3) hue-rotate(-10deg)}
+.bpin{width:30px;height:30px;margin:-15px 0 0 -15px;border-radius:10px;display:grid;place-items:center;font-size:15px;background:#1b2233;border:1.5px solid #8fb0ff;box-shadow:0 6px 18px rgba(0,0,0,.6)}
+.bpin + .blbl,.blbl{position:absolute;left:20px;top:-10px;white-space:nowrap;font-size:11.5px;padding:3px 8px;border-radius:999px;background:rgba(20,26,40,.9);color:#cfe0ff;border:1px solid rgba(143,176,255,.35)}
+.dlbl{transform:translate(-50%,-50%);white-space:nowrap;font-size:11px;padding:2px 7px;border-radius:999px;background:rgba(12,13,18,.85);color:#cfe0ff;border:1px solid rgba(143,176,255,.35)}
+@media (max-width:760px){
+  .trail-btn{left:max(14px,env(safe-area-inset-left,0px));bottom:calc(138px + env(safe-area-inset-bottom,0px));padding:9px 14px;font-size:13px}
+  .tcard{left:8px;right:8px;width:auto;bottom:calc(186px + env(safe-area-inset-bottom,0px));max-height:52vh;padding:16px 14px 12px}
+}
 </style>
 
 <div id="map" aria-label="Seoul map"></div>
@@ -337,6 +383,7 @@ body.picking #map{cursor:crosshair}
 <div class="mchips" id="mchips"></div>
 <div class="rail" id="rail"></div>
 <button class="mlist-btn" id="mlistBtn"></button>
+<button class="trail-btn" id="trailBtn" aria-pressed="false"></button>
 
 <aside class="panel" id="panel">
   <div class="hd">
@@ -406,7 +453,7 @@ let places=[],spots=[],visits=[],byId={},visitsBy={},markers={},map,pinLayer,are
 
 async function load(){
   const get=async p=>{try{const r=await fetch(p,{cache:'no-cache'});return r.ok?r.json():[];}catch(e){return [];}};
-  [places,spots,visits]=await Promise.all([get('data/places.json'),get('data/spots.json'),get('data/visits.json')]);
+  [places,spots,visits,footprints]=await Promise.all([get('data/places.json'),get('data/spots.json'),get('data/visits.json'),get('data/footprints.json')]);
   places.forEach(p=>byId[p.id]=p); spots.forEach(p=>byId[p.id]=p);
   visits.sort((a,b)=>b.date.localeCompare(a.date));
   visits.forEach(v=>(visitsBy[v.place_id] ||= []).push(v));
@@ -549,7 +596,7 @@ function renderStatic(){
   $$('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===lang));
   $$('[data-layer]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.layer===layer));
 }
-function renderAll(){ renderStatic(); renderProg(); renderPanel(); drawAreas(); drawPins(); if(selected&&byId[selected]) renderSheet(selected); }
+function renderAll(){ renderStatic(); renderProg(); renderPanel(); drawAreas(); drawPins(); if(selected&&byId[selected]) renderSheet(selected); if(typeof renderTrailBtn==='function'){ renderTrailBtn(); renderTrailCard(); drawTrail(); } }
 
 /* ---------- Detail ---------- */
 let lbList=[],lbIdx=0;
@@ -820,6 +867,88 @@ document.addEventListener('keydown',e=>{
   if(!$('#lb').hidden){ if(e.key==='Escape')closeLb(); if(e.key==='ArrowLeft'){lbIdx--;showLb();} if(e.key==='ArrowRight'){lbIdx++;showLb();} return; }
   if(e.key==='Escape'){ if(selected) closeSheet(); else $('#panel').classList.remove('open'); }
 });
+/* ---------- Footprints (足迹) ---------- */
+let footprints=[], trailOn=false, trailLayer=null, trailSel=null, bases={}, bEdit=null;
+const LT=(zh,en)=>lang==='zh'?zh:en;
+const BASES=[['hotel','🏨','酒店','Hotel'],['hq','🏢','HQ Tower','HQ Tower'],['ep','🏙️','EP Tower','EP Tower']];
+function loadBases(){ try{ bases=JSON.parse(localStorage.getItem('es-bases')||'{}')||{}; }catch(e){ bases={}; }
+  const m=location.hash.match(/bases=([A-Za-z0-9_\-]+)/);
+  if(m){ try{ const s=atob(m[1].replace(/-/g,'+').replace(/_/g,'/')); const j=JSON.parse(decodeURIComponent(escape(s)));
+      Object.assign(bases,j); saveBases(); trailOn=true; history.replaceState(null,'',location.pathname+location.search); toast(LT('已把你的 3 个据点存到这台设备','Your places were saved on this device')); }catch(e){} } }
+function saveBases(){ try{ localStorage.setItem('es-bases',JSON.stringify(bases)); }catch(e){} }
+function today(){ const d=new Date(Date.now()+9*3600e3); return d.toISOString().slice(0,10); }
+function fpList(){ return footprints.map(f=>({...f,p:byId[f.place_id]})).filter(f=>f.p&&typeof f.p.lat==='number').sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)); }
+function fpStatus(f){ const td=today(); return f.date<td?'past':f.date===td?'today':'future'; }
+function fmtDate(f){ const wdI=new Date(f.date+'T12:00:00Z').getUTCDay(), wd=(lang==='zh'?'日一二三四五六'.split(''):['Sun','Mon','Tue','Wed','Thu','Fri','Sat'])[wdI];
+  const md=`${+f.date.slice(5,7)}/${+f.date.slice(8,10)}`, meal=LT({lunch:'午餐',dinner:'晚餐'}[f.meal]||'',f.meal||'');
+  return lang==='zh'?`${md} 周${wd} ${f.time||''} ${meal}`:`${wd} ${md} ${f.time||''} ${meal}`; }
+function distRows(p){
+  const set=BASES.filter(([k])=>bases[k]&&typeof bases[k].lat==='number');
+  if(!set.length) return `<span class="none">${esc(LT('在下面设置酒店 / HQ Tower / EP Tower，就能看到距离','Set your hotel / HQ Tower / EP Tower below to see distances'))}</span>`;
+  return set.map(([k,ic,zh,en])=>{ const d=km(bases[k],p), e=estimates(d);
+    return `<div><span>${ic} ${esc(bases[k].label||LT(zh,en))}</span><span>${esc(LT('地铁','Transit'))}≈${e.transit}${esc(LT('分','m'))} · ${esc(LT('打车','Taxi'))}≈${e.taxi}${esc(LT('分','m'))}</span><strong>${d<1?Math.round(d*1000)+' m':d.toFixed(1)+' km'}</strong></div>`; }).join('');
+}
+function renderTrailCard(){
+  let card=$('#tcard'); if(!trailOn){ card&&card.remove(); return; }
+  if(!card){ card=document.createElement('div'); card.id='tcard'; card.className='tcard'; document.body.appendChild(card); }
+  const L=fpList(), n=L.filter(f=>fpStatus(f)==='past').length;
+  card.innerHTML=`<button class="x" data-trail-close aria-label="close">×</button>
+    <h3>👣 ${esc(LT('我的足迹','My footprints'))} <small>${n} ${esc(LT('站已到达','visited'))}${L.length>n?` · ${L.length-n} ${esc(LT('站计划中','planned'))}`:''}</small></h3>
+    <p class="sub">${esc(LT('距离为直线距离，时间为粗略估算','Straight-line distance; times are rough estimates'))}</p>
+    ${L.slice().reverse().map((f,i)=>{ const st=fpStatus(f), idx=L.indexOf(f)+1;
+      return `<div class="tstop ${st!=='past'?'next':''} ${trailSel===f.place_id?'on':''}" data-fp="${esc(f.place_id)}">
+        <span class="n">${idx}</span>
+        <div class="d">${esc(fmtDate(f))}${st==='today'?`<em>${esc(LT('今天','Today'))}</em>`:st==='future'?`<em>${esc(LT('计划','Planned'))}</em>`:''}</div>
+        <b>${esc(pname(f.p))}<i>${'★'.repeat(f.p.stars||0)}</i></b>
+        <div class="dist">${distRows(f.p)}</div></div>`; }).join('')}
+    <div class="bases"><h4>${esc(LT('我的据点（只保存在这台设备上，别人看不到）','My places (saved on this device only — others can’t see them)'))}</h4>
+      ${BASES.map(([k,ic,zh,en])=>{ const b=bases[k];
+        return `<div class="brow"><span class="ic">${ic}</span><span class="nm">${esc(LT(zh,en))}<small>${b?esc(b.addr||`${b.lat.toFixed(4)}, ${b.lng.toFixed(4)}`):esc(LT('未设置','Not set'))}</small></span>
+          <button data-bedit="${k}">${esc(b?LT('修改','Edit'):LT('设置','Set'))}</button>${b?`<button data-bdel="${k}" aria-label="remove">×</button>`:''}</div>
+          ${bEdit===k?`<div class="bform"><input id="bIn" placeholder="${esc(LT('粘贴 Google 地图链接或坐标 37.51,127.10','Paste a Google Maps link or 37.51,127.10'))}"><button class="p" data-bsave="${k}">${esc(LT('保存','Save'))}</button><button data-bpick="${k}">⌖ ${esc(LT('地图上点选','Pick on map'))}</button>${origins.length?origins.filter(o=>typeof o.lat==='number').map((o,i)=>`<button data-bfrom="${k}:${i}">${esc(o.name)}</button>`).join(''):''}</div>`:''}`; }).join('')}
+      <p class="bnote">${esc(LT('提示：在 Google 地图长按地点 → 分享 → 复制链接，粘贴到这里即可。','Tip: in Google Maps long-press a place → Share → copy link, then paste it here.'))}</p></div>`;
+}
+function drawTrail(){
+  if(!map) return; if(trailLayer){ trailLayer.remove(); trailLayer=null; }
+  const bl=L.layerGroup();
+  BASES.forEach(([k,ic,zh,en])=>{ const b=bases[k]; if(!b||typeof b.lat!=='number') return;
+    L.marker([b.lat,b.lng],{zIndexOffset:9000,icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="bpin">${ic}</div><span class="blbl">${esc(b.label||LT(zh,en))}</span>`})}).addTo(bl); });
+  if(trailOn){
+    const F=fpList();
+    if(F.length>1){ L.polyline(F.map(f=>[f.p.lat,f.p.lng]),{color:'#d8b46a',weight:2,opacity:.75,dashArray:'2 9',lineCap:'round',interactive:false}).addTo(bl);
+      for(let i=0;i<F.length-1;i++){ const a=F[i].p,b=F[i+1].p; [.33,.66].forEach(t=>L.marker([a.lat+(b.lat-a.lat)*t,a.lng+(b.lng-a.lng)*t],{interactive:false,icon:L.divIcon({className:'',iconSize:[0,0],html:'<div class="step">👣</div>'})}).addTo(bl)); } }
+    F.forEach((f,i)=>{ const st=fpStatus(f);
+      L.marker([f.p.lat,f.p.lng],{zIndexOffset:12000,icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="fp ${st!=='past'?'next':''}">👣<i>${i+1}</i></div>`})}).on('click',e=>{L.DomEvent.stopPropagation(e);selectFp(f.place_id);}).addTo(bl); });
+    const s=trailSel&&byId[trailSel];
+    if(s) BASES.forEach(([k])=>{ const b=bases[k]; if(!b||typeof b.lat!=='number') return; const d=km(b,s);
+      L.polyline([[b.lat,b.lng],[s.lat,s.lng]],{color:'#8fb0ff',weight:1.5,opacity:.7,dashArray:'4 6',interactive:false}).addTo(bl);
+      L.marker([(b.lat+s.lat)/2,(b.lng+s.lng)/2],{interactive:false,icon:L.divIcon({className:'',iconSize:[0,0],html:`<div class="dlbl">${d<1?Math.round(d*1000)+' m':d.toFixed(1)+' km'}</div>`})}).addTo(bl); });
+  }
+  trailLayer=bl.addTo(map);
+}
+function fitTrail(){ if(!map) return; const pts=fpList().map(f=>[f.p.lat,f.p.lng]).concat(BASES.map(([k])=>bases[k]).filter(b=>b&&typeof b.lat==='number').map(b=>[b.lat,b.lng]));
+  if(!pts.length) return; const ph=isPhone();
+  map.fitBounds(pts,{paddingTopLeft:ph?[30,140]:[$('#panel').offsetWidth+40+440,60],paddingBottomRight:ph?[30,Math.round(innerHeight*.55)]:[80,60],maxZoom:14.5}); }
+function selectFp(id){ trailSel=trailSel===id?null:id; renderTrailCard(); drawTrail(); }
+function setTrail(on){ trailOn=on; if(!on){ trailSel=null; bEdit=null; } else if(!trailSel){ const F=fpList(); const nx=F.find(f=>fpStatus(f)!=='past')||F[F.length-1]; trailSel=nx?nx.place_id:null; }
+  $('#trailBtn').setAttribute('aria-pressed',on); renderTrailCard(); drawTrail(); if(on) fitTrail(); }
+function renderTrailBtn(){ $('#trailBtn').innerHTML=`👣 ${esc(LT('足迹','Footprints'))}`; $('#trailBtn').setAttribute('aria-pressed',trailOn); }
+document.addEventListener('click',e=>{
+  const g=k=>e.target.closest(k);
+  if(g('#trailBtn')){ setTrail(!trailOn); return; }
+  if(g('[data-trail-close]')){ setTrail(false); return; }
+  let el;
+  if((el=g('[data-bedit]'))){ bEdit=bEdit===el.dataset.bedit?null:el.dataset.bedit; renderTrailCard(); setTimeout(()=>$('#bIn')?.focus(),50); return; }
+  if((el=g('[data-bdel]'))){ delete bases[el.dataset.bdel]; saveBases(); renderTrailCard(); drawTrail(); return; }
+  if((el=g('[data-bsave]'))){ const r=parseWhere($('#bIn')?.value); if(!r||typeof r.lat!=='number'){ toast(LT('没认出坐标，请粘贴 Google 地图链接或 "37.51,127.10"','Couldn’t read coordinates — paste a Google Maps link or "37.51,127.10"')); return; }
+    bases[el.dataset.bsave]={lat:r.lat,lng:r.lng}; saveBases(); bEdit=null; renderTrailCard(); drawTrail(); fitTrail(); return; }
+  if((el=g('[data-bfrom]'))){ const [k,i]=el.dataset.bfrom.split(':'); const o=origins.filter(o=>typeof o.lat==='number')[+i];
+    bases[k]={lat:o.lat,lng:o.lng,addr:o.name}; saveBases(); bEdit=null; renderTrailCard(); drawTrail(); fitTrail(); return; }
+  if((el=g('[data-bpick]'))){ const k=el.dataset.bpick; $('#tcard').style.display='none';
+    startPick(ll=>{ bases[k]={lat:+ll.lat.toFixed(6),lng:+ll.lng.toFixed(6)}; saveBases(); bEdit=null; $('#tcard').style.display=''; renderTrailCard(); drawTrail(); }); return; }
+  if((el=g('[data-fp]'))){ if(e.detail>1||trailSel===el.dataset.fp){ openPlace(el.dataset.fp); return; } selectFp(el.dataset.fp);
+    const p=byId[el.dataset.fp]; map&&map.panTo([p.lat,p.lng]); return; }
+});
 window.addEventListener('hashchange',()=>{ const id=location.hash.slice(1); id&&byId[id]?openPlace(id,true):(selected&&closeSheet()); });
 window.addEventListener('resize',()=>{ map&&map.invalidateSize(); declutter(); });
 
@@ -827,8 +956,10 @@ window.addEventListener('resize',()=>{ map&&map.invalidateSize(); declutter(); }
   renderStatic();
   if(window.L) initMap();
   await load();
+  loadBases();
   if(map) fitAll();
   renderAll();
+  if(trailOn) setTrail(true);
   const id=location.hash.slice(1); if(id&&byId[id]) openPlace(id,true);
 })();
 })();
