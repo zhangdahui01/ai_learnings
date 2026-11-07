@@ -847,7 +847,10 @@
    "马路对面就是奉恩寺，动静对比很有意思",
    "中庭的季节性装置一年中会更换几次"
   ],
-  "website": "https://www.starfield.co.kr"
+  "website": "https://www.starfield.co.kr",
+  "status": "visited",
+  "visited_date": "2026-10-15",
+  "visited_note_zh": "晚上去的"
  },
  {
   "id": "seoul-forest",
