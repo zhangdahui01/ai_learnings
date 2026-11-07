@@ -635,7 +635,7 @@
   "ratings": null,
   "notes_zh": "开会迟到了 45 分钟，整顿饭压缩到一个半小时吃完。",
   "notes_en": "A meeting made me 45 minutes late, so dinner was squeezed into an hour and a half.",
-  "spend": null,
+  "spend": "约 ¥2,000",
   "revisit": null,
   "cover": null,
   "cover_src": {
@@ -651,6 +651,8 @@
    "body_zh": "摆盘确实漂亮，但也只有漂亮。分量少，味道一般，4 分，不能再多了。（开会迟到 45 分钟，整顿饭压缩在一个半小时里吃完。）",
    "body_en": "The plating really is beautiful, but that's all it is. Small portions and ordinary flavours: 4 out of 10, no more. (A meeting made me 45 minutes late, so dinner was squeezed into an hour and a half.)"
   },
-  "menu_note_zh": "餐厅没有正式菜名，只给了原材料手绘图；菜名是按照片和原材料整理的。"
+  "menu_note_zh": "餐厅没有正式菜名，只给了原材料手绘图；菜名是按照片和原材料整理的。",
+  "spend_note_zh": "晚餐套餐约 ¥1,500；餐厅不接受单人预约，只能订 2 人位，同伴没来，被收 1 人违约费约 ¥500（₩100,000，从 ₩200,000 定金里扣）。",
+  "spend_note_en": "Dinner course about ¥1,500, plus a no-show fee of about ¥500 (₩100,000, taken from the ₩200,000 deposit): solo bookings aren't accepted, so it was booked for two and the second guest couldn't come."
  }
 ]
