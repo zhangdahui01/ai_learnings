@@ -480,7 +480,15 @@ let places=[],spots=[],visits=[],byId={},visitsBy={},markers={},map,pinLayer,are
 
 async function load(){
   const get=async p=>{try{const r=await fetch(p,{cache:'no-cache'});return r.ok?r.json():[];}catch(e){return [];}};
-  [places,spots,visits,footprints]=await Promise.all([get('data/places.json'),get('data/spots.json'),get('data/visits.json'),get('data/footprints.json')]);
+  const SB='https://wfcrqmbhmmazvgjbcqkl.supabase.co/rest/v1/', SBK='sb_publishable_b3fXgEsJ2eHYnmeigrjYNA_srFp71_U';
+  const sb=async(t,q)=>{ const c=new AbortController(); const tm=setTimeout(()=>c.abort(),4000);
+    try{ const r=await fetch(SB+t+'?'+q,{headers:{apikey:SBK,Authorization:'Bearer '+SBK},signal:c.signal}); clearTimeout(tm); if(!r.ok) throw 0; return await r.json(); }catch(e){ clearTimeout(tm); return null; } };
+  const live=location.protocol==='https:'&&!/claude|anthropic/.test(location.hostname)?await Promise.all([sb('places','select=data&order=sort'),sb('spots','select=data&order=sort'),sb('visits','select=data&order=date.desc'),sb('footprints','select=place_id,date,time,meal')]):[null];
+  if(live.every(x=>Array.isArray(x)&&x.length!==undefined)&&live[0].length){
+    places=live[0].map(r=>r.data); spots=live[1].map(r=>r.data); visits=live[2].map(r=>r.data); footprints=live[3]; window.DATA_SOURCE='supabase';
+  } else {
+    [places,spots,visits,footprints]=await Promise.all([get('data/places.json'),get('data/spots.json'),get('data/visits.json'),get('data/footprints.json')]); window.DATA_SOURCE='static';
+  }
   places.forEach(p=>byId[p.id]=p); spots.forEach(p=>byId[p.id]=p);
   visits.sort((a,b)=>b.date.localeCompare(a.date));
   visits.forEach(v=>(visitsBy[v.place_id] ||= []).push(v));
