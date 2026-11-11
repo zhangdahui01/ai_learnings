@@ -18,13 +18,20 @@ IMAGE="system-images;android-$API;google_apis;$ARCH"
 AVD="${ANDROID_AVD:-clientx_api$API}"
 
 have() { command -v "$1" >/dev/null 2>&1; }
+# macOS ships a /usr/bin/java stub that exists even with no JDK installed, so test that Java really runs.
+use_brew_jdk() {
+  local home; home="$(brew --prefix openjdk@17 2>/dev/null)/libexec/openjdk.jdk/Contents/Home"
+  [[ -x "$home/bin/java" ]] && export JAVA_HOME="$home" PATH="$home/bin:$PATH"
+}
+have_java() { java -version >/dev/null 2>&1; }
+have brew && ! have_java && use_brew_jdk || true
 say()  { printf '\n== %s\n' "$*"; }
 ok()   { printf '   ok       %s\n' "$*"; }
 miss() { printf '   MISSING  %s\n' "$*"; }
 
 say "Report"
 have brew     && ok "Homebrew"                                  || miss "Homebrew (https://brew.sh)"
-have java     && ok "Java: $(java -version 2>&1 | head -1)"     || miss "Java 17+"
+have_java     && ok "Java: $(java -version 2>&1 | head -1)"     || miss "Java 17+ (a JDK, not the macOS java stub)"
 have sdkmanager && ok "Android cmdline-tools"                   || miss "Android cmdline-tools"
 have adb      && ok "adb"                                       || miss "Android platform-tools"
 have emulator && ok "Android emulator"                          || miss "Android emulator"
@@ -42,8 +49,11 @@ $CHECK_ONLY && exit 0
 have brew || { echo "Install Homebrew first: https://brew.sh"; exit 1; }
 
 say "Java, Node, mitmproxy, Android command-line tools"
-have java     || brew install openjdk@17
-have java     || { sudo ln -sfn "$(brew --prefix)/opt/openjdk@17/libexec/openjdk.jdk" /Library/Java/JavaVirtualMachines/openjdk-17.jdk || true; export PATH="$(brew --prefix)/opt/openjdk@17/bin:$PATH"; }
+if ! have_java; then
+  brew install openjdk@17
+  use_brew_jdk
+  have_java || { echo "Java still does not run after installing openjdk@17"; exit 1; }
+fi
 have node     || brew install node
 have mitmdump || brew install mitmproxy
 if ! have sdkmanager; then
@@ -78,6 +88,7 @@ PROFILE="$HOME/.zshrc"
 grep -q "ANDROID_HOME" "$PROFILE" 2>/dev/null || cat >> "$PROFILE" <<EOP
 
 # ClientX Autopilot
+${JAVA_HOME:+export JAVA_HOME="$JAVA_HOME"}
 export ANDROID_HOME="$ANDROID_HOME"
 export PATH="\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator:\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH"
 EOP
