@@ -3,9 +3,24 @@ import re
 
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from clientx_app.pages import CartPage, PayPage, ProductsPage
+from clientx_app.pages import CartPage, LoginPage, PayPage, ProductsPage
 
-scenarios("../features/cart.feature", "../features/checkout.feature")
+scenarios("../features/login.feature", "../features/cart.feature", "../features/checkout.feature")
+
+
+@given("the login screen is open")
+def login_screen(driver):
+    assert LoginPage(driver).present(LoginPage.SUBMIT)
+
+
+@when("the member logs in with a valid member ID and password")
+def log_in(driver):
+    LoginPage(driver).login("member", "secret")
+
+
+@then("the product list is shown")
+def product_list(driver):
+    assert ProductsPage(driver).loaded().text(ProductsPage.TITLE) == "Products"
 
 
 @given("a logged-in member on the product list", target_fixture="products")

@@ -1,0 +1,35 @@
+# Template: merge into .circleci/config.yml of the service's pipeline.
+# quality-gate runs on every branch build before merge; release-gate runs on the release branch after the staging refresh.
+version: 2.1
+parameters:
+  service: { type: string, default: sample-checkout }
+jobs:
+  quality-gate:
+    docker: [{ image: mcr.microsoft.com/playwright:v1.63.0-jammy }]
+    steps:
+      - checkout
+      - run: apt-get update && apt-get install -y python3-pip && pip3 install pytest pytest-bdd Appium-Python-Client
+      - run: { command: npm ci, working_directory: projects/clientx-autopilot/automation/web }
+      - run:
+          name: Quality Gate (pre-merge)
+          working_directory: projects/clientx-autopilot
+          command: >
+            python3 -m ci.gate run --gate ci --service << pipeline.parameters.service >>
+            --pr "${CIRCLE_PULL_REQUEST##*/}" --repo "$CIRCLE_WORKING_DIRECTORY" --diff-base origin/main
+      - store_artifacts: { path: projects/clientx-autopilot/var }
+  release-gate:
+    docker: [{ image: mcr.microsoft.com/playwright:v1.63.0-jammy }]
+    steps:
+      - checkout
+      - run: apt-get update && apt-get install -y python3-pip && pip3 install pytest pytest-bdd Appium-Python-Client
+      - run: { command: npm ci, working_directory: projects/clientx-autopilot/automation/web }
+      - run:
+          name: Release Gate (staging)
+          working_directory: projects/clientx-autopilot
+          command: python3 -m ci.gate run --gate cd --service << pipeline.parameters.service >>
+      - store_artifacts: { path: projects/clientx-autopilot/var }
+workflows:
+  gates:
+    jobs:
+      - quality-gate: { filters: { branches: { ignore: [main, /release\/.*/] } } }
+      - release-gate: { filters: { branches: { only: [main, /release\/.*/] } } }

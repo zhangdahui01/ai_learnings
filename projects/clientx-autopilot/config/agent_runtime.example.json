@@ -1,0 +1,8 @@
+{
+  "_comment": "Copy to config/agent_runtime.json to change the agent runtime. {prompt}, {system} and {tools} are filled per task. The default is Claude Code headless; any CLI that takes a prompt works (codex exec, devin, ...).",
+  "command": ["claude", "-p", "{prompt}", "--append-system-prompt", "{system}", "--output-format", "json",
+              "--permission-mode", "acceptEdits", "--allowedTools", "{tools}"],
+  "cwd": ".",
+  "timeout_s": 1800,
+  "mcp_config": "config/mcp.example.json"
+}

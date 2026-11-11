@@ -1,0 +1,64 @@
+# Template: copy to .github/workflows/quality-gates.yml in the service's case repository.
+# ci  = Quality Gate before merge (required status check on pull requests)
+# cd  = Release Gate after merge, against staging
+name: quality-gates
+on:
+  pull_request:
+  push:
+    branches: [main]
+env:
+  SERVICE: sample-checkout            # the service id in knowledge-base/
+jobs:
+  quality-gate:                        # pre-merge: red blocks the merge (make this job a required check)
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: pip install pytest pytest-bdd Appium-Python-Client
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: projects/clientx-autopilot/automation/web
+      - name: Run the Quality Gate
+        working-directory: projects/clientx-autopilot
+        env:
+          BASE_URL: ${{ vars.TEST_ENV_BASE_URL }}       # unset = bundled demo shop
+        run: >
+          python -m ci.gate run --gate ci --service "$SERVICE"
+          --pr "PR-${{ github.event.pull_request.number }}"
+          --repo "$GITHUB_WORKSPACE" --diff-base "origin/${{ github.base_ref }}"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-gate-evidence
+          path: |
+            projects/clientx-autopilot/var/runtime
+            projects/clientx-autopilot/var/outbox
+            projects/clientx-autopilot/automation/web/test-results
+  release-gate:                        # post-merge: red blocks the release
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest             # app cases: use a self-hosted farm Mac and --device-profile android-emulator|ios-simulator|ios-real
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: '3.12' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - run: pip install pytest pytest-bdd Appium-Python-Client
+      - run: npm ci && npx playwright install --with-deps chromium
+        working-directory: projects/clientx-autopilot/automation/web
+      - name: Run the Release Gate on staging
+        working-directory: projects/clientx-autopilot
+        env:
+          BASE_URL: ${{ vars.STAGING_BASE_URL }}
+        run: python -m ci.gate run --gate cd --service "$SERVICE"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gate-evidence
+          path: |
+            projects/clientx-autopilot/var/runtime
+            projects/clientx-autopilot/var/outbox

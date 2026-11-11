@@ -12,9 +12,17 @@ def _load(path: Path, default: Any) -> Any:
     return json.loads(path.read_text()) if path.exists() else default
 
 
+def _overlay(folder: Path | None, key: str) -> dict[str, Any]:
+    """Records produced locally (ci.gate runs, their PRs) are read back from <overlay>/<kind>/*.json."""
+    if not folder or not folder.is_dir():
+        return {}
+    return {d[key]: d for d in (json.loads(p.read_text()) for p in sorted(folder.glob("*.json")))}
+
+
 class _GatePlatform:
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, overlay: Path | None = None) -> None:
         self._runs = {r["report_id"]: r for r in _load(root / "gate_runs.json", [])}
+        self._runs.update(_overlay(overlay / "gate_runs" if overlay else None, "report_id"))
         self._history = _load(root / "case_history.json", {})
 
     def get_gate_run(self, report_id: str) -> dict[str, Any]:
@@ -52,8 +60,9 @@ class _Logs:
 
 
 class _Scm:
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, overlay: Path | None = None) -> None:
         self._prs = {p["id"]: p for p in _load(root / "prs.json", [])}
+        self._prs.update(_overlay(overlay / "prs" if overlay else None, "id"))
 
     def get_pr(self, pr_id: str) -> dict[str, Any]:
         return self._prs.get(pr_id, {"id": pr_id, "files": [], "title": "", "author": ""})
@@ -68,10 +77,11 @@ class _CodeQuality:
 
 
 class FixtureAdapters(Adapters):
-    def __init__(self, root: str | Path) -> None:
+    def __init__(self, root: str | Path, overlay: str | Path | None = None) -> None:
         root = Path(root)
-        self.gate_platform = _GatePlatform(root)
+        overlay = Path(overlay) if overlay else None
+        self.gate_platform = _GatePlatform(root, overlay)
         self.automation_service = _AutomationService(root, self.gate_platform)
         self.logs = _Logs(root)
-        self.scm = _Scm(root)
+        self.scm = _Scm(root, overlay)
         self.code_quality = _CodeQuality(root)

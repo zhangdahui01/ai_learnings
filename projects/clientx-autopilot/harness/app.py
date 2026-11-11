@@ -27,7 +27,7 @@ def build(*, fixtures: str | Path = ROOT / "fixtures", kb_root: str | Path = ROO
     fixtures, var = Path(fixtures), Path(var)
     if graphs is None:
         graphs = {**load_graphs(fixtures / "code_graph"), **load_graphs(var / "code-graph")}
-    ctx = Context(adapters=adapters or FixtureAdapters(fixtures), kb=KnowledgeBase(kb_root),
+    ctx = Context(adapters=adapters or FixtureAdapters(fixtures, overlay=var / "runtime"), kb=KnowledgeBase(kb_root),
                   outbox=Outbox(var / "outbox", dry_run=True), brain=brain or Brain(), graphs=graphs,
                   farm_queue=ActionQueue(var / "farm_queue.json"))
     handlers = {

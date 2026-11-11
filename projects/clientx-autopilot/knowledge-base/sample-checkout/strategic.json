@@ -24,13 +24,19 @@
             "id": "web_login",
             "stack": "web",
             "state": "gated",
-            "asserts": 3
+            "asserts": 3,
+            "run": {
+              "spec": "login"
+            }
           },
           {
             "id": "app_login",
             "stack": "app",
             "state": "gated",
-            "asserts": 3
+            "asserts": 3,
+            "run": {
+              "test": "test_member_logs_in"
+            }
           }
         ]
       },
@@ -49,19 +55,28 @@
             "id": "web_cart_add",
             "stack": "web",
             "state": "gated",
-            "asserts": 3
+            "asserts": 3,
+            "run": {
+              "spec": "cart-add"
+            }
           },
           {
             "id": "web_cart_badge",
             "stack": "web",
             "state": "gated",
-            "asserts": 0
+            "asserts": 0,
+            "run": {
+              "spec": "cart-add"
+            }
           },
           {
             "id": "app_cart_add",
             "stack": "app",
             "state": "gated",
-            "asserts": 3
+            "asserts": 3,
+            "run": {
+              "test": "test_member_adds_a_product_to_the_cart"
+            }
           }
         ]
       },
@@ -80,13 +95,19 @@
             "id": "web_checkout_pay",
             "stack": "web",
             "state": "gated",
-            "asserts": 3
+            "asserts": 3,
+            "run": {
+              "spec": "checkout-pay"
+            }
           },
           {
             "id": "app_checkout_pay",
             "stack": "app",
             "state": "gated",
-            "asserts": 3
+            "asserts": 3,
+            "run": {
+              "test": "test_member_pays_for_the_cart_with_a_saved_card"
+            }
           }
         ]
       },

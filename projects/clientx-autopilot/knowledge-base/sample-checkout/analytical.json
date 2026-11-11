@@ -1,5 +1,12 @@
 {
-  "failure_patterns": {},
+  "failure_patterns": {
+    "automation_case": {
+      "count": 1,
+      "last_reports": [
+        "ci-20261111-171607"
+      ]
+    }
+  },
   "layer": "analytical",
   "reusable_steps": [
     "login as member",
@@ -12,5 +19,6 @@
       "breaks_90d": 3
     }
   },
-  "service": "sample-checkout"
+  "service": "sample-checkout",
+  "updated_at": "2026-11-11T17:16:07Z"
 }

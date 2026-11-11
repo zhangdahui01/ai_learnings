@@ -1,27 +1,48 @@
 {
-  "_comment": "Action type -> device kind -> commands run on the Mac. {target} is the device id (adb serial / simulator or device UDID) or the Mac id. Entries that call farm-scripts/* are site hooks: point them at your own device-local agent scripts.",
+  "_comment": "Action type -> device kind -> commands run on the Mac by device_farm.runner (cwd = project root). {target} is the device id (adb serial / simulator or device UDID) or the Mac id.",
   "restart_emulator": {
-    "android-emulator": ["adb -s {target} emu kill", "farm-scripts/start_android_emulator.sh {target}"],
-    "ios-simulator": ["xcrun simctl shutdown {target}", "xcrun simctl boot {target}"]
+    "android-emulator": [
+      "farm-scripts/start_android_emulator.sh {target}"
+    ],
+    "ios-simulator": [
+      "xcrun simctl shutdown {target}",
+      "xcrun simctl boot {target}"
+    ]
   },
   "restart_wda": {
-    "default": ["farm-scripts/restart_wda.sh {target}"]
+    "default": [
+      "farm-scripts/restart_wda.sh {target}"
+    ]
   },
   "reinstall_app": {
-    "android-emulator": ["farm-scripts/reinstall_app.sh android {target}"],
-    "ios-simulator": ["farm-scripts/reinstall_app.sh ios-simulator {target}"],
-    "ios-real": ["farm-scripts/reinstall_app.sh ios-real {target}"]
+    "android-emulator": [
+      "farm-scripts/reinstall_app.sh android {target}"
+    ],
+    "ios-simulator": [
+      "farm-scripts/reinstall_app.sh ios-simulator {target}"
+    ],
+    "ios-real": [
+      "farm-scripts/reinstall_app.sh ios-real {target}"
+    ]
   },
   "restart_appium": {
-    "default": ["farm-scripts/restart_appium.sh"]
+    "default": [
+      "farm-scripts/restart_appium.sh"
+    ]
   },
   "restart_proxy": {
-    "default": ["farm-scripts/restart_mitmproxy.sh"]
+    "default": [
+      "farm-scripts/restart_mitmproxy.sh"
+    ]
   },
   "quarantine_device": {
-    "default": ["farm-scripts/quarantine_device.sh {target}"]
+    "default": [
+      "farm-scripts/quarantine_device.sh {target}"
+    ]
   },
   "reset_mac": {
-    "default": ["farm-scripts/reset_mac.sh {mac}"]
+    "default": [
+      "farm-scripts/reset_mac.sh {mac}"
+    ]
   }
 }

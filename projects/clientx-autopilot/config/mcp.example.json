@@ -1,0 +1,6 @@
+{
+  "mcpServers": {
+    "playwright": {"command": "npx", "args": ["-y", "@playwright/mcp@latest"]},
+    "appium": {"command": "npx", "args": ["-y", "appium-mcp@latest"]}
+  }
+}
