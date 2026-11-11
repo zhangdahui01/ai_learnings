@@ -1,0 +1,8 @@
+{
+  "service": "<service>",
+  "layer": "operational",
+  "selectors": {},
+  "auth_flows": {},
+  "preconditions": {},
+  "environments": {}
+}

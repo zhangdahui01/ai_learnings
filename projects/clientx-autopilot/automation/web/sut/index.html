@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Demo Shop</title>
+<style>
+body{font:16px/1.5 system-ui,sans-serif;max-width:720px;margin:24px auto;padding:0 16px}
+nav{display:flex;justify-content:space-between;border-bottom:1px solid #ccc;padding-bottom:8px;margin-bottom:16px}
+ul{list-style:none;padding:0}li{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #eee}
+label{display:block;margin:8px 0}button{padding:6px 12px}[hidden]{display:none!important}
+</style></head><body>
+<nav><strong>Demo Shop</strong><a href="#cart" id="cart-link">Cart (<span data-testid="cart-badge">0</span>)</a></nav>
+
+<section id="login">
+  <h1>Log in</h1>
+  <form><label>Member ID <input name="user" autocomplete="off"></label>
+  <label>Password <input name="pass" type="password"></label>
+  <button type="submit">Log in</button><p role="alert" id="login-error"></p></form>
+</section>
+
+<section id="products" hidden>
+  <h1>Products</h1>
+  <ul>
+    <li>Kettle <button data-testid="add-kettle" data-p="Kettle">Add to cart</button></li>
+    <li>Toaster <button data-testid="add-toaster" data-p="Toaster">Add to cart</button></li>
+    <li>Blender <button data-testid="add-blender" data-p="Blender">Add to cart</button></li>
+  </ul>
+</section>
+
+<section id="cart" hidden>
+  <h1>Cart</h1>
+  <table><tbody id="lines"></tbody></table>
+  <p><button id="empty">Empty cart</button> <button id="checkout">Checkout</button></p>
+</section>
+
+<section id="pay" hidden>
+  <h1>Payment</h1>
+  <label><input type="radio" name="m" value="card"> Saved card</label>
+  <label><input type="radio" name="m" value="balance"> Balance</label>
+  <button data-testid="pay" id="pay-now">Pay now</button>
+</section>
+
+<p role="status" id="status"></p>
+
+<script>
+const $ = s => document.querySelector(s), cart = {};
+const show = id => ['login', 'products', 'cart', 'pay'].forEach(s => $('#' + s).hidden = s !== id);
+function render() {
+  const n = Object.values(cart).reduce((a, b) => a + b, 0);
+  $('[data-testid=cart-badge]').textContent = n;
+  $('#lines').innerHTML = Object.entries(cart).map(([p, q]) => `<tr><td>${p}</td><td>× ${q}</td></tr>`).join('');
+  $('#empty').disabled = $('#checkout').disabled = n === 0;
+}
+$('form').addEventListener('submit', e => { e.preventDefault();
+  const f = new FormData(e.target);
+  if (f.get('user') === 'member' && f.get('pass') === 'secret') show('products');
+  else $('#login-error').textContent = 'Wrong member ID or password'; });
+document.querySelectorAll('[data-p]').forEach(b => b.addEventListener('click', () => {
+  setTimeout(() => { cart[b.dataset.p] = (cart[b.dataset.p] || 0) + 1; render(); }, 150); }));   // async like a real API
+$('#cart-link').addEventListener('click', e => { e.preventDefault(); if (!$('#login').hidden) return; show('cart'); });
+$('#empty').addEventListener('click', () => { for (const k in cart) delete cart[k]; render(); });
+$('#checkout').addEventListener('click', () => show('pay'));
+$('#pay-now').addEventListener('click', () => {
+  if (!document.querySelector('[name=m]:checked')) { $('#status').textContent = 'Choose a payment method'; return; }
+  $('#status').textContent = 'Processing…';
+  setTimeout(() => { for (const k in cart) delete cart[k]; render(); show('products');
+    $('#status').textContent = 'Payment complete · Order #' + String(Math.floor(100000 + Math.random() * 900000)); }, 400); });
+render();
+</script></body></html>

@@ -9,6 +9,8 @@ ai_learnings/
 ├── skills/                         # Reusable agent skills
 │   ├── regression-gap-analyzer/    # Code graph and regression-gap analysis
 │   └── local-web-test-recorder/    # Local browser test recording and replay
+├── projects/                       # Multi-module systems
+│   └── clientx-autopilot/          # AI-driven UI automation and Device Farm harness
 ├── experiments/                    # Future prototypes and notebooks
 ├── notes/                          # Future learning notes and decision records
 ├── templates/                      # Future reusable prompts/templates
@@ -18,13 +20,14 @@ ai_learnings/
 
 ## Current modules
 
+- [`projects/clientx-autopilot`](projects/clientx-autopilot/README.md) is an agent harness for UI automation and Device Farm operations: six workflows (case factory, case care, release guard for CI and CD gates, farm autopilot, coverage intelligence, service onboarding), agents and skills, a per-service knowledge base, a code knowledge graph (Graphify), BDD web automation on Playwright, app automation on Appium for Android emulators, iOS Simulators and real iPhones, and a Device Farm monitor dashboard generator.
 - [`skills/QA/domain-automation-handbook`](skills/QA/domain-automation-handbook/SKILL.md) converts automation pilot designs into operational domain handbooks with onboarding, BDD generation, maintenance, and CI/CD gate guidance.
 - `skills/regression-gap-analyzer` analyzes local source and UI-automation repositories, producing code graphs, a knowledge base, CSV backlog, and an accessible HTML report. Read that module's `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for installation and use.
 - `skills/local-web-test-recorder` provides a Codex, Claude Code, and Devin-compatible Agent Skill plus a self-hosted Playwright recorder and replay application with test-plan management, assertions, waits, retries, proxy/browser configuration, artifacts, and bilingual beginner documentation. Start with its `SKILL.md`, `guideline.zh-CN.md`, or `guideline.en.md`.
 
 ## Add a new AI module
 
-Create a focused directory under `skills/`, `experiments/`, `notes/`, or `templates/`. Keep module-specific agent instructions, dependencies, and guides inside that module; update this README and `docs/index.html` with a short link.
+Create a focused directory under `skills/`, `projects/`, `experiments/`, `notes/`, or `templates/`. Keep module-specific agent instructions, dependencies, and guides inside that module; update this README and `docs/index.html` with a short link.
 
 ## GitHub Pages
 

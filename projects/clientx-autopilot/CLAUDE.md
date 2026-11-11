@@ -1,0 +1,3 @@
+# ClientX Autopilot
+
+@AGENTS.md

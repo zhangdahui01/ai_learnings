@@ -1,0 +1,123 @@
+{
+  "service": "sample-checkout",
+  "layer": "strategic",
+  "business_rules": [
+    "A payment is complete only when the order status is PAID and the confirmation page shows the order number."
+  ],
+  "coverage_map": {
+    "smoke": [
+      "web_login"
+    ],
+    "journeys": [
+      {
+        "id": "login",
+        "name": "Member login",
+        "priority": "P0",
+        "code_paths": [
+          "member/*"
+        ],
+        "specs": [
+          "specs/login.md"
+        ],
+        "cases": [
+          {
+            "id": "web_login",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 3
+          },
+          {
+            "id": "app_login",
+            "stack": "app",
+            "state": "gated",
+            "asserts": 3
+          }
+        ]
+      },
+      {
+        "id": "cart",
+        "name": "Add to cart",
+        "priority": "P0",
+        "code_paths": [
+          "checkout/cart.ts"
+        ],
+        "specs": [
+          "specs/cart-add.md"
+        ],
+        "cases": [
+          {
+            "id": "web_cart_add",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 3
+          },
+          {
+            "id": "web_cart_badge",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 0
+          },
+          {
+            "id": "app_cart_add",
+            "stack": "app",
+            "state": "gated",
+            "asserts": 3
+          }
+        ]
+      },
+      {
+        "id": "pay",
+        "name": "Checkout and pay",
+        "priority": "P0",
+        "code_paths": [
+          "checkout/payment/*"
+        ],
+        "specs": [
+          "specs/checkout-pay.md"
+        ],
+        "cases": [
+          {
+            "id": "web_checkout_pay",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 3
+          },
+          {
+            "id": "app_checkout_pay",
+            "stack": "app",
+            "state": "gated",
+            "asserts": 3
+          }
+        ]
+      },
+      {
+        "id": "coupon",
+        "name": "Apply coupon",
+        "priority": "P1",
+        "code_paths": [
+          "checkout/coupon.ts"
+        ],
+        "specs": [],
+        "cases": []
+      }
+    ],
+    "incidents": [
+      {
+        "id": "INC-77",
+        "title": "Duplicate charge on double tap",
+        "journey": "pay",
+        "fix_pr": "PR-480",
+        "covered_by": []
+      },
+      {
+        "id": "INC-60",
+        "title": "Login loop on expired session",
+        "journey": "login",
+        "fix_pr": "PR-410",
+        "covered_by": [
+          "web_login"
+        ]
+      }
+    ]
+  }
+}

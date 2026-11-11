@@ -1,0 +1,5 @@
+{
+  "type": "device_status",
+  "subject": "farm",
+  "payload": {}
+}

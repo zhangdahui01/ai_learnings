@@ -1,0 +1,8 @@
+{
+  "type": "cd_gate_result",
+  "subject": "gr-1001",
+  "payload": {
+    "report_id": "gr-1001",
+    "status": "failed"
+  }
+}

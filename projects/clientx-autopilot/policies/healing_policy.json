@@ -1,0 +1,19 @@
+{
+  "applies_to": "daily run only; inside a gate nothing is repaired",
+  "auto": {
+    "kinds": ["locator", "wait"],
+    "conditions": ["the original assertions are unchanged", "an isolated rerun passes", "one pull request per failure group"]
+  },
+  "propose": {
+    "kinds": ["flow", "test_data", "account"],
+    "conditions": ["linked to the product change that explains it", "a person approves"]
+  },
+  "never": {
+    "kinds": ["assertion", "expected_value", "skip", "delete"],
+    "route": "possible product bug: a card to the owner, the case stays failing"
+  },
+  "side_effect_steps": {
+    "tags": ["@destructive", "@payment"],
+    "rule": "no automatic retry and no unattended repair of payment, card binding, order or refund steps"
+  }
+}

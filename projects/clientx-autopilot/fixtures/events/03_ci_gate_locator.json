@@ -1,0 +1,8 @@
+{
+  "type": "ci_gate_result",
+  "subject": "gr-1003",
+  "payload": {
+    "report_id": "gr-1003",
+    "status": "failed"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "type": "incident_closed",
+  "subject": "INC-77",
+  "payload": {
+    "incident": "INC-77",
+    "service": "sample-checkout"
+  }
+}

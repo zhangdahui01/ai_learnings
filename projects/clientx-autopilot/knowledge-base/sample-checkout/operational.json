@@ -1,0 +1,21 @@
+{
+  "service": "sample-checkout",
+  "layer": "operational",
+  "selectors": {
+    "cart.add": {
+      "selector": "role=button[name='Add to cart']",
+      "source": "baseline"
+    }
+  },
+  "auth_flows": {
+    "member": "storage state from fixture `member`"
+  },
+  "preconditions": {
+    "has_saved_card": "account pool tag: saved-card"
+  },
+  "environments": {
+    "staging": {
+      "web_base_url": "TODO: from config/systems.local.json"
+    }
+  }
+}

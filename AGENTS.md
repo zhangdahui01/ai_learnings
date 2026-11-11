@@ -3,6 +3,7 @@
 This is a modular AI learning repository, not a single Skill. Start at `README.md`, identify the requested module, then read that module's local instructions before changing files.
 
 - Keep reusable skills under `skills/` and do not place skill-specific rules at repository root.
+- Keep multi-module systems under `projects/`; for ClientX Autopilot read `projects/clientx-autopilot/AGENTS.md`.
 - Keep experiments, notes, templates, and Pages assets separate from skills.
 - Never commit credentials, copied target repositories, or private analysis artifacts.
 - Treat `docs/` as publishable: place only reviewed, shareable static content there.

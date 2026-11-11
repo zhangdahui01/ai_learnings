@@ -1,0 +1,10 @@
+{
+  "_comment": "Copy to config/systems.local.json (git-ignored) and map each generic system to the real one. Read-only endpoints or read-only MCP servers only. No credentials in this file: reference the secret store / environment.",
+  "gate_platform": {"kind": "mcp", "server": "TODO: read-only MCP server of the CI/CD quality-gate platform"},
+  "automation_service": {"kind": "mcp", "server": "TODO: read-only MCP server of the device/account automation service"},
+  "logs": {"kind": "mcp", "server": "TODO: read-only log store MCP"},
+  "scm": {"kind": "mcp", "server": "TODO: source control MCP (read scope)"},
+  "code_quality": {"kind": "mcp", "server": "TODO: static analysis / build status MCP"},
+  "notifications": {"default_channel": "TODO", "farm_oncall_channel": "TODO"},
+  "transports": {"pull_request": "TODO: bot that opens PRs for human review", "slack_card": "TODO", "farm_action": "TODO: the existing typed pull queue"}
+}

@@ -1,0 +1,12 @@
+{
+  "states": ["incubating", "warn", "gated", "quarantined", "retired"],
+  "graduation": {"consecutive_daily_passes": 7, "pass_rate": 0.98, "human_sign_off": true},
+  "quarantine": {"after_recent_failures": 3, "requires": ["owner", "expires", "reason"], "max_days": 14},
+  "meaning": {
+    "incubating": "daily run only",
+    "warn": "in CI/CD, not blocking",
+    "gated": "blocks the merge or the release",
+    "quarantined": "out of the gate, has an owner and an expiry",
+    "retired": "removed"
+  }
+}

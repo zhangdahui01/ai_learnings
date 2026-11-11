@@ -1,0 +1,22 @@
+{
+  "ci": {
+    "name": "Quality Gate (pre-merge)",
+    "when": "before a pull request may merge",
+    "runs": "a selected subset: the smoke set plus gated cases of every journey the PR reaches",
+    "on_failure": "the merge is blocked",
+    "environment_checks": ["pr_build_ok", "test_env_ready"],
+    "selection": {"limit": 50, "states": ["gated"], "dependency_depth": 2}
+  },
+  "cd": {
+    "name": "Release Gate (post-merge)",
+    "when": "after merge, on the staging environment",
+    "runs": "regression and key cases of the role",
+    "on_failure": "the release is blocked",
+    "environment_checks": ["image_built", "deploy_finished"]
+  },
+  "rules": [
+    "The healer is off inside both gates.",
+    "A failed gate stays red until a person decides. The harness never passes a failed gate.",
+    "Skips, missing results, zero selected cases and quarantined cases are not passing evidence."
+  ]
+}

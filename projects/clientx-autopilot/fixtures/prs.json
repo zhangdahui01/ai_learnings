@@ -1,0 +1,34 @@
+[
+  {
+    "id": "PR-501",
+    "title": "Change payment submit flow",
+    "author": "dev-a",
+    "files": [
+      "shared/money.ts"
+    ],
+    "cases_ran": [
+      "web_checkout_pay"
+    ]
+  },
+  {
+    "id": "PR-502",
+    "title": "Redesign cart buttons",
+    "author": "dev-b",
+    "files": [
+      "checkout/cart.ts"
+    ],
+    "cases_ran": [
+      "web_cart_add",
+      "web_cart_badge"
+    ]
+  },
+  {
+    "id": "PR-503",
+    "title": "Coupon banner",
+    "author": "dev-c",
+    "files": [
+      "checkout/coupon.ts"
+    ],
+    "cases_ran": []
+  }
+]

@@ -1,0 +1,400 @@
+[
+  {
+    "report_id": "gr-1001",
+    "gate": "cd",
+    "role": "shop-app-checkout",
+    "service": "sample-checkout",
+    "platform": "app",
+    "pr": "PR-501",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "image_built": true,
+      "deploy_finished": true
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": false
+    },
+    "route": {
+      "proxy_up": true,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {
+      "download_ok": true,
+      "exit_code": 0
+    },
+    "tasks": [
+      {
+        "task_id": "t1",
+        "mac": "sh-ios-03",
+        "pulled": true,
+        "mac_online": false,
+        "lease_expired": false
+      },
+      {
+        "task_id": "t2",
+        "mac": "sh-ios-01",
+        "pulled": true,
+        "mac_online": true,
+        "lease_expired": false
+      }
+    ],
+    "cases": [
+      {
+        "case": "app_checkout_pay",
+        "status": "failed",
+        "task_id": "t1",
+        "failure": {
+          "kind": "session_lost",
+          "message": "session terminated"
+        },
+        "evidence": [
+          "evidence://app_checkout_pay/trace.zip",
+          "evidence://app_checkout_pay/video.mp4"
+        ]
+      },
+      {
+        "case": "app_cart_add",
+        "status": "failed",
+        "task_id": "t1",
+        "failure": {
+          "kind": "session_lost",
+          "message": "session terminated"
+        },
+        "evidence": [
+          "evidence://app_cart_add/trace.zip",
+          "evidence://app_cart_add/video.mp4"
+        ]
+      },
+      {
+        "case": "app_login",
+        "status": "passed",
+        "task_id": "t2"
+      }
+    ]
+  },
+  {
+    "report_id": "gr-1002",
+    "gate": "cd",
+    "role": "shop-web-checkout",
+    "service": "sample-checkout",
+    "platform": "web",
+    "pr": "PR-501",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "image_built": true,
+      "deploy_finished": true
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": false
+    },
+    "route": {
+      "proxy_up": true,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {},
+    "tasks": [],
+    "cases": [
+      {
+        "case": "web_checkout_pay",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "assertion",
+          "message": "expected 'Payment complete' but got 'Processing'"
+        },
+        "evidence": [
+          "evidence://web_checkout_pay/trace.zip",
+          "evidence://web_checkout_pay/video.mp4"
+        ]
+      },
+      {
+        "case": "web_cart_add",
+        "status": "passed",
+        "task_id": null
+      }
+    ]
+  },
+  {
+    "report_id": "gr-1003",
+    "gate": "ci",
+    "role": "shop-web-checkout",
+    "service": "sample-checkout",
+    "platform": "web",
+    "pr": "PR-502",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "pr_build_ok": true,
+      "test_env_ready": true
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": false
+    },
+    "route": {
+      "proxy_up": true,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {},
+    "tasks": [],
+    "cases": [
+      {
+        "case": "web_cart_add",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "locator",
+          "message": "locator('#add-to-cart') resolved to 0 elements",
+          "selector": "#add-to-cart"
+        },
+        "evidence": [
+          "evidence://web_cart_add/trace.zip",
+          "evidence://web_cart_add/video.mp4"
+        ]
+      },
+      {
+        "case": "web_cart_badge",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "locator",
+          "message": "locator('#add-to-cart') resolved to 0 elements",
+          "selector": "#add-to-cart"
+        },
+        "evidence": [
+          "evidence://web_cart_badge/trace.zip",
+          "evidence://web_cart_badge/video.mp4"
+        ]
+      }
+    ]
+  },
+  {
+    "report_id": "gr-1004",
+    "gate": "cd",
+    "role": "shop-web-checkout",
+    "service": "sample-checkout",
+    "platform": "web",
+    "pr": "PR-501",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "image_built": true,
+      "deploy_finished": false
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": false
+    },
+    "route": {
+      "proxy_up": true,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {},
+    "tasks": [],
+    "cases": [
+      {
+        "case": "web_checkout_pay",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "timeout",
+          "message": "navigation timeout"
+        },
+        "evidence": [
+          "evidence://web_checkout_pay/trace.zip",
+          "evidence://web_checkout_pay/video.mp4"
+        ]
+      }
+    ]
+  },
+  {
+    "report_id": "gr-1005",
+    "gate": "cd",
+    "role": "shop-app-checkout",
+    "service": "sample-checkout",
+    "platform": "app",
+    "pr": "PR-501",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "image_built": true,
+      "deploy_finished": true
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": false
+    },
+    "route": {
+      "proxy_up": false,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {
+      "download_ok": true,
+      "exit_code": 0
+    },
+    "tasks": [
+      {
+        "task_id": "t9",
+        "mac": "sh-and-01",
+        "pulled": true,
+        "mac_online": true,
+        "lease_expired": false
+      }
+    ],
+    "cases": [
+      {
+        "case": "app_checkout_pay",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "timeout",
+          "message": "no response"
+        },
+        "evidence": [
+          "evidence://app_checkout_pay/trace.zip",
+          "evidence://app_checkout_pay/video.mp4"
+        ]
+      }
+    ]
+  },
+  {
+    "report_id": "gr-1006",
+    "gate": "ci",
+    "role": "shop-web-checkout",
+    "service": "sample-checkout",
+    "platform": "web",
+    "pr": "PR-503",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "pr_build_ok": true,
+      "test_env_ready": true
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": true
+    },
+    "route": {
+      "proxy_up": true,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {},
+    "tasks": [],
+    "cases": [
+      {
+        "case": "web_login",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "assertion",
+          "message": "expected welcome banner"
+        },
+        "evidence": [
+          "evidence://web_login/trace.zip",
+          "evidence://web_login/video.mp4"
+        ]
+      }
+    ]
+  },
+  {
+    "report_id": "gr-1007",
+    "gate": "cd",
+    "role": "shop-app-checkout",
+    "service": "sample-checkout",
+    "platform": "app",
+    "pr": "PR-501",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "image_built": true,
+      "deploy_finished": true
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": false
+    },
+    "route": {
+      "proxy_up": true,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {
+      "download_ok": true,
+      "exit_code": 1
+    },
+    "tasks": [
+      {
+        "task_id": "t7",
+        "mac": "sh-and-02",
+        "pulled": true,
+        "mac_online": true,
+        "lease_expired": false
+      }
+    ],
+    "cases": [
+      {
+        "case": "app_login",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "locator",
+          "message": "element not found"
+        },
+        "evidence": [
+          "evidence://app_login/trace.zip",
+          "evidence://app_login/video.mp4"
+        ]
+      }
+    ]
+  },
+  {
+    "report_id": "gr-1008",
+    "gate": "cd",
+    "role": "shop-web-checkout",
+    "service": "sample-checkout",
+    "platform": "web",
+    "pr": "PR-502",
+    "status": "failed",
+    "owner_channel": "#checkout-quality",
+    "environment": {
+      "image_built": true,
+      "deploy_finished": true
+    },
+    "accounts": {
+      "lock_acquired": true,
+      "expired_mid_run": false
+    },
+    "route": {
+      "proxy_up": true,
+      "env_answers": true,
+      "flag_set": true
+    },
+    "install": {},
+    "tasks": [],
+    "cases": [
+      {
+        "case": "web_login",
+        "status": "failed",
+        "task_id": null,
+        "failure": {
+          "kind": "assertion",
+          "message": "expected welcome banner"
+        },
+        "evidence": [
+          "evidence://web_login/trace.zip",
+          "evidence://web_login/video.mp4"
+        ]
+      }
+    ]
+  }
+]

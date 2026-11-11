@@ -1,0 +1,8 @@
+{
+  "dry_run": true,
+  "allowlist": ["restart_appium", "restart_wda", "restart_emulator", "reinstall_app", "restart_proxy", "quarantine_device", "reset_mac"],
+  "needs_approval": ["reset_mac"],
+  "cooldown_s": {"default": 900, "reset_mac": 21600, "reinstall_app": 1800},
+  "budget_per_mac_per_hour": 6,
+  "min_confidence": 0.6
+}

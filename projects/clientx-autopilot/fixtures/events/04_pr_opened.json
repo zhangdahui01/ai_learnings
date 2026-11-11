@@ -1,0 +1,8 @@
+{
+  "type": "pr_opened",
+  "subject": "PR-501",
+  "payload": {
+    "pr": "PR-501",
+    "service": "sample-checkout"
+  }
+}

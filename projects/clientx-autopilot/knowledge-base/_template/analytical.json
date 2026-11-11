@@ -1,0 +1,7 @@
+{
+  "service": "<service>",
+  "layer": "analytical",
+  "failure_patterns": {},
+  "selector_stability": {},
+  "reusable_steps": []
+}

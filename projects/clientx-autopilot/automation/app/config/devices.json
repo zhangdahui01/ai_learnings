@@ -1,0 +1,57 @@
+{
+  "_comment": "Device profiles. ${VAR} is read from the environment at run time (set by the device-local agent or CI). Nothing secret or site-specific is stored here.",
+  "appium_server": "${APPIUM_SERVER:-http://127.0.0.1:4723}",
+  "app": {
+    "android": {"appium:appPackage": "${ANDROID_APP_PACKAGE}", "appium:appActivity": "${ANDROID_APP_ACTIVITY}", "appium:app": "${ANDROID_APP_PATH:-}"},
+    "ios": {"appium:bundleId": "${IOS_BUNDLE_ID}", "appium:app": "${IOS_APP_PATH:-}"}
+  },
+  "profiles": {
+    "android-emulator": {
+      "platform": "android",
+      "description": "Android emulator running on a Mac Studio",
+      "capabilities": {
+        "platformName": "Android",
+        "appium:automationName": "UiAutomator2",
+        "appium:udid": "${DEVICE_UDID:-emulator-5554}",
+        "appium:avd": "${ANDROID_AVD:-}",
+        "appium:systemPort": "${SYSTEM_PORT:-8200}",
+        "appium:autoGrantPermissions": true,
+        "appium:newCommandTimeout": 120,
+        "appium:noReset": false
+      }
+    },
+    "ios-simulator": {
+      "platform": "ios",
+      "description": "iOS Simulator running on a Mac",
+      "capabilities": {
+        "platformName": "iOS",
+        "appium:automationName": "XCUITest",
+        "appium:udid": "${DEVICE_UDID}",
+        "appium:wdaLocalPort": "${WDA_PORT:-8100}",
+        "appium:newCommandTimeout": 120,
+        "appium:noReset": false
+      }
+    },
+    "ios-real": {
+      "platform": "ios",
+      "description": "Real iPhone attached to a Mac mini through a USB hub",
+      "capabilities": {
+        "platformName": "iOS",
+        "appium:automationName": "XCUITest",
+        "appium:udid": "${DEVICE_UDID}",
+        "appium:wdaLocalPort": "${WDA_PORT:-8100}",
+        "appium:xcodeOrgId": "${XCODE_ORG_ID}",
+        "appium:xcodeSigningId": "${XCODE_SIGNING_ID:-Apple Development}",
+        "appium:updatedWDABundleId": "${WDA_BUNDLE_ID:-}",
+        "appium:usePrebuiltWDA": true,
+        "appium:newCommandTimeout": 120,
+        "appium:noReset": true
+      }
+    },
+    "fake": {
+      "platform": "fake",
+      "description": "In-memory driver: runs the page objects and BDD steps with no device (CI smoke of the framework itself)",
+      "capabilities": {}
+    }
+  }
+}

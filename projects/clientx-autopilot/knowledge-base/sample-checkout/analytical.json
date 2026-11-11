@@ -1,0 +1,16 @@
+{
+  "failure_patterns": {},
+  "layer": "analytical",
+  "reusable_steps": [
+    "login as member",
+    "add product to cart",
+    "open checkout"
+  ],
+  "selector_stability": {
+    "#add-to-cart": {
+      "advice": "use role=button name='Add to cart'",
+      "breaks_90d": 3
+    }
+  },
+  "service": "sample-checkout"
+}

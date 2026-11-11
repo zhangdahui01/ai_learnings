@@ -1,0 +1,72 @@
+[
+ {
+  "ts": 1794387200,
+  "mac": "sh-and-04",
+  "target": "sh-and-04-d6",
+  "action": "restart_emulator",
+  "result": "ok"
+ },
+ {
+  "ts": 1794385800,
+  "mac": "sh-ios-02",
+  "target": "sh-ios-02-d1",
+  "action": "status_change",
+  "result": "offline"
+ },
+ {
+  "ts": 1794384000,
+  "mac": "sh-ios-02",
+  "target": "sh-ios-02-d1",
+  "action": "status_change",
+  "result": "online"
+ },
+ {
+  "ts": 1794382200,
+  "mac": "sh-ios-02",
+  "target": "sh-ios-02-d1",
+  "action": "status_change",
+  "result": "offline"
+ },
+ {
+  "ts": 1794380400,
+  "mac": "sh-ios-01",
+  "target": "sh-ios-01-d2",
+  "action": "restart_wda",
+  "result": "ok"
+ },
+ {
+  "ts": 1794380400,
+  "mac": "sh-ios-02",
+  "target": "sh-ios-02-d1",
+  "action": "status_change",
+  "result": "online"
+ },
+ {
+  "ts": 1794380400,
+  "mac": "sh-and-01",
+  "target": "sh-and-01-d3",
+  "action": "restart_emulator",
+  "result": "ok"
+ },
+ {
+  "ts": 1794378600,
+  "mac": "sh-ios-02",
+  "target": "sh-ios-02-d1",
+  "action": "status_change",
+  "result": "offline"
+ },
+ {
+  "ts": 1794376800,
+  "mac": "sh-ios-01",
+  "target": "sh-ios-01-d2",
+  "action": "restart_wda",
+  "result": "ok"
+ },
+ {
+  "ts": 1794373200,
+  "mac": "sh-ios-01",
+  "target": "sh-ios-01-d2",
+  "action": "restart_wda",
+  "result": "ok"
+ }
+]
