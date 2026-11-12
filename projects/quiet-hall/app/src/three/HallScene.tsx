@@ -11,9 +11,6 @@ import { TrialVisitors, type TrialKind } from './Trials';
 export { hallSize, seatPosition };
 
 const cushionGeo = new THREE.CylinderGeometry(0.56, 0.6, 0.16, 24);
-const lanternGeo = new THREE.SphereGeometry(0.2, 12, 10);
-const LANTERN = ['#f08a8a', '#f6c453', '#8fd08a', '#7fb7ea', '#f2a6d0', '#ffffff'];
-
 function Cushions({ seats, taken }: { seats: number; taken: Set<number> }) {
   const ref = useRef<THREE.InstancedMesh>(null);
   useLayoutEffect(() => {
@@ -30,38 +27,31 @@ function Cushions({ seats, taken }: { seats: number; taken: Set<number> }) {
   return <instancedMesh ref={ref} args={[cushionGeo, undefined, seats]} key={seats}><meshStandardMaterial roughness={0.9} /></instancedMesh>;
 }
 
-/** Rows of paper lanterns under the ceiling. */
-function Lanterns({ width, depth }: { width: number; depth: number }) {
-  const ref = useRef<THREE.InstancedMesh>(null);
-  const spots = useMemo(() => {
-    const out: [number, number, number][] = [];
-    for (let z = -depth / 2 + 9; z < depth / 2 - 2; z += 2.2) for (let x = -width / 2 + 3.4; x <= width / 2 - 3.4; x += 2.05) out.push([x, H - 1.9, z]);
-    return out;
-  }, [width, depth]);
-  useLayoutEffect(() => {
-    const mesh = ref.current; if (!mesh) return;
-    const m = new THREE.Matrix4(), c = new THREE.Color();
-    spots.forEach(([x, y, z], i) => {
-      m.makeScale(1, 1.15, 1).setPosition(x, y + ((i * 7) % 3) * 0.12, z); mesh.setMatrixAt(i, m);
-      mesh.setColorAt(i, c.set(LANTERN[(i * 5 + Math.floor(i / 7)) % LANTERN.length]));
-    });
-    mesh.instanceMatrix.needsUpdate = true;
-    if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
-  }, [spots]);
+/** The coffered ceiling: a grid of dark ribs under the boards. */
+function Coffers({ width, depth }: { width: number; depth: number }) {
+  const xs = useMemo(() => Array.from({ length: Math.floor(width / 2.4) + 1 }, (_, i) => -width / 2 + i * 2.4), [width]);
+  const zs = useMemo(() => Array.from({ length: Math.floor(depth / 2.4) + 1 }, (_, i) => -depth / 2 + i * 2.4), [depth]);
   return (
-    <instancedMesh ref={ref} args={[lanternGeo, undefined, spots.length]} key={spots.length}>
-      <meshBasicMaterial toneMapped={false} />
-    </instancedMesh>
+    <group position={[0, H - 0.08, 0]}>
+      {xs.map(x => <mesh key={`x${x}`} position={[x, 0, 0]}><boxGeometry args={[0.14, 0.14, depth]} /><meshStandardMaterial color="#6b4a30" roughness={0.8} /></mesh>)}
+      {zs.map(z => <mesh key={`z${z}`} position={[0, 0, z]}><boxGeometry args={[width, 0.14, 0.14]} /><meshStandardMaterial color="#6b4a30" roughness={0.8} /></mesh>)}
+    </group>
   );
 }
 
+/** One of the great timber pillars: plain wood on a stone base, bound with iron hoops, bracket arms on top. */
 function Pillar({ x, z }: { x: number; z: number }) {
   return (
     <group position={[x, 0, z]}>
-      <mesh position={[0, 0.2, 0]}><cylinderGeometry args={[0.62, 0.7, 0.4, 20]} /><meshStandardMaterial color="#8d8478" roughness={0.9} /></mesh>
-      <mesh position={[0, H / 2, 0]}><cylinderGeometry args={[0.42, 0.46, H - 0.4, 20]} /><meshStandardMaterial color="#9c2f24" roughness={0.55} /></mesh>
-      <mesh position={[0, H - 0.75, 0]}><cylinderGeometry args={[0.6, 0.44, 0.5, 20]} /><meshStandardMaterial color="#1f6b62" roughness={0.6} /></mesh>
-      <mesh position={[0, H - 1.15, 0]}><cylinderGeometry args={[0.47, 0.47, 0.12, 20]} /><meshStandardMaterial color="#d9a441" roughness={0.4} metalness={0.4} /></mesh>
+      <mesh position={[0, 0.2, 0]}><cylinderGeometry args={[0.78, 0.88, 0.4, 20]} /><meshStandardMaterial color="#8d8478" roughness={0.9} /></mesh>
+      <mesh position={[0, H / 2, 0]}><cylinderGeometry args={[0.56, 0.62, H - 0.4, 20]} /><meshStandardMaterial color="#7a5233" roughness={0.7} /></mesh>
+      {[1.3, 3.6, 5.9, 8.2].map(y => (
+        <mesh key={y} position={[0, y, 0]}><cylinderGeometry args={[0.64, 0.64, 0.14, 20]} /><meshStandardMaterial color="#2b2622" metalness={0.6} roughness={0.5} /></mesh>
+      ))}
+      {[0, Math.PI / 2].map(r => (
+        <mesh key={r} position={[0, H - 1.3, 0]} rotation={[0, r, 0]}><boxGeometry args={[2.6, 0.36, 0.5]} /><meshStandardMaterial color="#5a3a25" roughness={0.8} /></mesh>
+      ))}
+      <mesh position={[0, H - 0.95, 0]}><boxGeometry args={[1.5, 0.34, 1.5]} /><meshStandardMaterial color="#e6dcc6" roughness={0.9} /></mesh>
     </group>
   );
 }
@@ -70,6 +60,13 @@ function Altar({ z }: { z: number }) {
   const flames = useRef<THREE.Group>(null);
   const smoke = useRef<THREE.Group>(null);
   const glow = useRef<THREE.PointLight>(null);
+  const halo = useMemo(() => {
+    const shape = new THREE.Shape();                                  // boat-shaped: round below, pointed above
+    shape.moveTo(0, 0.35); shape.bezierCurveTo(2.6, 0.35, 2.9, 2.6, 1.5, 3.9); shape.quadraticCurveTo(0.6, 4.6, 0, 5.05);
+    shape.quadraticCurveTo(-0.6, 4.6, -1.5, 3.9); shape.bezierCurveTo(-2.9, 2.6, -2.6, 0.35, 0, 0.35);
+    const spots: [number, number][] = [[0, 4.45], [-0.85, 3.95], [0.85, 3.95], [-1.55, 3.2], [1.55, 3.2], [-1.9, 2.3], [1.9, 2.3], [-1.85, 1.4], [1.85, 1.4]];
+    return { back: new THREE.ShapeGeometry(shape, 24), spots };
+  }, []);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
     flames.current?.children.forEach((f, i) => { f.scale.setScalar(1 + Math.sin(t * 9 + i * 2.1) * 0.12); });
@@ -82,30 +79,83 @@ function Altar({ z }: { z: number }) {
     });
   });
   const gold = <meshStandardMaterial color="#e2b24a" metalness={0.75} roughness={0.28} emissive="#6b4a12" emissiveIntensity={0.35} />;
-  const figure = (x: number, s: number) => (
-    <group position={[x, 2.1, 0.2]} scale={s} key={x}>
-      {Array.from({ length: 12 }, (_, i) => (                       // lotus seat
-        <mesh key={i} position={[Math.cos(i * Math.PI / 6) * 1.25, 0.05, Math.sin(i * Math.PI / 6) * 1.25]}
-          rotation={[0, -i * Math.PI / 6, Math.PI / 2.6]}>
-          <coneGeometry args={[0.38, 0.9, 6]} /><meshStandardMaterial color="#e8a7a0" roughness={0.7} />
+  const bronze = <meshStandardMaterial color="#5d6553" metalness={0.7} roughness={0.42} emissive="#161a12" emissiveIntensity={0.6} />;
+  const lotus = (color: string, r: number) => (
+    <>
+      {Array.from({ length: 16 }, (_, i) => (
+        <mesh key={i} position={[Math.cos(i * Math.PI / 8) * r, 0.05, Math.sin(i * Math.PI / 8) * r]} rotation={[0, -i * Math.PI / 8, Math.PI / 2.6]}>
+          <coneGeometry args={[0.36, 0.9, 6]} /><meshStandardMaterial color={color} metalness={0.5} roughness={0.5} />
         </mesh>
       ))}
-      <mesh position={[0, 0.2, 0]}><cylinderGeometry args={[1.25, 1.1, 0.4, 24]} /><meshStandardMaterial color="#c9796f" roughness={0.7} /></mesh>
-      <mesh position={[0, 0.72, 0.1]} scale={[1.5, 0.5, 1.25]}><sphereGeometry args={[0.8, 24, 16]} />{gold}</mesh>
-      <mesh position={[0, 1.55, 0]} scale={[1, 1.15, 0.8]}><sphereGeometry args={[0.8, 24, 18]} />{gold}</mesh>
-      <mesh position={[0, 2.78, 0]}><sphereGeometry args={[0.52, 24, 18]} />{gold}</mesh>
-      <mesh position={[0, 3.3, 0]}><sphereGeometry args={[0.22, 16, 12]} />{gold}</mesh>
+      <mesh position={[0, 0.2, 0]}><cylinderGeometry args={[r, r - 0.15, 0.4, 28]} /><meshStandardMaterial color={color} metalness={0.5} roughness={0.5} /></mesh>
+    </>
+  );
+  // The great bronze Buddha: seated, right hand raised with the palm outward, left hand open on the knee,
+  // before a gilded boat-shaped halo set with small seated Buddhas.
+  const great = (
+    <group position={[0, 2.0, -0.1]} scale={2.05}>
+      <group position={[0, 0, -0.62]}>
+        <mesh geometry={halo.back}><meshStandardMaterial color="#c9983a" metalness={0.7} roughness={0.35} emissive="#5a3c0e" emissiveIntensity={0.5} side={THREE.DoubleSide} /></mesh>
+        <mesh position={[0, 2.85, 0.03]}><ringGeometry args={[0.7, 0.98, 40]} /><meshBasicMaterial color="#f6d27a" toneMapped={false} /></mesh>
+        <mesh position={[0, 1.6, 0.03]}><ringGeometry args={[1.25, 1.42, 48]} /><meshBasicMaterial color="#e9bf5e" toneMapped={false} /></mesh>
+        {halo.spots.map(([x, y], i) => (
+          <group key={i} position={[x, y, 0.06]} scale={0.2}>
+            <mesh position={[0, 0, 0]} scale={[1.2, 0.6, 0.5]}><sphereGeometry args={[0.7, 10, 8]} />{gold}</mesh>
+            <mesh position={[0, 0.6, 0]} scale={[0.8, 1, 0.5]}><sphereGeometry args={[0.6, 10, 8]} />{gold}</mesh>
+            <mesh position={[0, 1.4, 0]}><sphereGeometry args={[0.4, 10, 8]} />{gold}</mesh>
+            <mesh position={[0, 0.7, -0.2]}><circleGeometry args={[1.25, 16]} /><meshBasicMaterial color="#f6d27a" toneMapped={false} /></mesh>
+          </group>
+        ))}
+      </group>
+      {lotus('#6b705b', 1.5)}
+      <mesh position={[0, 0.72, 0.1]} scale={[1.75, 0.5, 1.3]}><sphereGeometry args={[0.8, 28, 18]} />{bronze}</mesh>
+      <mesh position={[0, 1.55, 0]} scale={[1.08, 1.2, 0.82]}><sphereGeometry args={[0.8, 28, 20]} />{bronze}</mesh>
+      <mesh position={[0, 2.1, 0]} scale={[1.5, 0.48, 0.78]}><sphereGeometry args={[0.8, 24, 16]} />{bronze}</mesh>
+      <mesh position={[0, 2.5, 0.02]}><cylinderGeometry args={[0.26, 0.32, 0.3, 16]} />{bronze}</mesh>
+      {/* head: tight curls, the mound on the crown, long ears, the bright dot between the brows */}
+      <mesh position={[0, 2.92, 0]} scale={[1, 1.1, 0.98]}><sphereGeometry args={[0.52, 28, 20]} />{bronze}</mesh>
+      <mesh position={[0, 3.0, -0.03]} scale={[1.06, 1.05, 1.06]}><sphereGeometry args={[0.52, 24, 14, 0, Math.PI * 2, 0, Math.PI * 0.42]} /><meshStandardMaterial color="#20262a" roughness={0.9} flatShading /></mesh>
+      <mesh position={[0, 3.52, -0.03]}><sphereGeometry args={[0.24, 16, 12]} /><meshStandardMaterial color="#20262a" roughness={0.9} flatShading /></mesh>
+      {[-1, 1].map(e => <mesh key={e} position={[e * 0.53, 2.84, 0]} scale={[0.35, 1.5, 0.6]}><sphereGeometry args={[0.16, 10, 8]} />{bronze}</mesh>)}
+      <mesh position={[0, 3.06, 0.5]}><sphereGeometry args={[0.045, 10, 8]} /><meshBasicMaterial color="#f6d27a" toneMapped={false} /></mesh>
+      {[-1, 1].map(e => (
+        <group key={e}>
+          <mesh position={[e * 0.2, 2.95, 0.47]} rotation={[0, e * 0.35, e * -0.08]} scale={[1, 0.22, 0.3]}><sphereGeometry args={[0.11, 12, 8]} /><meshStandardMaterial color="#14181a" roughness={0.6} /></mesh>
+          <mesh position={[e * 0.2, 3.07, 0.46]} rotation={[0, e * 0.35, e * -0.2]} scale={[1, 0.12, 0.25]}><sphereGeometry args={[0.13, 12, 8]} /><meshStandardMaterial color="#2a2f2a" roughness={0.6} /></mesh>
+        </group>
+      ))}
+      <mesh position={[0, 2.82, 0.53]} scale={[0.5, 1, 0.6]}><sphereGeometry args={[0.07, 10, 8]} />{bronze}</mesh>
+      <mesh position={[0, 2.66, 0.49]} scale={[1, 0.3, 0.4]}><sphereGeometry args={[0.1, 12, 8]} /><meshStandardMaterial color="#3b3f33" roughness={0.6} /></mesh>
+      {/* right arm raised, palm outward */}
+      <mesh position={[-1.22, 1.72, 0.12]} rotation={[0.25, 0, 0.12]}><cylinderGeometry args={[0.24, 0.22, 0.95, 12]} />{bronze}</mesh>
+      <mesh position={[-1.18, 1.66, 0.62]} rotation={[-0.75, 0, -0.1]}><cylinderGeometry args={[0.18, 0.21, 0.95, 12]} />{bronze}</mesh>
+      <mesh position={[-1.12, 2.2, 0.95]} scale={[0.5, 0.68, 0.17]}><sphereGeometry args={[0.5, 16, 12]} />{bronze}</mesh>
+      {/* left arm resting, palm up on the knee */}
+      <mesh position={[1.2, 1.55, 0.2]} rotation={[0.5, 0, -0.15]}><cylinderGeometry args={[0.24, 0.2, 1.1, 12]} />{bronze}</mesh>
+      <mesh position={[1.0, 1.05, 0.95]} scale={[0.62, 0.15, 0.45]}><sphereGeometry args={[0.5, 16, 12]} />{bronze}</mesh>
+    </group>
+  );
+  // The gilded attendants either side.
+  const attendant = (x: number) => (
+    <group position={[x, 2.0, 0.4]} scale={1.05} key={x}>
+      {lotus('#b8892f', 1.2)}
+      <mesh position={[0, 0.72, 0.1]} scale={[1.45, 0.5, 1.2]}><sphereGeometry args={[0.8, 24, 16]} />{gold}</mesh>
+      <mesh position={[0, 1.55, 0]} scale={[0.95, 1.15, 0.78]}><sphereGeometry args={[0.8, 24, 18]} />{gold}</mesh>
+      <mesh position={[0, 2.75, 0]}><sphereGeometry args={[0.48, 24, 18]} />{gold}</mesh>
+      <mesh position={[0, 3.3, 0]}><coneGeometry args={[0.36, 0.7, 8]} />{gold}</mesh>
       <mesh position={[0, 1.05, 0.72]} scale={[1.3, 0.5, 0.7]}><sphereGeometry args={[0.3, 16, 12]} />{gold}</mesh>
-      <mesh position={[0, 2.5, -0.55]}><circleGeometry args={[1.75, 40]} /><meshBasicMaterial color="#f6d27a" toneMapped={false} side={THREE.DoubleSide} /></mesh>
-      <mesh position={[0, 2.5, -0.6]}><ringGeometry args={[1.75, 2.05, 40]} /><meshBasicMaterial color="#c0392b" toneMapped={false} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[0, 2.6, -0.55]}><circleGeometry args={[1.5, 40]} /><meshStandardMaterial color="#c9983a" metalness={0.7} roughness={0.35} emissive="#5a3c0e" emissiveIntensity={0.5} side={THREE.DoubleSide} /></mesh>
+      <mesh position={[0, 2.6, -0.52]}><ringGeometry args={[1.2, 1.5, 40]} /><meshBasicMaterial color="#f6d27a" toneMapped={false} /></mesh>
     </group>
   );
   return (
     <group position={[0, 0, z]}>
-      <mesh position={[0, 0.5, 0.6]}><boxGeometry args={[15, 1, 5.2]} /><meshStandardMaterial color="#8d8478" roughness={0.95} /></mesh>
-      <mesh position={[0, 1.45, 0.2]}><boxGeometry args={[13.5, 0.9, 3.6]} /><meshStandardMaterial color="#6e241c" roughness={0.6} /></mesh>
-      <mesh position={[0, 1.93, 0.2]}><boxGeometry args={[13.8, 0.1, 3.8]} /><meshStandardMaterial color="#d9a441" metalness={0.5} roughness={0.4} /></mesh>
-      {figure(0, 1)}{figure(-4.4, 0.72)}{figure(4.4, 0.72)}
+      <mesh position={[0, 0.5, 0.6]}><boxGeometry args={[19, 1, 5.6]} /><meshStandardMaterial color="#8d8478" roughness={0.95} /></mesh>
+      <mesh position={[0, 1.45, 0.2]}><cylinderGeometry args={[4.4, 4.7, 0.9, 8]} /><meshStandardMaterial color="#4d5346" metalness={0.5} roughness={0.6} /></mesh>
+      <mesh position={[0, 1.93, 0.2]}><cylinderGeometry args={[4.5, 4.5, 0.1, 8]} /><meshStandardMaterial color="#d9a441" metalness={0.5} roughness={0.4} /></mesh>
+      {[-6.9, 6.9].map(x => <mesh key={x} position={[x, 1.5, 0.4]}><cylinderGeometry args={[1.6, 1.8, 1, 8]} /><meshStandardMaterial color="#6e241c" roughness={0.6} /></mesh>)}
+      {great}{attendant(-6.9)}{attendant(6.9)}
+      <pointLight position={[0, 9, 6]} color="#ffe2b0" intensity={90} distance={30} decay={1.6} />
       {/* offering table: candles and an incense burner */}
       <mesh position={[0, 1.25, 3.55]}><boxGeometry args={[6, 0.5, 1.1]} /><meshStandardMaterial color="#4a2418" roughness={0.6} /></mesh>
       <mesh position={[0, 1.62, 3.55]}><cylinderGeometry args={[0.32, 0.22, 0.26, 16]} /><meshStandardMaterial color="#b8892f" metalness={0.6} roughness={0.4} /></mesh>
@@ -197,8 +247,8 @@ export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onK
   const { pillarZ, px } = plan;
   return (
     <>
-      <color attach="background" args={['#1c120c']} />
-      <fog attach="fog" args={['#1c120c', 26, 95]} />
+      <color attach="background" args={['#1a130e']} />
+      <fog attach="fog" args={['#1a130e', 30, 100]} />
       <ambientLight intensity={0.85} color="#ffe6c4" />
       <hemisphereLight args={['#ffe9c9', '#4a2f1d', 1.1]} />
       <directionalLight position={[-W, 9, 6]} intensity={1.5} color="#fff1d8" />
@@ -206,42 +256,46 @@ export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onK
       <pointLight position={[0, H - 3, 2]} intensity={70} distance={40} decay={1.6} color="#ffd9a0" />
       <pointLight position={[0, H - 3, D / 2 - 8]} intensity={50} distance={36} decay={1.6} color="#ffd9a0" />
 
-      {/* floor: wooden boards running toward the altar */}
+      {/* floor: stone slabs, with a worn path from the door to the Buddha */}
       <mesh rotation={[-Math.PI / 2, 0, 0]} onClick={e => { e.stopPropagation(); onFloor(e.point.x, e.point.z); }}>
-        <planeGeometry args={[W, D]} /><meshStandardMaterial color="#9a6a3e" roughness={0.55} />
+        <planeGeometry args={[W, D]} /><meshStandardMaterial color="#a39a88" roughness={0.8} />
       </mesh>
-      {Array.from({ length: Math.floor(W / 1.3) }, (_, i) => (
-        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-W / 2 + (i + 0.5) * 1.3, 0.004, 0]}>
-          <planeGeometry args={[0.035, D]} /><meshBasicMaterial color="#5e3d22" />
-        </mesh>
+      {Array.from({ length: Math.floor(W / 1.7) }, (_, i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-W / 2 + (i + 0.5) * 1.7, 0.004, 0]}><planeGeometry args={[0.04, D]} /><meshBasicMaterial color="#7d7566" /></mesh>
       ))}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 2]}><planeGeometry args={[1.25, D - 13]} /><meshStandardMaterial color="#7a2a22" roughness={0.9} /></mesh>
+      {Array.from({ length: Math.floor(D / 1.7) }, (_, i) => (
+        <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.004, -D / 2 + (i + 0.5) * 1.7]}><planeGeometry args={[W, 0.04]} /><meshBasicMaterial color="#7d7566" /></mesh>
+      ))}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 2]}><planeGeometry args={[1.25, D - 13]} /><meshStandardMaterial color="#8c8370" roughness={0.9} /></mesh>
 
-      {/* walls, ceiling, beams */}
-      <mesh position={[0, H / 2, front]}><planeGeometry args={[W, H]} /><meshStandardMaterial color="#6a2019" roughness={0.8} /></mesh>
-      <mesh position={[0, H / 2 + 0.6, front + 0.05]}><planeGeometry args={[W - 4, H - 3.4]} /><meshStandardMaterial color="#8a5a1e" roughness={0.6} metalness={0.25} /></mesh>
-      <mesh position={[0, H / 2, D / 2]} rotation={[0, Math.PI, 0]}><planeGeometry args={[W, H]} /><meshStandardMaterial color="#5c1d17" roughness={0.85} /></mesh>
+      {/* walls: dark timber below, white plaster above, slatted windows between the pillars */}
+      <mesh position={[0, H / 2, front]}><planeGeometry args={[W, H]} /><meshStandardMaterial color="#33221a" roughness={0.85} /></mesh>
+      <mesh position={[0, H / 2, D / 2]} rotation={[0, Math.PI, 0]}><planeGeometry args={[W, H]} /><meshStandardMaterial color="#4a3122" roughness={0.85} /></mesh>
       {[-1, 1].map(s => (
         <group key={s}>
-          <mesh position={[s * W / 2, H / 2, 0]} rotation={[0, -s * Math.PI / 2, 0]}><planeGeometry args={[D, H]} /><meshStandardMaterial color="#6a2019" roughness={0.85} /></mesh>
-          {pillarZ.map(z => (                                         // paper lattice windows between the pillars
-            <group key={z} position={[s * (W / 2 - 0.04), 3.6, z + 2.7]} rotation={[0, -s * Math.PI / 2, 0]}>
-              <mesh><planeGeometry args={[3.3, 3.6]} /><meshBasicMaterial color="#fbe9c6" toneMapped={false} /></mesh>
-              {[-1.1, 0, 1.1].map(x => <mesh key={x} position={[x, 0, 0.01]}><planeGeometry args={[0.07, 3.6]} /><meshBasicMaterial color="#5a2a1c" /></mesh>)}
-              {[-1.2, 0, 1.2].map(y => <mesh key={y} position={[0, y, 0.01]}><planeGeometry args={[3.3, 0.07]} /><meshBasicMaterial color="#5a2a1c" /></mesh>)}
+          <mesh position={[s * W / 2, H / 2, 0]} rotation={[0, -s * Math.PI / 2, 0]}><planeGeometry args={[D, H]} /><meshStandardMaterial color="#d8cdb4" roughness={0.95} /></mesh>
+          <mesh position={[s * (W / 2 - 0.02), 0.9, 0]} rotation={[0, -s * Math.PI / 2, 0]}><planeGeometry args={[D, 1.8]} /><meshStandardMaterial color="#4a3122" roughness={0.85} /></mesh>
+          {[1.8, 5.7, 9.2].map(y => <mesh key={y} position={[s * (W / 2 - 0.1), y, 0]}><boxGeometry args={[0.2, 0.3, D]} /><meshStandardMaterial color="#4a3122" roughness={0.8} /></mesh>)}
+          {pillarZ.map(z => (
+            <group key={z}>
+              <mesh position={[s * (W / 2 - 0.12), H / 2, z]}><boxGeometry args={[0.24, H, 0.5]} /><meshStandardMaterial color="#4a3122" roughness={0.8} /></mesh>
+              <group position={[s * (W / 2 - 0.05), 3.75, z + 2.7]} rotation={[0, -s * Math.PI / 2, 0]}>
+                <mesh><planeGeometry args={[3.5, 3.6]} /><meshBasicMaterial color="#fbeed0" toneMapped={false} /></mesh>
+                {Array.from({ length: 11 }, (_, i) => <mesh key={i} position={[-1.6 + i * 0.32, 0, 0.01]}><planeGeometry args={[0.13, 3.6]} /><meshBasicMaterial color="#3d281c" /></mesh>)}
+              </group>
+              <Pillar x={s * px} z={z} />
             </group>
           ))}
-          {pillarZ.map(z => <Pillar key={z} x={s * px} z={z} />)}
-          <mesh position={[s * px, H - 0.45, 0]}><boxGeometry args={[0.7, 0.6, D]} /><meshStandardMaterial color="#1f6b62" roughness={0.6} /></mesh>
+          <mesh position={[s * px, H - 0.5, 0]}><boxGeometry args={[0.6, 0.7, D]} /><meshStandardMaterial color="#5a3a25" roughness={0.8} /></mesh>
         </group>
       ))}
-      <mesh position={[0, H, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[W, D]} /><meshStandardMaterial color="#3a2317" roughness={0.9} /></mesh>
+      <mesh position={[0, H, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[W, D]} /><meshStandardMaterial color="#3b291c" roughness={0.9} /></mesh>
       {pillarZ.map(z => (
-        <mesh key={z} position={[0, H - 0.5, z]}><boxGeometry args={[W, 0.55, 0.5]} /><meshStandardMaterial color="#a33a2a" roughness={0.6} /></mesh>
+        <mesh key={z} position={[0, H - 0.5, z]}><boxGeometry args={[W, 0.6, 0.55]} /><meshStandardMaterial color="#5a3a25" roughness={0.8} /></mesh>
       ))}
+      <Coffers width={W} depth={D} />
 
       <Altar z={front + 2.6} />
-      <Lanterns width={W} depth={D} />
       <Cushions seats={seats} taken={taken} />
       {monks.filter(m => m.seat !== null).map(m => (
         <Monk3D key={m.handle} monk={m} position={stand(m)} me={m.handle === meHandle}
@@ -249,7 +303,7 @@ export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onK
       ))}
       {me && me.seat !== null && <WoodenFish position={[mySeat[0] + 0.86, 0, mySeat[2] - 0.5]} tick={knockTick} onKnock={onKnock} />}
       {trial && <TrialVisitors kind={trial} center={mine} />}
-      <CameraRig orbit={orbit} target={[mine[0] * 0.8, 1.5, mine[2] - 2.2]} bounds={{ x: px - 1.3, z0: front + 8.6, z1: D / 2 - 0.9 }} />
+      <CameraRig orbit={orbit} target={[mine[0] * 0.8, 2.8, mine[2] - 3.6]} bounds={{ x: px - 1.3, z0: front + 8.6, z1: D / 2 - 0.9 }} />
     </>
   );
 }

@@ -10,15 +10,26 @@ export function FlatTemple() {
   return (
     <View style={styles.temple}>
       <Svg width={300} height={210} viewBox="0 0 300 210">
-        <Circle cx={212} cy={46} r={30} fill="#fff4d6" />
-        <Path d="M0 150 L70 70 L140 150 Z" fill="#c9cdb6" /><Path d="M150 150 L235 60 L300 130 L300 150 Z" fill="#b7c1ad" />
-        <Path d="M78 78 L150 44 L222 78 L212 86 L88 86 Z" fill="#3d4a4a" />
-        <Rect x={100} y={86} width={100} height={18} fill="#e9dcc0" /><Rect x={128} y={89} width={44} height={12} fill="#1f2a44" />
-        <Path d="M40 126 L150 96 L260 126 L246 136 L54 136 Z" fill="#3d4a4a" />
-        <Rect x={56} y={134} width={188} height={5} fill="#1f6b62" />
-        <Rect x={62} y={139} width={176} height={44} fill="#e9dcc0" /><Rect x={136} y={144} width={28} height={39} fill="#3a2317" />
-        {[66, 100, 128, 164, 192, 226].map(x => <Rect key={x} x={x} y={139} width={8} height={44} fill={C.vermilion} />)}
-        <Rect x={44} y={183} width={212} height={12} fill="#a8a094" /><Rect x={126} y={195} width={48} height={8} fill="#b5ad9f" />
+        <Circle cx={222} cy={40} r={26} fill="#fff6dc" />
+        <Path d="M0 160 L70 84 L140 160 Z" fill="#c3ccb4" /><Path d="M160 160 L240 76 L300 140 L300 160 Z" fill="#b3c0aa" />
+        <Rect x={0} y={160} width={300} height={50} fill="#8fa863" />
+        {/* great hipped roof with golden horns */}
+        <Path d="M100 58 L200 58 L262 104 Q150 96 38 104 Z" fill="#4d5861" />
+        <Rect x={98} y={54} width={104} height={5} fill="#31373b" />
+        <Path d="M98 54 Q96 40 108 36 Q104 44 108 54 Z" fill="#e0b24c" /><Path d="M202 54 Q204 40 192 36 Q196 44 192 54 Z" fill="#e0b24c" />
+        <Rect x={70} y={104} width={160} height={16} fill="#efe6d2" />
+        {[70, 96, 122, 148, 174, 200, 226].map(x => <Rect key={x} x={x} y={104} width={4} height={16} fill="#4a3122" />)}
+        {/* skirt roof and the cusped gable over the door */}
+        <Path d="M66 118 L234 118 L274 140 Q150 134 26 140 Z" fill="#4d5861" />
+        <Path d="M118 140 Q132 138 138 126 Q150 114 162 126 Q168 138 182 140 Z" fill="#efe6d2" stroke="#4d5861" strokeWidth={4} />
+        <Rect x={143} y={127} width={14} height={9} fill="#1b120c" /><Circle cx={150} cy={131.5} r={3} fill="#d8aa48" />
+        <Rect x={46} y={140} width={208} height={44} fill="#efe6d2" />
+        {[46, 76, 106, 136, 160, 190, 220, 250].map(x => <Rect key={x} x={x} y={140} width={4} height={44} fill="#4a3122" />)}
+        {[80, 110, 164, 194].map(x => <Rect key={x} x={x} y={152} width={26} height={32} fill="#6b3a26" />)}
+        <Rect x={140} y={150} width={20} height={34} fill="#1b120c" /><Circle cx={150} cy={164} r={6} fill="#c99a3c" />
+        <Rect x={30} y={184} width={240} height={10} fill="#a8a094" /><Rect x={128} y={194} width={44} height={7} fill="#b5ad9f" />
+        {/* bronze lantern */}
+        <Rect x={147} y={196} width={6} height={8} fill="#5f6b5a" /><Path d="M141 190 L159 190 L156 196 L144 196 Z" fill="#5f6b5a" /><Rect x={146} y={191} width={8} height={4} fill="#ffd98a" />
       </Svg>
     </View>
   );
@@ -37,7 +48,7 @@ export function FlatHall({ monks, seats, meHandle, onBow }: { monks: Monk[]; sea
     <FlatList
       testID="hall.flat" style={styles.hall} data={data} numColumns={columns} keyExtractor={i => String(i.seat)}
       contentContainerStyle={styles.floor} initialNumToRender={columns * 8}
-      ListHeaderComponent={<Text style={styles.altar}>佛 台</Text>}
+      ListHeaderComponent={<Text style={styles.altar}>大 佛</Text>}
       renderItem={({ item }) => {
         const m = item.monk, mine = !!m && m.handle === meHandle;
         if (!m) return <View style={[styles.cell, { width: cell }]}><EmptyCushion size={figure} /></View>;

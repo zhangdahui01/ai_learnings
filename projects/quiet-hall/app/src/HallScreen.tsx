@@ -34,6 +34,7 @@ function trialSetting(): { forced: TrialKind | null; off: boolean } {
 interface Trial { kind: TrialKind; focus: number; endsAt: number; at: number }      // `at`: when composure was last updated
 // Where you stand to look at the hall: behind your cushion, from the side, or from the altar looking back.
 const VIEWS: { label: string; orbit: Orbit }[] = [
+  { label: '仰望', orbit: { yaw: 0.22, pitch: 0.1, dist: 10.5 } },
   { label: '身后', orbit: { yaw: 0.55, pitch: 0.34, dist: 9.5 } },
   { label: '侧面', orbit: { yaw: 1.45, pitch: 0.22, dist: 14 } },
   { label: '佛前', orbit: { yaw: 2.9, pitch: 0.28, dist: 12 } },
@@ -283,7 +284,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   return (
     <View style={styles.root}>
       <View style={styles.header}>
-        <Text style={styles.title} accessibilityRole="header">大殿</Text>
+        <Text style={styles.title} accessibilityRole="header">大佛殿</Text>
         <View style={styles.counts}>
           <View style={styles.inline}>
             <Text style={styles.count}>在堂 </Text><Text testID="hall.count" style={[styles.count, styles.countNum]}>{hall.present}</Text><Text style={styles.count}> 人</Text>

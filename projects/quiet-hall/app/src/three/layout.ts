@@ -1,6 +1,6 @@
 // The hall's floor plan: where cushions, pillars and walls are, shared by the 3D scene and the walking rules.
 export const COLS = 8;
-export const SX = 1.7, SZ = 1.8, H = 9.5;
+export const SX = 1.7, SZ = 1.8, H = 13.5;
 const MONK_R = 0.42;            // how much room a monk takes
 const PILLAR_R = 0.75;
 
