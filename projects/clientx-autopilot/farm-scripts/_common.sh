@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Shared settings for the farm scripts. Override any of these in the environment of the device-local agent.
 set -euo pipefail
+[[ -f "$HOME/.clientx-farm/env" ]] && source "$HOME/.clientx-farm/env"     # written by scripts/setup_mac.sh
 export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
 export PATH="$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$ANDROID_HOME/cmdline-tools/latest/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 if ! java -version >/dev/null 2>&1; then     # macOS java stub without a JDK: use the Homebrew JDK when present

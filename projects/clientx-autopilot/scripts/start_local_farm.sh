@@ -22,7 +22,7 @@ if [[ "${1:-}" == "--stop" ]]; then
 fi
 
 if have emulator && emulator -list-avds 2>/dev/null | grep -qx "$AVD"; then
-  adb devices | grep -q "^emulator-5554" || farm-scripts/start_android_emulator.sh "$AVD"
+  adb devices | grep -q "^emulator-5554" || farm-scripts/start_android_emulator.sh "$AVD" || log "Android emulator failed to boot (see $FARM_LOG_DIR/emulator-5554.log)"
 else
   log "skip Android emulator: AVD $AVD not found (run scripts/setup_mac.sh)"
 fi
@@ -45,8 +45,12 @@ else
   log "skip iOS Simulator: Xcode command-line tools not available"
 fi
 
-have appium   && { nc -z 127.0.0.1 "$APPIUM_PORT" 2>/dev/null || farm-scripts/restart_appium.sh; } || log "skip Appium: not installed"
-have mitmdump && { nc -z 127.0.0.1 "$PROXY_PORT"  2>/dev/null || farm-scripts/restart_mitmproxy.sh; } || log "skip mitmproxy: not installed"
+if have appium; then
+  nc -z 127.0.0.1 "$APPIUM_PORT" 2>/dev/null || farm-scripts/restart_appium.sh || log "Appium failed to start (see $FARM_LOG_DIR/appium.log)"
+else log "skip Appium: not installed (run scripts/setup_mac.sh)"; fi
+if have mitmdump; then
+  nc -z 127.0.0.1 "$PROXY_PORT" 2>/dev/null || farm-scripts/restart_mitmproxy.sh || log "mitmproxy failed to start (see $FARM_LOG_DIR/mitmproxy.log)"
+else log "skip mitmproxy: not installed"; fi
 
 mkdir -p var
 python3 -m device_farm.collector --out var/farm_snapshot.json --history var/farm_history.json --dashboard var/farm-dashboard.html

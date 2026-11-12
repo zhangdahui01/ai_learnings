@@ -10,8 +10,20 @@
 set -euo pipefail
 CHECK_ONLY=false; [[ "${1:-}" == "--check" ]] && CHECK_ONLY=true
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-export ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
-export PATH="/opt/homebrew/bin:/usr/local/bin:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+export PATH="/opt/homebrew/bin:/usr/local/bin:$PATH"
+# avdmanager has no --sdk_root: it always uses the SDK root its own cmdline-tools live in. With the
+# Homebrew cask that is <brew prefix>/share/android-commandlinetools, so packages must go there too,
+# otherwise avdmanager cannot see the system image sdkmanager installed.
+sdk_root() {
+  local brew_root; brew_root="$(brew --prefix 2>/dev/null)/share/android-commandlinetools"
+  if [[ -d "$brew_root/cmdline-tools" ]]; then echo "$brew_root"
+  else echo "${ANDROID_HOME:-$HOME/Library/Android/sdk}"; fi
+}
+use_sdk() {
+  export ANDROID_HOME="$(sdk_root)"; export ANDROID_SDK_ROOT="$ANDROID_HOME"
+  export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator:$PATH"
+}
+use_sdk
 API="${ANDROID_API:-35}"
 ARCH="$([[ "$(uname -m)" == "arm64" ]] && echo arm64-v8a || echo x86_64)"
 IMAGE="system-images;android-$API;google_apis;$ARCH"
@@ -33,8 +45,9 @@ say "Report"
 have brew     && ok "Homebrew"                                  || miss "Homebrew (https://brew.sh)"
 have_java     && ok "Java: $(java -version 2>&1 | head -1)"     || miss "Java 17+ (a JDK, not the macOS java stub)"
 have sdkmanager && ok "Android cmdline-tools"                   || miss "Android cmdline-tools"
-have adb      && ok "adb"                                       || miss "Android platform-tools"
-have emulator && ok "Android emulator"                          || miss "Android emulator"
+[[ -x "$ANDROID_HOME/platform-tools/adb" ]]  && ok "adb ($ANDROID_HOME)"            || miss "Android platform-tools in $ANDROID_HOME"
+[[ -x "$ANDROID_HOME/emulator/emulator" ]]   && ok "Android emulator"                || miss "Android emulator in $ANDROID_HOME"
+[[ -d "$ANDROID_HOME/system-images/android-$API" ]] && ok "System image android-$API" || miss "System image android-$API"
 { have emulator && emulator -list-avds 2>/dev/null | grep -qx "$AVD"; } && ok "AVD $AVD" || miss "AVD $AVD"
 have node     && ok "Node $(node --version)"                    || miss "Node.js"
 have appium   && ok "Appium $(appium --version 2>/dev/null)"    || miss "Appium"
@@ -56,20 +69,26 @@ if ! have_java; then
 fi
 have node     || brew install node
 have mitmdump || brew install mitmproxy
-if ! have sdkmanager; then
-  brew install --cask android-commandlinetools
-  mkdir -p "$ANDROID_HOME"
-fi
+have sdkmanager || brew install --cask android-commandlinetools
+use_sdk
+mkdir -p "$ANDROID_HOME"
 SDKM="sdkmanager --sdk_root=$ANDROID_HOME"
+echo "   Android SDK root: $ANDROID_HOME"
 
 say "Android SDK packages (platform-tools, emulator, platform $API, system image $ARCH)"
-yes | $SDKM --licenses >/dev/null || true
-$SDKM "platform-tools" "emulator" "platforms;android-$API" "$IMAGE"
+set +o pipefail                       # `yes` is killed by SIGPIPE when sdkmanager is done; that is not a failure
+yes | $SDKM --licenses >/dev/null 2>&1 || true
+yes | $SDKM "platform-tools" "emulator" "platforms;android-$API" "$IMAGE"
+set -o pipefail
+[[ -d "$ANDROID_HOME/system-images/android-$API" ]] || { echo "system image was not installed into $ANDROID_HOME"; exit 1; }
 
 say "AVD $AVD"
 if ! emulator -list-avds 2>/dev/null | grep -qx "$AVD"; then
-  echo no | avdmanager create avd -n "$AVD" -k "$IMAGE" -d pixel_7 --force
+  echo no | avdmanager create avd -n "$AVD" -k "$IMAGE" -d pixel_7 --force \
+    || echo no | avdmanager create avd -n "$AVD" -k "$IMAGE" --force \
+    || echo "   WARNING: could not create AVD $AVD; continuing with the rest of the setup"
 fi
+emulator -list-avds 2>/dev/null | grep -qx "$AVD" && ok "AVD $AVD" || miss "AVD $AVD"
 
 say "Appium + drivers"
 have appium || npm install -g appium
@@ -85,7 +104,10 @@ say "Web automation packages"
 
 say "Shell profile"
 PROFILE="$HOME/.zshrc"
-grep -q "ANDROID_HOME" "$PROFILE" 2>/dev/null || cat >> "$PROFILE" <<EOP
+mkdir -p "$HOME/.clientx-farm"          # read by farm-scripts/_common.sh so every script uses the same SDK and JDK
+{ echo "export ANDROID_HOME=\"$ANDROID_HOME\""; echo "export ANDROID_SDK_ROOT=\"$ANDROID_HOME\""
+  [[ -n "${JAVA_HOME:-}" ]] && echo "export JAVA_HOME=\"$JAVA_HOME\""; } > "$HOME/.clientx-farm/env"
+grep -q "ANDROID_HOME=\"$ANDROID_HOME\"" "$PROFILE" 2>/dev/null || cat >> "$PROFILE" <<EOP
 
 # ClientX Autopilot
 ${JAVA_HOME:+export JAVA_HOME="$JAVA_HOME"}
