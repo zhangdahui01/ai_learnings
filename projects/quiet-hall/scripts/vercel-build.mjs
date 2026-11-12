@@ -1,5 +1,5 @@
 // Build for Vercel with the Build Output API (v3): the exported web app as static files and one
-// function per API action. Run from projects/quiet-hall after `npm install` in app/.
+// function for the API. Run from projects/quiet-hall after `npm install` in app/.
 //   node scripts/vercel-build.mjs
 import { execSync } from 'node:child_process';
 import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -33,21 +33,21 @@ setTimeout(function(){fail('加载超时，可能是网络拦截了本站');},40
 </script>`;
 writeFileSync(indexFile, readFileSync(indexFile, 'utf8').replace('<div id="root"></div>', `<div id="root"></div>${boot}`));
 
-for (const [action, method] of Object.entries(ACTIONS)) {
-  const fn = join(out, 'functions', 'api', `${action}.func`);
-  mkdirSync(fn, { recursive: true });
-  cpSync(join(root, 'lib'), join(fn, 'lib'), { recursive: true, filter: src => !src.endsWith('.test.mjs') });
-  cpSync(join(root, 'server', 'hall.mjs'), join(fn, 'server', 'hall.mjs'));
-  writeFileSync(join(fn, 'index.mjs'), `import { route } from './lib/handler.mjs';\n\nexport default route('${action}');\n`);
-  writeFileSync(join(fn, '.vc-config.json'), JSON.stringify({
-    runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: true, maxDuration: 15,
-  }, null, 2));
-}
+// One function serves every action: the free plan allows 12 functions per deployment and the API has more.
+const fn = join(out, 'functions', 'api.func');
+mkdirSync(fn, { recursive: true });
+cpSync(join(root, 'lib'), join(fn, 'lib'), { recursive: true, filter: src => !src.endsWith('.test.mjs') });
+cpSync(join(root, 'server', 'hall.mjs'), join(fn, 'server', 'hall.mjs'));
+writeFileSync(join(fn, 'index.mjs'), `export { dispatch as default } from './lib/handler.mjs';\n`);
+writeFileSync(join(fn, '.vc-config.json'), JSON.stringify({
+  runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: true, maxDuration: 15,
+}, null, 2));
 
 writeFileSync(join(out, 'config.json'), JSON.stringify({
   version: 3,
   routes: [
-    { handle: 'filesystem' },                               // static files and /api/* functions first
+    { src: `/api/(${Object.keys(ACTIONS).join('|')})/?`, dest: '/api?action=$1' },
+    { handle: 'filesystem' },                               // static files next
     { src: '/(?!api/).*', dest: '/index.html' },            // everything else is the single-page app
   ],
 }, null, 2));

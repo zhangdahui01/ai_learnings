@@ -39,3 +39,15 @@ export function route(action, method = ROUTES[action]) {
     }
   };
 }
+
+/** One function for the whole API (the free hosting plan caps the number of functions): the action is the last path segment. */
+export function dispatch(req, res) {
+  const url = new URL(req.url ?? '/', 'http://hall');
+  const action = url.searchParams.get('action') ?? url.pathname.match(/\/api\/([a-z]+)\/?$/)?.[1] ?? '';
+  if (!Object.hasOwn(ROUTES, action)) {
+    res.statusCode = 404;
+    res.setHeader('content-type', 'application/json; charset=utf-8');
+    return res.end(JSON.stringify({ error: 'not found' }));
+  }
+  return route(action)(req, res);
+}

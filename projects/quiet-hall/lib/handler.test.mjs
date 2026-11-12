@@ -50,3 +50,16 @@ test('concurrent joins do not lose each other', async () => {
   assert.deepEqual(results.map(r => r.status), [200, 200, 200, 200]);
   assert.equal(new Set(results.map(r => r.body.me.seat)).size, 4);
 });
+
+test('one function dispatches every action by its path', async () => {
+  const { dispatch } = await import('./handler.mjs');
+  const ask = (url, method = 'GET') => new Promise(resolve => {
+    const res = { statusCode: 200, setHeader() {}, end(text) { resolve({ status: this.statusCode, body: text ? JSON.parse(text) : null }); } };
+    dispatch({ url, method, headers: {}, body: {} }, res);
+  });
+  assert.equal((await ask('/api/health')).status, 200);
+  assert.equal((await ask('/api?action=hall')).status, 200);               // as rewritten by the hosting route
+  assert.equal((await ask('/api/register', 'GET')).status, 405);
+  assert.equal((await ask('/api/constructor')).status, 404);
+  assert.equal((await ask('/api/nothing')).status, 404);
+});
