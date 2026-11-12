@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { playBell, unlockSound } from './sound';
-import { Canvas } from './three/r3f';
+import { FlatTemple } from './FlatHall';
+import { Stage3D } from './three/Stage3D';
 import { TempleScene } from './three/TempleScene';
 import { api, HallError, type Session } from './api';
 import { C } from './theme';
@@ -45,9 +46,9 @@ export function Gate({ initialServer, onEnter }: { initialServer: string; onEnte
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <View style={styles.scene} pointerEvents="none">
-        <Canvas style={styles.canvas} dpr={[1, 2]} camera={{ fov: 50, near: 0.1, far: 260, position: [0, 4.3, 27] }}>
+        <Stage3D fallback={<FlatTemple />} style={styles.canvas} dpr={[1, 2]} camera={{ fov: 50, near: 0.1, far: 260, position: [0, 4.3, 27] }}>
           <TempleScene />
-        </Canvas>
+        </Stage3D>
       </View>
       <View style={styles.card}>
         <Text style={styles.title} accessibilityRole="header">静堂</Text>

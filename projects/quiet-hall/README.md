@@ -20,6 +20,7 @@ quiet-hall/
 - Walking: stand up, then tap the floor and your monk walks there; others see you move. Sitting down takes you back to your cushion.
 - Prostration: your monk folds forward to the floor and rises; the count is kept, and every 108th is announced.
 - Prayer beads: a loop of beads you turn one at a time; 108 make a round.
+- No 3D, no problem: where WebGL is unavailable (many office computers and in-app browsers) the gate and the hall fall back to flat drawings instead of a blank page; everything except walking still works.
 - The hall grows: there are always spare cushions past the last occupied one.
 - `--residents N` seats N resident monks so the hall is never empty. They are marked as residents in the API.
 

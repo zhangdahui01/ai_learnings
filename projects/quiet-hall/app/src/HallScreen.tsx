@@ -7,7 +7,8 @@ import { playBell, playKnock, playTick, setChanting, soundStatus, soundSupported
 import { useBatched } from './useBatched';
 import { HallScene } from './three/HallScene';
 import { useOrbit, type Orbit } from './three/orbit';
-import { Canvas } from './three/r3f';
+import { FlatHall } from './FlatHall';
+import { Stage3D } from './three/Stage3D';
 import { C, clock } from './theme';
 
 const POLL_MS = 2000;
@@ -33,6 +34,8 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const [walkTo, setWalkTo] = useState<{ x: number; z: number } | null>(null);        // where I am walking, before the hall confirms
   const rise = useRef(new Animated.Value(0)).current;
   const [riseText, setRiseText] = useState('功德 +1');
+  const [flat, setFlat] = useState(false);            // true when this device cannot draw the 3D hall
+  const noThreeD = useCallback(() => setFlat(true), []);
   const [view, setView] = useState(0);
   const { orbit, handlers, zoom } = useOrbit(VIEWS[0].orbit);
   const nextView = useCallback(() => {
@@ -141,12 +144,13 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         {offline && <Text testID="hall.offline" style={styles.offline}>网络不稳，显示的是刚才的大殿</Text>}
       </View>
 
-      <View testID="hall.scene" style={styles.stage} {...handlers}
-        {...(Platform.OS === 'web' ? { onWheel: (e: { deltaY: number }) => zoom(e.deltaY > 0 ? 1.1 : 0.9) } : {})}>
-        <Canvas style={styles.canvas} dpr={[1, 2]} camera={{ fov: 58, near: 0.1, far: 220, position: [6, 5, 14] }}>
+      <View testID="hall.scene" style={styles.stage} {...(flat ? {} : handlers)}
+        {...(Platform.OS === 'web' && !flat ? { onWheel: (e: { deltaY: number }) => zoom(e.deltaY > 0 ? 1.1 : 0.9) } : {})}>
+        <Stage3D onFail={noThreeD} style={styles.canvas} dpr={[1, 2]} camera={{ fov: 58, near: 0.1, far: 220, position: [6, 5, 14] }}
+          fallback={<FlatHall monks={monks} seats={hall.seats} meHandle={me.handle} onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />}>
           <HallScene monks={monks} seats={hall.seats} meHandle={me.handle} orbit={orbit} knockTick={knockTick} onKnock={knock}
             bowTick={bowTick} onFloor={walk} onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
-        </Canvas>
+        </Stage3D>
         <View style={styles.viewBar} pointerEvents="box-none">
           {soundSupported && TRACKS.length > 0 && (
             <Pressable testID="hall.sound" onPress={nextTrack} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
@@ -154,14 +158,14 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
               <Text style={styles.chipText}>诵经 · {track >= 0 ? TRACKS[track].title : '关'}</Text>
             </Pressable>
           )}
-          <Pressable testID="hall.view" onPress={nextView} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+          {!flat && <Pressable testID="hall.view" onPress={nextView} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
             accessibilityRole="button" accessibilityLabel={`切换视角，当前${VIEWS[view].label}`}>
             <Text style={styles.chipText}>视角 · {VIEWS[view].label}</Text>
-          </Pressable>
-          <Pressable testID="hall.zoom.in" onPress={() => zoom(0.8)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
-            accessibilityRole="button" accessibilityLabel="靠近"><Text style={styles.chipText}>＋</Text></Pressable>
-          <Pressable testID="hall.zoom.out" onPress={() => zoom(1.25)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
-            accessibilityRole="button" accessibilityLabel="拉远"><Text style={styles.chipText}>－</Text></Pressable>
+          </Pressable>}
+          {!flat && <Pressable testID="hall.zoom.in" onPress={() => zoom(0.8)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
+            accessibilityRole="button" accessibilityLabel="靠近"><Text style={styles.chipText}>＋</Text></Pressable>}
+          {!flat && <Pressable testID="hall.zoom.out" onPress={() => zoom(1.25)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
+            accessibilityRole="button" accessibilityLabel="拉远"><Text style={styles.chipText}>－</Text></Pressable>}
         </View>
         <Animated.Text testID="hall.rise" pointerEvents="none" style={[styles.rise, {
           opacity: rise.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0] }),
@@ -169,8 +173,8 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           {riseText}
         </Animated.Text>
         {!!notice && <View style={styles.toast} pointerEvents="none"><Text testID="hall.notice" style={styles.toastText}>{notice}</Text></View>}
-        <Text testID="hall.hint" style={styles.hint} pointerEvents="none">
-          {blocked ? '点一下屏幕，开启诵经声' : me.sitting ? '拖动环顾 · 点木鱼敲一下 · 点和尚向他合十' : '点地面走过去 · 拖动环顾 · 点和尚向他合十'}
+        <Text testID="hall.hint" style={[styles.hint, flat && styles.hintFlat]} pointerEvents="none">
+          {blocked ? '点一下屏幕，开启诵经声' : flat ? '这台设备不支持 3D，已切换为平面大殿 · 点和尚向他合十' : me.sitting ? '拖动环顾 · 点木鱼敲一下 · 点和尚向他合十' : '点地面走过去 · 拖动环顾 · 点和尚向他合十'}
         </Text>
       </View>
 
@@ -245,6 +249,7 @@ const styles = StyleSheet.create({
   chipRound: { width: 44, paddingHorizontal: 0 },
   chipText: { color: '#f3ead9', fontSize: 14 },
   rise: { position: 'absolute', left: 0, right: 0, bottom: 96, textAlign: 'center', color: '#ffd978', fontSize: 22, fontWeight: '700' },
+  hintFlat: { color: C.wood, backgroundColor: '#f3ead9cc', paddingVertical: 4 },
   hint: { position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', color: '#f3ead9aa', fontSize: 12 },
   loading: { flex: 1, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' },
   header: { backgroundColor: C.wood, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 20, alignItems: 'center', gap: 4 },
