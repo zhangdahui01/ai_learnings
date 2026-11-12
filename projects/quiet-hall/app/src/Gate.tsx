@@ -60,6 +60,7 @@ export function Gate({ initialServer, onEnter }: { initialServer: string; onEnte
         <Pressable testID="gate.server.toggle" onPress={() => setShowServer(v => !v)} accessibilityRole="button" hitSlop={8}>
           <Text style={styles.link}>{showServer ? '收起服务器地址' : '服务器地址'}</Text>
         </Pressable>
+        <Text style={styles.credit}>诵经录音来自 Wikimedia Commons：灵隐寺僧众诵经（LouiseBrown1981，CC BY-SA 3.0）、心经（Nyarlathotep1001，CC0）</Text>
         {showServer && (
           <TextInput testID="gate.server" style={[styles.input, styles.inputSmall]} value={server} onChangeText={setServer}
             autoCapitalize="none" autoCorrect={false} keyboardType="url" accessibilityLabel="服务器地址" />
@@ -84,5 +85,6 @@ const styles = StyleSheet.create({
   button: { width: '100%', height: 50, borderRadius: 12, backgroundColor: C.vermilion, alignItems: 'center', justifyContent: 'center' },
   pressed: { opacity: 0.8 },
   buttonText: { color: C.paper, fontSize: 18, fontWeight: '600', letterSpacing: 4 },
+  credit: { color: C.inkSoft, fontSize: 11, textAlign: 'center', lineHeight: 16 },
   link: { color: C.inkSoft, fontSize: 13, textDecorationLine: 'underline' },
 });

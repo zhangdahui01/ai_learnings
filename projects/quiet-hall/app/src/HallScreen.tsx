@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, HallError, type HallSnapshot, type Session } from './api';
 import { MonkFigure } from './MonkFigure';
-import { playBell, playKnock, setChanting, soundStatus, soundSupported } from './sound';
+import { playBell, playKnock, setChanting, soundStatus, soundSupported, TRACKS } from './sound';
 import { HallScene } from './three/HallScene';
 import { useOrbit, type Orbit } from './three/orbit';
 import { Canvas } from './three/r3f';
@@ -11,7 +11,7 @@ import { C, clock } from './theme';
 const POLL_MS = 2000;
 // Where you stand to look at the hall: behind your cushion, from the side, or from the altar looking back.
 const VIEWS: { label: string; orbit: Orbit }[] = [
-  { label: '身后', orbit: { yaw: 0.5, pitch: 0.3, dist: 13 } },
+  { label: '身后', orbit: { yaw: 0.55, pitch: 0.34, dist: 9.5 } },
   { label: '侧面', orbit: { yaw: 1.45, pitch: 0.22, dist: 14 } },
   { label: '佛前', orbit: { yaw: 2.9, pitch: 0.28, dist: 12 } },
   { label: '高处', orbit: { yaw: 0.15, pitch: 0.75, dist: 26 } },
@@ -24,7 +24,9 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const [notice, setNotice] = useState('');
   const [offline, setOffline] = useState(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const [chant, setChant] = useState(soundSupported);
+  const [track, setTrack] = useState(soundSupported && TRACKS.length ? 0 : -1);       // -1 = chanting off
+  const [knockTick, setKnockTick] = useState(0);
+  const rise = useRef(new Animated.Value(0)).current;
   const [knocks, setKnocks] = useState(0);            // knocks not yet sent to the hall
   const pendingKnocks = useRef(0);
   const [view, setView] = useState(0);
@@ -61,14 +63,18 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
     catch (e) { say(e instanceof HallError ? e.message : '没有成功，请再试一次'); }
   }, [refresh, say]);
 
-  useEffect(() => { setChanting(chant); return () => setChanting(false); }, [chant]);
+  useEffect(() => { setChanting(track >= 0 ? TRACKS[track].id : null); }, [track]);
+  useEffect(() => () => setChanting(null), []);
+  const nextTrack = useCallback(() => {
+    setTrack(t => { const n = t + 1 >= TRACKS.length ? -1 : t + 1; if (n >= 0) say(TRACKS[n].credit); return n; });
+  }, [say]);
   // A page restored without a tap (reload, coming back later) is not allowed to make sound yet: say so.
   const [blocked, setBlocked] = useState(false);
   useEffect(() => {
     if (!soundSupported) return;
-    const check = setInterval(() => setBlocked(chant && soundStatus().state !== 'running'), 1000);
+    const check = setInterval(() => setBlocked(track >= 0 && soundStatus().state === 'blocked'), 1000);
     return () => clearInterval(check);
-  }, [chant]);
+  }, [track]);
 
   // The wooden fish answers at once. Knocks are sent as a batch shortly after the last one, so a burst
   // is one request, and nothing waits long enough to be lost when the page is closed or reloaded.
@@ -91,11 +97,14 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   }, [session]);
   const knock = useCallback(() => {
     playKnock();
+    setKnockTick(t => t + 1);                         // swings the mallet in the hall
+    rise.setValue(0);
+    Animated.timing(rise, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== 'web' }).start();
     pendingKnocks.current += 1;
     setKnocks(pendingKnocks.current + inFlight.current);
     if (flushTimer.current) clearTimeout(flushTimer.current);
     flushTimer.current = setTimeout(flushKnocks, 400);
-  }, [flushKnocks]);
+  }, [flushKnocks, rise]);
   useEffect(() => {                                              // leaving the hall or closing the page sends what is left
     const onHide = () => { flushKnocks(); };
     if (Platform.OS === 'web') window.addEventListener('pagehide', onHide);
@@ -127,14 +136,14 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
       <View testID="hall.scene" style={styles.stage} {...handlers}
         {...(Platform.OS === 'web' ? { onWheel: (e: { deltaY: number }) => zoom(e.deltaY > 0 ? 1.1 : 0.9) } : {})}>
         <Canvas style={styles.canvas} dpr={[1, 2]} camera={{ fov: 58, near: 0.1, far: 220, position: [6, 5, 14] }}>
-          <HallScene monks={hall.monks} seats={hall.seats} meHandle={me.handle} orbit={orbit}
+          <HallScene monks={hall.monks} seats={hall.seats} meHandle={me.handle} orbit={orbit} knockTick={knockTick} onKnock={knock}
             onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
         </Canvas>
         <View style={styles.viewBar} pointerEvents="box-none">
-          {soundSupported && (
-            <Pressable testID="hall.sound" onPress={() => setChant(c => !c)} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
-              accessibilityRole="switch" accessibilityState={{ checked: chant }} accessibilityLabel="诵经声">
-              <Text style={styles.chipText}>诵经 · {chant ? '开' : '关'}</Text>
+          {soundSupported && TRACKS.length > 0 && (
+            <Pressable testID="hall.sound" onPress={nextTrack} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+              accessibilityRole="button" accessibilityLabel={`诵经声，当前${track >= 0 ? TRACKS[track].title : '关闭'}，点按切换`}>
+              <Text style={styles.chipText}>诵经 · {track >= 0 ? TRACKS[track].title : '关'}</Text>
             </Pressable>
           )}
           <Pressable testID="hall.view" onPress={nextView} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
@@ -146,8 +155,13 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           <Pressable testID="hall.zoom.out" onPress={() => zoom(1.25)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
             accessibilityRole="button" accessibilityLabel="拉远"><Text style={styles.chipText}>－</Text></Pressable>
         </View>
+        <Animated.Text testID="hall.merit.rise" pointerEvents="none" style={[styles.rise, {
+          opacity: rise.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0] }),
+          transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [0, -70] }) }] }]}>
+          功德 +1
+        </Animated.Text>
         <Text testID="hall.hint" style={styles.hint} pointerEvents="none">
-          {blocked ? '点一下屏幕，开启诵经声' : '拖动环顾大殿 · 点一位和尚向他合十'}
+          {blocked ? '点一下屏幕，开启诵经声' : '拖动环顾大殿 · 点木鱼敲一下 · 点和尚向他合十'}
         </Text>
       </View>
 
@@ -210,6 +224,7 @@ const styles = StyleSheet.create({
   chip: { height: 44, paddingHorizontal: 12, borderRadius: 22, backgroundColor: '#2a1f18cc', borderWidth: 1, borderColor: '#c9a24a88', alignItems: 'center', justifyContent: 'center' },
   chipRound: { width: 44, paddingHorizontal: 0 },
   chipText: { color: '#f3ead9', fontSize: 14 },
+  rise: { position: 'absolute', left: 0, right: 0, bottom: 96, textAlign: 'center', color: '#ffd978', fontSize: 22, fontWeight: '700' },
   hint: { position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', color: '#f3ead9aa', fontSize: 12 },
   loading: { flex: 1, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' },
   header: { backgroundColor: C.wood, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 20, alignItems: 'center', gap: 4 },

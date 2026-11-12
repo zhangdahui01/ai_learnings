@@ -15,8 +15,8 @@ quiet-hall/
 - Every visit draws a random ID. The dharma name, gender and look are derived from it; you stay that monk until you leave the temple.
 - An ID belongs to whoever used it first (a token is kept in the app). Nobody else can enter with it.
 - Sitting time counts while you sit and is kept when you stand or leave. A monk who goes silent for 90 seconds leaves the hall and frees the cushion.
-- Sound: chanting on one note, a wooden fish keeping the beat and a bell are synthesized in the browser (no recording is used). The web build has sound; native builds are silent for now.
-- Wooden fish: each knock adds one merit. Knocks are sent in batches (at most 60 per batch) and are delivered even when the page is closing.
+- Sound: chanting is two openly licensed recordings from Wikimedia Commons, monks at Lingyin Temple (CC BY-SA 3.0) and a Mandarin Heart Sutra (CC0); credits are in `app/public/audio/CREDITS.md` and on the gate screen. The wooden fish and bell strokes are synthesized. The web build has sound; native builds are silent for now.
+- Wooden fish: it sits beside your cushion. Tap it (or the button) and the mallet strikes, it sounds, and you gain one merit. Knocks are sent in batches (at most 60 per batch) and are delivered even when the page is closing.
 - The hall grows: there are always spare cushions past the last occupied one.
 - `--residents N` seats N resident monks so the hall is never empty. They are marked as residents in the API.
 

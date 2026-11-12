@@ -139,6 +139,37 @@ function Altar({ z }: { z: number }) {
   );
 }
 
+/** The wooden fish beside your cushion. Each knock swings the mallet down and makes the fish jump. */
+function WoodenFish({ position, tick, onKnock }: { position: [number, number, number]; tick: number; onKnock: () => void }) {
+  const mallet = useRef<THREE.Group>(null);
+  const fish = useRef<THREE.Group>(null);
+  const struck = useRef(-10);
+  const seen = useRef(tick);
+  useFrame(({ clock }) => {
+    if (tick !== seen.current) { seen.current = tick; struck.current = clock.elapsedTime; }
+    const dt = clock.elapsedTime - struck.current;
+    // 0-0.09 s: the mallet comes down; then it lifts back over 0.3 s
+    const down = dt < 0.09 ? dt / 0.09 : Math.max(0, 1 - (dt - 0.09) / 0.3);
+    if (mallet.current) mallet.current.rotation.z = -0.95 + down * 0.8;
+    const hop = dt > 0.07 && dt < 0.4 ? Math.sin(((dt - 0.07) / 0.33) * Math.PI) : 0;
+    if (fish.current) { fish.current.position.y = 0.3 + hop * 0.07; fish.current.scale.setScalar(1 + hop * 0.06); }
+  });
+  return (
+    <group position={position} scale={1.45} onClick={e => { e.stopPropagation(); onKnock(); }}>
+      <mesh position={[0, 0.07, 0]}><cylinderGeometry args={[0.36, 0.4, 0.14, 20]} /><meshStandardMaterial color="#c9a24a" roughness={0.8} /></mesh>
+      <group ref={fish} position={[0, 0.3, 0]}>
+        <mesh scale={[1.15, 0.85, 0.95]}><sphereGeometry args={[0.27, 20, 16]} /><meshStandardMaterial color="#8a3b22" roughness={0.35} metalness={0.1} /></mesh>
+        <mesh position={[0, -0.04, -0.245]} scale={[1, 0.22, 0.3]}><sphereGeometry args={[0.16, 12, 8]} /><meshStandardMaterial color="#2a120a" roughness={0.8} /></mesh>
+        <mesh position={[0, 0.2, 0.06]} rotation={[0.3, 0, 0]}><torusGeometry args={[0.09, 0.03, 8, 16, Math.PI]} /><meshStandardMaterial color="#d9a441" metalness={0.5} roughness={0.4} /></mesh>
+      </group>
+      <group ref={mallet} position={[0.62, 0.42, 0]} rotation={[0, 0, -0.95]}>
+        <mesh position={[-0.3, 0, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.022, 0.026, 0.6, 8]} /><meshStandardMaterial color="#5b3d28" roughness={0.7} /></mesh>
+        <mesh position={[-0.6, 0, 0]}><sphereGeometry args={[0.075, 12, 10]} /><meshStandardMaterial color="#e9dcc0" roughness={0.9} /></mesh>
+      </group>
+    </group>
+  );
+}
+
 function CameraRig({ orbit, target, bounds }: { orbit: React.RefObject<Orbit>; target: [number, number, number]; bounds: { x: number; z0: number; z1: number } }) {
   const { camera } = useThree();
   const look = useRef(new THREE.Vector3(...target));
@@ -156,8 +187,9 @@ function CameraRig({ orbit, target, bounds }: { orbit: React.RefObject<Orbit>; t
   return null;
 }
 
-export function HallScene({ monks, seats, meHandle, orbit, onBow }: {
+export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onKnock }: {
   monks: Monk[]; seats: number; meHandle: string; orbit: React.RefObject<Orbit>; onBow: (m: Monk) => void;
+  knockTick: number; onKnock: () => void;
 }) {
   const { width: W, depth: D, front } = hallSize(seats);
   const taken = useMemo(() => new Set(monks.map(m => m.seat ?? -1)), [monks]);
@@ -215,6 +247,7 @@ export function HallScene({ monks, seats, meHandle, orbit, onBow }: {
         <Monk3D key={m.handle} monk={m} position={seatPosition(m.seat as number, seats)} me={m.handle === meHandle}
           onPress={m.handle === meHandle ? undefined : onBow} />
       ))}
+      {me && me.seat !== null && <WoodenFish position={[mine[0] + 0.86, 0, mine[2] - 0.5]} tick={knockTick} onKnock={onKnock} />}
       <CameraRig orbit={orbit} target={[mine[0] * 0.55, 1.5, mine[2] - 2.5]} bounds={{ x: px - 1.3, z0: front + 8.6, z1: D / 2 - 0.9 }} />
     </>
   );
