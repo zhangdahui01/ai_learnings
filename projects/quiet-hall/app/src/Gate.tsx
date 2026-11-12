@@ -1,21 +1,9 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import Svg, { Path, Rect } from 'react-native-svg';
+import { Canvas } from './three/r3f';
+import { TempleScene } from './three/TempleScene';
 import { api, HallError, type Session } from './api';
 import { C } from './theme';
-
-function TempleGate() {
-  return (
-    <Svg width={220} height={130} viewBox="0 0 220 130">
-      <Path d="M10 46 Q110 8 210 46 L196 54 Q110 28 24 54 Z" fill={C.wood} />
-      <Path d="M30 62 Q110 40 190 62 L180 69 Q110 52 40 69 Z" fill={C.woodSoft} />
-      <Rect x={52} y={68} width={12} height={58} fill={C.vermilion} />
-      <Rect x={156} y={68} width={12} height={58} fill={C.vermilion} />
-      <Rect x={84} y={74} width={52} height={20} rx={3} fill={C.wood} />
-      <Rect x={40} y={124} width={140} height={5} fill={C.woodSoft} />
-    </Svg>
-  );
-}
 
 export function Gate({ initialServer, onEnter }: { initialServer: string; onEnter: (s: Session) => void }) {
   const [handle, setHandle] = useState('');
@@ -42,8 +30,12 @@ export function Gate({ initialServer, onEnter }: { initialServer: string; onEnte
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <View style={styles.scene} pointerEvents="none">
+        <Canvas style={styles.canvas} dpr={[1, 2]} camera={{ fov: 50, near: 0.1, far: 260, position: [0, 4.3, 27] }}>
+          <TempleScene />
+        </Canvas>
+      </View>
       <View style={styles.card}>
-        <TempleGate />
         <Text style={styles.title} accessibilityRole="header">静堂</Text>
         <Text style={styles.sub}>取一个 ID，入寺，在大殿里安静地坐一会儿。</Text>
         <TextInput
@@ -68,9 +60,12 @@ export function Gate({ initialServer, onEnter }: { initialServer: string; onEnte
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  card: { width: '100%', maxWidth: 380, alignItems: 'center', gap: 14 },
-  title: { fontSize: 40, fontWeight: '700', color: C.wood, letterSpacing: 8 },
+  root: { flex: 1, backgroundColor: '#f1d9b0', alignItems: 'center', justifyContent: 'flex-end' },
+  scene: { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 },
+  canvas: { flex: 1 },
+  card: { width: '100%', maxWidth: 460, alignItems: 'center', gap: 12, paddingHorizontal: 24, paddingTop: 20, paddingBottom: 28,
+          backgroundColor: '#f3ead9ee', borderTopLeftRadius: 24, borderTopRightRadius: 24 },
+  title: { fontSize: 34, fontWeight: '700', color: C.wood, letterSpacing: 8 },
   sub: { fontSize: 15, color: C.inkSoft, textAlign: 'center', lineHeight: 22 },
   input: { width: '100%', height: 50, borderRadius: 12, borderWidth: 1, borderColor: C.line, backgroundColor: '#fffaf0',
            paddingHorizontal: 16, fontSize: 17, color: C.ink },

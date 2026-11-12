@@ -1,10 +1,20 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
-import { api, HallError, type HallSnapshot, type Monk, type Session } from './api';
-import { EmptyCushion, MonkFigure } from './MonkFigure';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { api, HallError, type HallSnapshot, type Session } from './api';
+import { MonkFigure } from './MonkFigure';
+import { HallScene } from './three/HallScene';
+import { useOrbit, type Orbit } from './three/orbit';
+import { Canvas } from './three/r3f';
 import { C, clock } from './theme';
 
 const POLL_MS = 2000;
+// Where you stand to look at the hall: behind your cushion, from the side, or from the altar looking back.
+const VIEWS: { label: string; orbit: Orbit }[] = [
+  { label: '身后', orbit: { yaw: 0.5, pitch: 0.3, dist: 13 } },
+  { label: '侧面', orbit: { yaw: 1.45, pitch: 0.22, dist: 14 } },
+  { label: '佛前', orbit: { yaw: 2.9, pitch: 0.28, dist: 12 } },
+  { label: '高处', orbit: { yaw: 0.15, pitch: 0.75, dist: 26 } },
+];
 
 export function HallScreen({ session, onLeft }: { session: Session; onLeft: () => void }) {
   const [hall, setHall] = useState<HallSnapshot | null>(null);
@@ -13,9 +23,11 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const [notice, setNotice] = useState('');
   const [offline, setOffline] = useState(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { width } = useWindowDimensions();
-  const columns = width >= 700 ? 8 : width >= 480 ? 6 : 5;
-  const cell = Math.floor(Math.min(width, 900) / columns);
+  const [view, setView] = useState(0);
+  const { orbit, handlers, zoom } = useOrbit(VIEWS[0].orbit);
+  const nextView = useCallback(() => {
+    setView(v => { const n = (v + 1) % VIEWS.length; Object.assign(orbit.current, VIEWS[n].orbit); return n; });
+  }, [orbit]);
 
   const say = useCallback((text: string) => {
     setNotice(text);
@@ -48,12 +60,6 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const me = hall?.me ?? null;
   const drift = me?.sitting ? Math.floor((Date.now() - fetchedAt) / 1000) : 0;   // seconds since the last poll
   void tick;
-  const seats = useMemo(() => {
-    const bySeat = new Map<number, Monk>();
-    for (const m of hall?.monks ?? []) if (m.seat !== null) bySeat.set(m.seat, m);
-    return Array.from({ length: hall?.seats ?? 0 }, (_, seat) => ({ seat, monk: bySeat.get(seat) ?? null }));
-  }, [hall]);
-
   if (!hall || !me) {
     return <View style={styles.loading}><Text testID="hall.loading" style={styles.muted}>{offline ? '连不上大殿，正在重试…' : '正在入殿…'}</Text></View>;
   }
@@ -73,24 +79,24 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         {offline && <Text testID="hall.offline" style={styles.offline}>网络不稳，显示的是刚才的大殿</Text>}
       </View>
 
-      <FlatList
-        testID="hall.seats" data={seats} key={columns} numColumns={columns} keyExtractor={item => String(item.seat)}
-        contentContainerStyle={styles.floor} initialNumToRender={columns * 8} windowSize={7}
-        renderItem={({ item }) => {
-          const m = item.monk;
-          const mine = !!m && m.handle === me.handle;
-          const figure = Math.min(cell - 10, 72);
-          if (!m) return <View testID={`hall.seat.${item.seat}`} style={[styles.cell, { width: cell }]}><EmptyCushion size={figure} /></View>;
-          return (
-            <Pressable testID={`hall.monk.${m.handle}`} disabled={mine} style={[styles.cell, { width: cell }]}
-              onPress={() => act(() => api.bow(session, m.handle), `向${m.name}合十`)}
-              accessibilityRole="button" accessibilityLabel={`${m.name}，${m.sitting ? '静坐中' : '站立'}${mine ? '，这是你' : '，点按合十'}`}>
-              <MonkFigure monk={m} size={figure} me={mine} />
-              <Text style={[styles.name, mine && styles.nameMe]} numberOfLines={1}>{m.name}</Text>
-            </Pressable>
-          );
-        }}
-      />
+      <View testID="hall.scene" style={styles.stage} {...handlers}
+        {...(Platform.OS === 'web' ? { onWheel: (e: { deltaY: number }) => zoom(e.deltaY > 0 ? 1.1 : 0.9) } : {})}>
+        <Canvas style={styles.canvas} dpr={[1, 2]} camera={{ fov: 58, near: 0.1, far: 220, position: [6, 5, 14] }}>
+          <HallScene monks={hall.monks} seats={hall.seats} meHandle={me.handle} orbit={orbit}
+            onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
+        </Canvas>
+        <View style={styles.viewBar} pointerEvents="box-none">
+          <Pressable testID="hall.view" onPress={nextView} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+            accessibilityRole="button" accessibilityLabel={`切换视角，当前${VIEWS[view].label}`}>
+            <Text style={styles.chipText}>视角 · {VIEWS[view].label}</Text>
+          </Pressable>
+          <Pressable testID="hall.zoom.in" onPress={() => zoom(0.8)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
+            accessibilityRole="button" accessibilityLabel="靠近"><Text style={styles.chipText}>＋</Text></Pressable>
+          <Pressable testID="hall.zoom.out" onPress={() => zoom(1.25)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
+            accessibilityRole="button" accessibilityLabel="拉远"><Text style={styles.chipText}>－</Text></Pressable>
+        </View>
+        <Text style={styles.hint} pointerEvents="none">拖动环顾大殿 · 点一位和尚向他合十</Text>
+      </View>
 
       {!!notice && <View style={styles.toast} pointerEvents="none"><Text testID="hall.notice" style={styles.toastText}>{notice}</Text></View>}
 
@@ -139,7 +145,14 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: C.floor },
+  root: { flex: 1, backgroundColor: '#1c120c' },
+  stage: { flex: 1, minHeight: 200 },
+  canvas: { flex: 1 },
+  viewBar: { position: 'absolute', top: 10, right: 10, flexDirection: 'row', gap: 8 },
+  chip: { height: 44, paddingHorizontal: 14, borderRadius: 22, backgroundColor: '#2a1f18cc', borderWidth: 1, borderColor: '#c9a24a88', alignItems: 'center', justifyContent: 'center' },
+  chipRound: { width: 44, paddingHorizontal: 0 },
+  chipText: { color: '#f3ead9', fontSize: 14 },
+  hint: { position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', color: '#f3ead9aa', fontSize: 12 },
   loading: { flex: 1, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' },
   header: { backgroundColor: C.wood, paddingTop: 14, paddingBottom: 12, paddingHorizontal: 20, alignItems: 'center', gap: 4 },
   title: { color: C.gold, fontSize: 22, fontWeight: '700', letterSpacing: 10 },
@@ -148,10 +161,6 @@ const styles = StyleSheet.create({
   count: { color: '#e9dcc3', fontSize: 14 },
   countNum: { color: '#fff', fontWeight: '700', fontVariant: ['tabular-nums'] },
   offline: { color: '#f2c9a0', fontSize: 12 },
-  floor: { paddingVertical: 14, alignItems: 'center' },
-  cell: { alignItems: 'center', paddingVertical: 6, minHeight: 44 },
-  name: { fontSize: 12, color: C.wood, marginTop: -2 },
-  nameMe: { fontWeight: '700', color: C.vermilion },
   toast: { position: 'absolute', left: 0, right: 0, bottom: 176, alignItems: 'center' },
   toastText: { backgroundColor: '#2a1f18dd', color: C.paper, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18, fontSize: 14, overflow: 'hidden' },
   panel: { backgroundColor: C.paper, borderTopWidth: 1, borderTopColor: C.line, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18, gap: 12 },
