@@ -16,7 +16,11 @@ const PORT = 8787;
 /** Where the hall server is, when nobody has typed an address: the machine this app was served or built from. */
 export function defaultServer(): string {
   if (process.env.EXPO_PUBLIC_HALL_URL) return process.env.EXPO_PUBLIC_HALL_URL;
-  if (Platform.OS === 'web' && typeof location !== 'undefined') return `${location.protocol}//${location.hostname}:${PORT}`;
+  if (Platform.OS === 'web' && typeof location !== 'undefined') {
+    // deployed: the API is served from the same origin. Local: the hall server runs beside the page on its own port.
+    const local = ['localhost', '127.0.0.1'].includes(location.hostname) || /^(10|192\.168|172\.(1[6-9]|2\d|3[01]))\./.test(location.hostname);
+    return local ? `${location.protocol}//${location.hostname}:${PORT}` : location.origin;
+  }
   const devHost = Constants.expoConfig?.hostUri?.split(':')[0];          // the Mac running `expo start`
   if (devHost && devHost !== 'localhost' && devHost !== '127.0.0.1') return `http://${devHost}:${PORT}`;
   return Platform.OS === 'android' ? `http://10.0.2.2:${PORT}` : `http://localhost:${PORT}`;   // emulator -> host loopback

@@ -1,0 +1,7 @@
+{
+  "framework": null,
+  "installCommand": "cd app && npm ci",
+  "buildCommand": "cd app && npx expo export -p web --output-dir ../public",
+  "outputDirectory": "public",
+  "rewrites": [{ "source": "/((?!api/).*)", "destination": "/index.html" }]
+}
