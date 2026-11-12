@@ -2,9 +2,9 @@
 Feature: Quiet Hall
   Service: quiet-hall   Journeys: enter, sit, bow
 
-  Scenario: A visitor takes an ID and enters the hall as a monk
+  Scenario: A visitor enters the temple and becomes a monk
     Given the temple gate is open
-    When the visitor enters with a new ID
+    When the visitor enters the temple
     Then the hall shows the visitor's monk with a dharma name
     And the monk is not sitting yet and the timer shows "00:00"
     And the hall counts at least 1 monk present

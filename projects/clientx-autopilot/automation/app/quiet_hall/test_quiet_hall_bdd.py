@@ -2,7 +2,7 @@ import re
 
 from pytest_bdd import given, parsers, scenarios, then, when
 
-from clientx_app.pages.hall import GatePage, HallPage, new_id
+from clientx_app.pages.hall import HallPage
 
 scenarios("quiet_hall.feature")
 
@@ -12,14 +12,14 @@ def gate_open(gate):
     return gate
 
 
-@when("the visitor enters with a new ID", target_fixture="hall")
+@when("the visitor enters the temple", target_fixture="hall")
 def enter(gate_page):
-    return gate_page.enter_as(new_id()).loaded()
+    return gate_page.enter().loaded()
 
 
 @given("a monk who has entered the hall", target_fixture="hall")
 def entered(gate):
-    hall = gate.enter_as(new_id()).loaded()
+    hall = gate.enter().loaded()
     hall.expect_text(HallPage.STATE, "未入坐")
     return hall
 

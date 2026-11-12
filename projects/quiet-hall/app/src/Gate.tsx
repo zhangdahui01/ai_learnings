@@ -5,21 +5,33 @@ import { TempleScene } from './three/TempleScene';
 import { api, HallError, type Session } from './api';
 import { C } from './theme';
 
+/** A fresh ID for every visit: nobody has to think of one, and it decides which monk you are. */
+function randomId(): string {
+  const letters = 'abcdefghjkmnpqrstuvwxyz23456789';
+  let id = 'm';
+  for (let i = 0; i < 9; i += 1) id += letters[Math.floor(Math.random() * letters.length)];
+  return id;
+}
+
 export function Gate({ initialServer, onEnter }: { initialServer: string; onEnter: (s: Session) => void }) {
-  const [handle, setHandle] = useState('');
   const [server, setServer] = useState(initialServer);
   const [showServer, setShowServer] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const ready = handle.trim().length >= 2 && !busy;
 
   async function enter() {
-    if (!ready) return;
+    if (busy) return;
     setBusy(true); setError('');
     try {
-      const name = handle.trim();
-      const joined = await api.join(server.trim(), name);
-      onEnter({ server: server.trim(), handle: joined.me.handle, token: joined.token });
+      for (let attempt = 0; ; attempt += 1) {
+        try {
+          const joined = await api.join(server.trim(), randomId());
+          onEnter({ server: server.trim(), handle: joined.me.handle, token: joined.token });
+          return;
+        } catch (e) {
+          if (!(e instanceof HallError && e.status === 409 && attempt < 3)) throw e;    // that ID exists: draw another
+        }
+      }
     } catch (e) {
       setError(e instanceof HallError ? e.message : '入寺失败，请再试一次');
       if (e instanceof HallError && e.status === 0) setShowServer(true);
@@ -37,14 +49,10 @@ export function Gate({ initialServer, onEnter }: { initialServer: string; onEnte
       </View>
       <View style={styles.card}>
         <Text style={styles.title} accessibilityRole="header">静堂</Text>
-        <Text style={styles.sub}>取一个 ID，入寺，在大殿里安静地坐一会儿。</Text>
-        <TextInput
-          testID="gate.handle" style={styles.input} value={handle} onChangeText={setHandle}
-          placeholder="修行 ID（2–16 位）" placeholderTextColor={C.inkSoft} autoCapitalize="none" autoCorrect={false}
-          maxLength={16} returnKeyType="go" onSubmitEditing={enter} accessibilityLabel="修行 ID" />
+        <Text style={styles.sub}>入寺后你会成为一位小和尚，在大殿里安静地坐一会儿。</Text>
         {!!error && <Text testID="gate.error" style={styles.error} accessibilityRole="alert">{error}</Text>}
-        <Pressable testID="gate.enter" onPress={enter} disabled={!ready} accessibilityRole="button" accessibilityLabel="入寺"
-          accessibilityState={{ disabled: !ready }} style={({ pressed }) => [styles.button, !ready && styles.buttonOff, pressed && styles.pressed]}>
+        <Pressable testID="gate.enter" onPress={enter} disabled={busy} accessibilityRole="button" accessibilityLabel="入寺"
+          accessibilityState={{ disabled: busy }} style={({ pressed }) => [styles.button, pressed && styles.pressed]}>
           {busy ? <ActivityIndicator color={C.paper} /> : <Text style={styles.buttonText}>入寺</Text>}
         </Pressable>
         <Pressable testID="gate.server.toggle" onPress={() => setShowServer(v => !v)} accessibilityRole="button" hitSlop={8}>
@@ -72,7 +80,6 @@ const styles = StyleSheet.create({
   inputSmall: { height: 42, fontSize: 14 },
   error: { color: C.vermilion, fontSize: 14, textAlign: 'center' },
   button: { width: '100%', height: 50, borderRadius: 12, backgroundColor: C.vermilion, alignItems: 'center', justifyContent: 'center' },
-  buttonOff: { opacity: 0.45 },
   pressed: { opacity: 0.8 },
   buttonText: { color: C.paper, fontSize: 18, fontWeight: '600', letterSpacing: 4 },
   link: { color: C.inkSoft, fontSize: 13, textDecorationLine: 'underline' },

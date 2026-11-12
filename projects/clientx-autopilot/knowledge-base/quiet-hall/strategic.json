@@ -2,8 +2,8 @@
   "service": "quiet-hall",
   "layer": "strategic",
   "business_rules": [
-    "One ID is one monk: the look and dharma name are derived from the ID and never change.",
-    "An ID belongs to whoever holds its token; nobody else can enter with it.",
+    "Every visit draws a random ID; the monk's look and dharma name are derived from it. Leaving the temple ends that identity.",
+    "An ID belongs to whoever holds its token; the server refuses anyone else (covered by the server tests, not reachable from the UI).",
     "Sitting time counts only while the monk sits and is kept when the monk stands or leaves.",
     "There is no chat. The only interaction is a bow."
   ],
@@ -14,7 +14,7 @@
     "journeys": [
       {
         "id": "enter",
-        "name": "Take an ID and enter the hall",
+        "name": "Enter the temple as a monk",
         "priority": "P0",
         "code_paths": [
           "server/hall.mjs",
@@ -24,8 +24,7 @@
           "app/App.tsx"
         ],
         "specs": [
-          "specs/hall-enter.md",
-          "specs/hall-id-taken.md"
+          "specs/hall-enter.md"
         ],
         "cases": [
           {
@@ -35,17 +34,6 @@
             "asserts": 4,
             "run": {
               "spec": "hall-enter",
-              "config": "playwright.hall.config.ts",
-              "dir": "tests-hall"
-            }
-          },
-          {
-            "id": "web_hall_id_taken",
-            "stack": "web",
-            "state": "gated",
-            "asserts": 3,
-            "run": {
-              "spec": "hall-id-taken",
               "config": "playwright.hall.config.ts",
               "dir": "tests-hall"
             }

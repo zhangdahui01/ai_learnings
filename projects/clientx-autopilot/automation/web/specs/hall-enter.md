@@ -1,18 +1,18 @@
 ---
 id: hall-enter
-title: A visitor takes an ID and enters the hall as a monk
+title: A visitor enters the temple and becomes a monk
 service: quiet-hall
 journey: enter
 tags: @gated @P0 @progression
 ---
 
-# A visitor takes an ID and enters the hall as a monk
+# A visitor enters the temple and becomes a monk
 
 ## Given
 - the temple gate is open
 
 ## When
-- the visitor enters with a new ID
+- the visitor enters the temple
 
 ## Then
 - the hall shows the visitor's monk with a dharma name

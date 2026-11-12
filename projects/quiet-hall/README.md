@@ -1,6 +1,6 @@
 # 静堂 Quiet Hall
 
-A shared meditation hall. Take an ID at the temple gate, enter as a little monk, sit on a cushion and let the time count. Everyone in the hall sees everyone else. There is no chat; the only interaction is a bow.
+A shared meditation hall. Tap Enter at the temple gate and you become a little monk (a random ID is drawn for every visit), sit on a cushion and let the time count. Everyone in the hall sees everyone else. There is no chat; the only interaction is a bow.
 
 It is an original app in the "online temple" genre, built as the sample app under test for [`clientx-autopilot`](../clientx-autopilot/README.md): one React Native codebase for Android, iOS and the web, with a `testID` on every element a test needs.
 
@@ -12,7 +12,7 @@ quiet-hall/
 
 ## Rules of the hall
 
-- One ID is one monk. The dharma name, gender and look are derived from the ID, so you are always the same monk.
+- Every visit draws a random ID. The dharma name, gender and look are derived from it; you stay that monk until you leave the temple.
 - An ID belongs to whoever used it first (a token is kept in the app). Nobody else can enter with it.
 - Sitting time counts while you sit and is kept when you stand or leave. A monk who goes silent for 90 seconds leaves the hall and frees the cushion.
 - The hall grows: there are always spare cushions past the last occupied one.

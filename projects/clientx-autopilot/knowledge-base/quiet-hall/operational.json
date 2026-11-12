@@ -2,10 +2,6 @@
   "service": "quiet-hall",
   "layer": "operational",
   "selectors": {
-    "gate.handle": {
-      "selector": "testid=gate.handle",
-      "source": "baseline"
-    },
     "gate.enter": {
       "selector": "testid=gate.enter",
       "source": "baseline"
@@ -57,14 +53,17 @@
     "hall.notice": {
       "selector": "testid=hall.notice",
       "source": "baseline"
+    },
+    "hall.me.handle": {
+      "selector": "testid=hall.me.handle",
+      "source": "baseline"
     }
   },
   "auth_flows": {
-    "visitor": "no account: type an unused ID at the gate; the token is kept in app storage"
+    "visitor": "no account and nothing to type: tapping Enter draws a random ID; the token is kept in app storage until the visitor leaves"
   },
   "preconditions": {
-    "hall_server": "node projects/quiet-hall/server/server.mjs",
-    "unique_id": "IDs are owned once used: generate a fresh one per test"
+    "hall_server": "node projects/quiet-hall/server/server.mjs"
   },
   "environments": {
     "local": {

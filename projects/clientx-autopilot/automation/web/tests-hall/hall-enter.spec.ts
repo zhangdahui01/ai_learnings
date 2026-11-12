@@ -5,7 +5,7 @@ scenario('hall-enter', async ({ page, bdd }) => {
   const hall = new QuietHall(page);
 
   await bdd.Given('the temple gate is open', async () => { await hall.openGate(); });
-  await bdd.When('the visitor enters with a new ID', async () => { await hall.enterAs(QuietHall.newId()); });
+  await bdd.When('the visitor enters the temple', async () => { await hall.enter(); });
   await bdd.Then("the hall shows the visitor's monk with a dharma name", async () => {
     await expect(hall.myName()).toHaveText(/^[一-鿿]{2}$/);
   });

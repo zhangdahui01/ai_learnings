@@ -1,8 +1,6 @@
 """Page objects for the Quiet Hall sample app (projects/quiet-hall). Locators are the app's React Native testIDs."""
 from __future__ import annotations
 
-import time
-
 from .. import locators
 from ..locators import Loc
 from .base import Page
@@ -10,12 +8,7 @@ from .base import Page
 T = Loc.test_id
 
 
-def new_id(prefix: str = "t") -> str:
-    return f"{prefix}{int(time.time() * 1000):x}"[:16]
-
-
 class GatePage(Page):
-    HANDLE = T("gate.handle", "gate.handle")
     ENTER = T("gate.enter", "gate.enter")
     ERROR = T("gate.error", "gate.error")
     SERVER_TOGGLE = T("gate.server.toggle", "gate.server.toggle")
@@ -26,14 +19,15 @@ class GatePage(Page):
             self.tap(self.SERVER_TOGGLE)
         self.type(self.SERVER, url)
 
-    def enter_as(self, handle: str) -> "HallPage":
-        self.type(self.HANDLE, handle)
+    def enter(self) -> "HallPage":
+        """No ID to type: the app draws a random one for every visit."""
         self.tap(self.ENTER)
         return HallPage(self.driver)
 
 
 class HallPage(Page):
     NAME = T("hall.me.name", "hall.me.name")
+    HANDLE = T("hall.me.handle", "hall.me.handle")
     STATE = T("hall.me.state", "hall.me.state")
     TIMER = T("hall.me.timer", "hall.me.timer")
     TOTAL = T("hall.me.total", "hall.me.total")

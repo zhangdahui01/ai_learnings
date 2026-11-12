@@ -7,7 +7,7 @@ scenario('hall-sit', async ({ page, bdd }) => {
 
   await bdd.Given('a monk who has entered the hall', async () => {
     await hall.openGate();
-    await hall.enterAs(QuietHall.newId());
+    await hall.enter();
     await expect(hall.myState()).toHaveText('未入坐');
     sittingBefore = await hall.number('sitting');
   });
