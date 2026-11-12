@@ -1,5 +1,5 @@
 // Where the hall document lives when the server runs as stateless functions.
-// Supabase: two SQL functions guarded by a server-side secret (see deploy notes in README). Memory: local tests.
+// Supabase: two SQL functions over one row of a table that is otherwise closed (RLS on, no policies). Memory: local tests.
 const memory = { state: null, version: 0 };
 
 async function rpc(name, args) {
@@ -14,7 +14,7 @@ async function rpc(name, args) {
 
 export async function load() {
   if (!process.env.SUPABASE_URL) return { state: memory.state && structuredClone(memory.state), version: memory.version };
-  return rpc('quiet_hall_load', { p_secret: process.env.HALL_SECRET });
+  return rpc('quiet_hall_load', {});
 }
 
 /** Returns false when someone else wrote first: reload and apply the action again. */
@@ -24,5 +24,5 @@ export async function save(state, version) {
     memory.state = structuredClone(state); memory.version += 1;
     return true;
   }
-  return rpc('quiet_hall_save', { p_secret: process.env.HALL_SECRET, p_state: state, p_version: version });
+  return rpc('quiet_hall_save', { p_state: state, p_version: version });
 }

@@ -8,6 +8,9 @@ const ROBE = ['#b5651d', '#8a4b2a', '#c98a2b', '#6b6e5a', '#7d3c2c', '#a8722f', 
 export const AWAY_AFTER_MS = 90_000;      // no heartbeat for this long: the monk has left the hall
 export const HANDLE = /^[\p{L}\p{N}_-]{2,16}$/u;
 
+// Only a hash of each token is kept, so reading the stored hall does not let anyone enter as someone else.
+const digest = token => createHash('sha256').update(String(token)).digest('hex');
+
 function pick(list, n) { return list[n % list.length]; }
 
 // Everything about a monk's look comes from the handle, so the same person is always the same monk.
@@ -57,20 +60,22 @@ export class Hall {
     this.sweep();
     const key = handle.toLowerCase();
     let m = this.monks.get(key);
-    if (m && (m.resident || m.token !== token)) return { status: 409, error: '这个 ID 已有人在用，请换一个' };
+    if (m && (m.resident || !token || m.tokenHash !== digest(token))) return { status: 409, error: '这个 ID 已有人在用，请换一个' };
     if (!m) {
-      m = { handle, token: randomBytes(18).toString('hex'), ...monkFor(handle), seat: null, inHall: false,
+      token = randomBytes(18).toString('hex');
+      m = { handle, tokenHash: digest(token), ...monkFor(handle), seat: null, inHall: false,
             sitting: false, sitSince: null, totalSeconds: 0, bows: 0, joinedAt: this.now(), lastSeen: this.now() };
       this.monks.set(key, m);
     }
     if (!this.#present(m)) { m.seat = this.#freeSeat(); m.inHall = true; }
     m.lastSeen = this.now();
-    return { status: 200, token: m.token, me: this.view(m) };
+    return { status: 200, token, me: this.view(m) };
   }
 
   auth(token) {
     if (!token) return null;
-    for (const m of this.monks.values()) if (!m.resident && m.token === token) return m;
+    const hash = digest(token);
+    for (const m of this.monks.values()) if (!m.resident && m.tokenHash === hash) return m;
     return null;
   }
 
@@ -96,7 +101,7 @@ export class Hall {
     for (let i = 0; i < count; i += 1) {
       const handle = `resident-${i + 1}`;
       if (this.monks.has(handle)) continue;
-      this.monks.set(handle, { handle, token: null, resident: true, ...monkFor(handle), seat: null, inHall: true,
+      this.monks.set(handle, { handle, tokenHash: null, resident: true, ...monkFor(handle), seat: null, inHall: true,
                                sitting: true, sitSince: this.now(), totalSeconds: 0, bows: 0, joinedAt: this.now(), lastSeen: this.now() });
       this.monks.get(handle).seat = this.#freeSeat();
     }

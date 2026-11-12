@@ -36,16 +36,16 @@ test('sitting accumulates time; standing banks it', () => {
 
 test('a monk who stops sending heartbeats leaves, keeps their time and frees the cushion', () => {
   const { h, tick } = hall();
-  const a = h.auth(h.join('alice').token); h.join('bob');
+  const aliceToken = h.join('alice').token; const a = h.auth(aliceToken); const bobToken = h.join('bob').token;
   h.sit(a); tick(20_000); h.touch(a);          // alice's last heartbeat: 20 s into her sitting
-  const b = h.auth(h.join('bob', [...h.monks.values()][1].token).token);
+  const b = h.auth(h.join('bob', bobToken).token);
   tick(AWAY_AFTER_MS - 1000); h.touch(b);       // bob keeps checking in, alice has gone silent
   tick(2000); h.touch(b);
   const snap = h.snapshot();
   assert.deepEqual(snap.monks.map(m => m.handle), ['bob']);
   assert.equal(a.totalSeconds, 20);            // counted until the last heartbeat, not until the sweep
   assert.equal(h.join('carol').me.seat, 0);
-  assert.equal(h.join('alice', a.token).me.seat, 2);
+  assert.equal(h.join('alice', aliceToken).me.seat, 2);
 });
 
 test('bowing is the only interaction', () => {
@@ -66,9 +66,10 @@ test('residents fill the hall and cannot be impersonated', () => {
   assert.ok(h.snapshot().seats >= 60);
 });
 
-test('state survives a restart', () => {
+test('state survives a restart and holds no usable token', () => {
   const { h } = hall();
   const a = h.join('alice');
+  assert.ok(!JSON.stringify(h).includes(a.token));
   const again = new Hall({ state: JSON.parse(JSON.stringify(h)) });
   assert.equal(again.join('alice', a.token).status, 200);
 });
