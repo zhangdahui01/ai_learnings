@@ -48,7 +48,7 @@ class HallPage(Page):
     TRIALS = T("hall.me.trials", "hall.me.trials")
     SUMMON_DOG = T("hall.summon.dog", "hall.summon.dog")
     SUMMON_FAIRIES = T("hall.summon.fairies", "hall.summon.fairies")
-    TRIAL_TITLE = T("hall.trial.title", "hall.trial.title")
+    TRIAL_TITLE = T("hall.trial", "hall.trial")
     LEDGER = T("hall.ledger", "hall.ledger")
     LEDGER_PANEL = T("ledger.panel", "ledger.panel")
     LEDGER_CLOSE = T("ledger.close", "ledger.close")
