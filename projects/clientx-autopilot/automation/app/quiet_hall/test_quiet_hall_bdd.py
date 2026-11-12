@@ -76,3 +76,13 @@ def bow(hall):
 @then(parsers.parse('the hall confirms "{text}"'))
 def confirms(hall, text):
     hall.expect_text(HallPage.NOTICE, text)
+
+
+@when(parsers.parse("the monk knocks the wooden fish {times:d} times"))
+def knock(hall, times):
+    hall.knock(times)
+
+
+@then(parsers.parse("the merit shows {merit:d}"))
+def merit_shows(hall, merit):
+    hall.expect_text(HallPage.MERIT, str(merit))

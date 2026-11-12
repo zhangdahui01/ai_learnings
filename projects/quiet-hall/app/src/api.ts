@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 export interface Monk {
   handle: string; name: string; gender: 'm' | 'f';
   look: { skin: string; robe: string; face: number; beads: boolean };
-  seat: number | null; sitting: boolean; sittingSeconds: number; totalSeconds: number; bows: number; resident: boolean;
+  seat: number | null; sitting: boolean; sittingSeconds: number; totalSeconds: number; bows: number; merit: number; resident: boolean;
 }
 export interface HallSnapshot { now: number; present: number; sitting: number; seats: number; monks: Monk[]; me: Monk | null }
 export interface Session { server: string; handle: string; token: string }
@@ -30,13 +30,13 @@ export class HallError extends Error {
   constructor(message: string, public status: number) { super(message); }
 }
 
-async function call<T>(server: string, path: string, init: { method?: string; token?: string; body?: unknown } = {}): Promise<T> {
+async function call<T>(server: string, path: string, init: { method?: string; token?: string; body?: unknown; keepalive?: boolean } = {}): Promise<T> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), 8000);
   let res: Response;
   try {
     res = await fetch(`${server.replace(/\/+$/, '')}${path}`, {
-      method: init.method ?? 'GET', signal: controller.signal,
+      method: init.method ?? 'GET', signal: init.keepalive ? undefined : controller.signal, keepalive: init.keepalive,
       headers: { ...(init.body ? { 'content-type': 'application/json' } : {}), ...(init.token ? { authorization: `Bearer ${init.token}` } : {}) },
       body: init.body ? JSON.stringify(init.body) : undefined,
     });
@@ -57,6 +57,8 @@ export const api = {
   sit: (s: Session) => call<{ me: Monk }>(s.server, '/api/sit', { method: 'POST', token: s.token }),
   stand: (s: Session) => call<{ me: Monk }>(s.server, '/api/stand', { method: 'POST', token: s.token }),
   bow: (s: Session, to?: string) => call<{ bowedTo: number; me: Monk }>(s.server, '/api/bow', { method: 'POST', token: s.token, body: { to } }),
+  // keepalive: a batch sent while the page is closing still reaches the hall
+  knock: (s: Session, count: number) => call<{ me: Monk }>(s.server, '/api/knock', { method: 'POST', token: s.token, body: { count }, keepalive: true }),
   leave: (s: Session) => call<{ me: Monk }>(s.server, '/api/leave', { method: 'POST', token: s.token }),
 };
 

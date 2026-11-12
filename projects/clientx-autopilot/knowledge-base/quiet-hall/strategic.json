@@ -5,7 +5,8 @@
     "Every visit draws a random ID; the monk's look and dharma name are derived from it. Leaving the temple ends that identity.",
     "An ID belongs to whoever holds its token; the server refuses anyone else (covered by the server tests, not reachable from the UI).",
     "Sitting time counts only while the monk sits and is kept when the monk stands or leaves.",
-    "There is no chat. The only interaction is a bow."
+    "There is no chat. The only interaction between monks is a bow. Chanting, wooden fish and bell sounds are synthesized on the device.",
+    "Knocking the wooden fish adds one merit per knock; knocks are sent in batches and one batch counts at most 60."
   ],
   "coverage_map": {
     "smoke": [
@@ -60,6 +61,32 @@
             "asserts": 6,
             "run": {
               "spec": "hall-sit",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          }
+        ]
+      },
+      {
+        "id": "knock",
+        "name": "Knock the wooden fish",
+        "priority": "P1",
+        "code_paths": [
+          "server/hall.mjs",
+          "app/src/HallScreen.tsx",
+          "app/src/sound.web.ts"
+        ],
+        "specs": [
+          "specs/hall-knock.md"
+        ],
+        "cases": [
+          {
+            "id": "web_hall_knock",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 3,
+            "run": {
+              "spec": "hall-knock",
               "config": "playwright.hall.config.ts",
               "dir": "tests-hall"
             }

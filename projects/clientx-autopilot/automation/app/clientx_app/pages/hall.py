@@ -32,10 +32,12 @@ class HallPage(Page):
     TIMER = T("hall.me.timer", "hall.me.timer")
     TOTAL = T("hall.me.total", "hall.me.total")
     BOWS = T("hall.me.bows", "hall.me.bows")
+    MERIT = T("hall.me.merit", "hall.me.merit")
     PRESENT = T("hall.count", "hall.count")
     SITTING = T("hall.sitting", "hall.sitting")
     SIT = T("hall.sit", "hall.sit")
     STAND = T("hall.stand", "hall.stand")
+    KNOCK = T("hall.knock", "hall.knock")
     BOW = T("hall.bow", "hall.bow")
     LEAVE = T("hall.leave", "hall.leave")
     NOTICE = T("hall.notice", "hall.notice")
@@ -52,6 +54,10 @@ class HallPage(Page):
 
     def stand(self) -> None:
         self.tap(self.STAND)
+
+    def knock(self, times: int = 1) -> None:
+        for _ in range(times):
+            self.tap(self.KNOCK)
 
     def bow_to_all(self) -> None:
         self.tap(self.BOW)

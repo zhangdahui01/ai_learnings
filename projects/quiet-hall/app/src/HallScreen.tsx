@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, HallError, type HallSnapshot, type Session } from './api';
 import { MonkFigure } from './MonkFigure';
+import { playBell, playKnock, setChanting, soundSupported } from './sound';
 import { HallScene } from './three/HallScene';
 import { useOrbit, type Orbit } from './three/orbit';
 import { Canvas } from './three/r3f';
@@ -23,6 +24,9 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const [notice, setNotice] = useState('');
   const [offline, setOffline] = useState(false);
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [chant, setChant] = useState(soundSupported);
+  const [knocks, setKnocks] = useState(0);            // knocks not yet sent to the hall
+  const pendingKnocks = useRef(0);
   const [view, setView] = useState(0);
   const { orbit, handlers, zoom } = useOrbit(VIEWS[0].orbit);
   const nextView = useCallback(() => {
@@ -57,6 +61,40 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
     catch (e) { say(e instanceof HallError ? e.message : '没有成功，请再试一次'); }
   }, [refresh, say]);
 
+  useEffect(() => { setChanting(chant); return () => setChanting(false); }, [chant]);
+
+  // The wooden fish answers at once. Knocks are sent as a batch shortly after the last one, so a burst
+  // is one request, and nothing waits long enough to be lost when the page is closed or reloaded.
+  const inFlight = useRef(0);
+  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flushKnocks = useCallback(async () => {
+    if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
+    const count = pendingKnocks.current;
+    if (!count || inFlight.current) return;
+    pendingKnocks.current = 0; inFlight.current = count;
+    try {
+      const res = await api.knock(session, count);
+      inFlight.current = 0;
+      setHall(h => (h ? { ...h, me: res.me } : h));          // the hall's count and the local remainder change together
+      setKnocks(pendingKnocks.current);
+    } catch {
+      inFlight.current = 0; pendingKnocks.current += count;   // keep them for the next try
+    }
+    if (pendingKnocks.current && !flushTimer.current) flushTimer.current = setTimeout(flushKnocks, 400);
+  }, [session]);
+  const knock = useCallback(() => {
+    playKnock();
+    pendingKnocks.current += 1;
+    setKnocks(pendingKnocks.current + inFlight.current);
+    if (flushTimer.current) clearTimeout(flushTimer.current);
+    flushTimer.current = setTimeout(flushKnocks, 400);
+  }, [flushKnocks]);
+  useEffect(() => {                                              // leaving the hall or closing the page sends what is left
+    const onHide = () => { flushKnocks(); };
+    if (Platform.OS === 'web') window.addEventListener('pagehide', onHide);
+    return () => { if (Platform.OS === 'web') window.removeEventListener('pagehide', onHide); flushKnocks(); };
+  }, [flushKnocks]);
+
   const me = hall?.me ?? null;
   const drift = me?.sitting ? Math.floor((Date.now() - fetchedAt) / 1000) : 0;   // seconds since the last poll
   void tick;
@@ -86,6 +124,12 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
             onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
         </Canvas>
         <View style={styles.viewBar} pointerEvents="box-none">
+          {soundSupported && (
+            <Pressable testID="hall.sound" onPress={() => setChant(c => !c)} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+              accessibilityRole="switch" accessibilityState={{ checked: chant }} accessibilityLabel="诵经声">
+              <Text style={styles.chipText}>诵经 · {chant ? '开' : '关'}</Text>
+            </Pressable>
+          )}
           <Pressable testID="hall.view" onPress={nextView} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
             accessibilityRole="button" accessibilityLabel={`切换视角，当前${VIEWS[view].label}`}>
             <Text style={styles.chipText}>视角 · {VIEWS[view].label}</Text>
@@ -110,6 +154,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
             <View style={styles.inline}>
               <Text style={styles.muted}>累计 </Text><Text testID="hall.me.total" style={styles.muted}>{clock(me.totalSeconds + drift)}</Text>
               <Text style={styles.muted}> · 受礼 </Text><Text testID="hall.me.bows" style={styles.muted}>{me.bows}</Text>
+              <Text style={styles.muted}> · 功德 </Text><Text testID="hall.me.merit" style={styles.muted}>{me.merit + knocks}</Text>
             </View>
           </View>
           <View style={styles.timerBox}>
@@ -120,15 +165,19 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         <View style={styles.actions}>
           {me.sitting ? (
             <Pressable testID="hall.stand" style={({ pressed }) => [styles.primary, styles.secondary, pressed && styles.pressed]}
-              onPress={() => act(() => api.stand(session), '起身')} accessibilityRole="button" accessibilityLabel="起身">
+              onPress={() => { playBell(); act(() => api.stand(session), '起身'); }} accessibilityRole="button" accessibilityLabel="起身">
               <Text style={[styles.primaryText, styles.secondaryText]}>起身</Text>
             </Pressable>
           ) : (
             <Pressable testID="hall.sit" style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-              onPress={() => act(() => api.sit(session), '入坐')} accessibilityRole="button" accessibilityLabel="坐下">
+              onPress={() => { playBell(); act(() => api.sit(session), '入坐'); }} accessibilityRole="button" accessibilityLabel="坐下">
               <Text style={styles.primaryText}>坐下</Text>
             </Pressable>
           )}
+          <Pressable testID="hall.knock" style={({ pressed }) => [styles.ghost, pressed && styles.knockPressed]}
+            onPress={knock} accessibilityRole="button" accessibilityLabel="敲木鱼，功德加一">
+            <Text style={styles.ghostText}>木鱼</Text>
+          </Pressable>
           <Pressable testID="hall.bow" style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
             onPress={() => act(() => api.bow(session), '向大众合十')} accessibilityRole="button" accessibilityLabel="向大众合十">
             <Text style={styles.ghostText}>合十</Text>
@@ -148,8 +197,8 @@ const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#1c120c' },
   stage: { flex: 1, minHeight: 200 },
   canvas: { flex: 1 },
-  viewBar: { position: 'absolute', top: 10, right: 10, flexDirection: 'row', gap: 8 },
-  chip: { height: 44, paddingHorizontal: 14, borderRadius: 22, backgroundColor: '#2a1f18cc', borderWidth: 1, borderColor: '#c9a24a88', alignItems: 'center', justifyContent: 'center' },
+  viewBar: { position: 'absolute', top: 10, right: 10, left: 10, flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: 8 },
+  chip: { height: 44, paddingHorizontal: 12, borderRadius: 22, backgroundColor: '#2a1f18cc', borderWidth: 1, borderColor: '#c9a24a88', alignItems: 'center', justifyContent: 'center' },
   chipRound: { width: 44, paddingHorizontal: 0 },
   chipText: { color: '#f3ead9', fontSize: 14 },
   hint: { position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', color: '#f3ead9aa', fontSize: 12 },
@@ -171,11 +220,12 @@ const styles = StyleSheet.create({
   timerBox: { alignItems: 'flex-end' },
   timer: { fontSize: 26, fontWeight: '700', color: C.wood, fontVariant: ['tabular-nums'] },
   actions: { flexDirection: 'row', gap: 10 },
-  primary: { flex: 2, height: 48, borderRadius: 12, backgroundColor: C.vermilion, alignItems: 'center', justifyContent: 'center' },
+  primary: { flex: 1.5, height: 48, borderRadius: 12, backgroundColor: C.vermilion, alignItems: 'center', justifyContent: 'center' },
   secondary: { backgroundColor: C.wood },
   primaryText: { color: C.paper, fontSize: 17, fontWeight: '600', letterSpacing: 4 },
   secondaryText: { color: C.gold },
   ghost: { flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: C.woodSoft, alignItems: 'center', justifyContent: 'center' },
   ghostText: { color: C.wood, fontSize: 16 },
   pressed: { opacity: 0.75 },
+  knockPressed: { backgroundColor: C.gold, transform: [{ scale: 0.94 }] },
 });

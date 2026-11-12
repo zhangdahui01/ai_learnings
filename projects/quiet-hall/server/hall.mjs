@@ -88,6 +88,14 @@ export class Hall {
   stand(m) { this.touch(m); this.#stand(m); return this.view(m); }
   leave(m) { this.#leave(m, this.now()); return this.view(m); }
 
+  // Knocking the wooden fish. The app sends knocks in small batches; one batch is capped so a script cannot inflate it.
+  knock(m, count = 1) {
+    this.touch(m);
+    const n = Math.min(60, Math.max(0, Math.floor(Number(count) || 0)));
+    m.merit = (m.merit ?? 0) + n;
+    return this.view(m);
+  }
+
   // A silent greeting: palms together. To one monk, or to the whole hall when `to` is omitted.
   bow(m, to) {
     this.touch(m);
@@ -110,7 +118,7 @@ export class Hall {
   view(m) {
     const live = m.sitting ? Math.max(0, Math.round((this.now() - m.sitSince) / 1000)) : 0;
     return { handle: m.handle, name: m.name, gender: m.gender, look: m.look, seat: m.seat, sitting: m.sitting,
-             sittingSeconds: live, totalSeconds: m.totalSeconds + live, bows: m.bows, resident: !!m.resident };
+             sittingSeconds: live, totalSeconds: m.totalSeconds + live, bows: m.bows, merit: m.merit ?? 0, resident: !!m.resident };
   }
 
   snapshot() {

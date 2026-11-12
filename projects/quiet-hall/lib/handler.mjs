@@ -19,7 +19,7 @@ function apply(hall, action, { token, body }) {
     return { status: 200, body: { ...hall.snapshot(), me: me ? hall.view(me) : null } };
   }
   if (!me) return { status: 401, body: { error: '请先入寺' } };
-  const result = action === 'bow' ? hall.bow(me, body.to) : hall[action](me);
+  const result = action === 'bow' ? hall.bow(me, body.to) : action === 'knock' ? hall.knock(me, body.count) : hall[action](me);
   return { status: 200, body: { ...(action === 'bow' ? result : {}), me: hall.view(me) } };
 }
 

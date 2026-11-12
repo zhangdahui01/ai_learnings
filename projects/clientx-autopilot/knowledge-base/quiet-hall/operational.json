@@ -57,6 +57,22 @@
     "hall.me.handle": {
       "selector": "testid=hall.me.handle",
       "source": "baseline"
+    },
+    "hall.knock": {
+      "selector": "testid=hall.knock",
+      "source": "baseline"
+    },
+    "hall.me.merit": {
+      "selector": "testid=hall.me.merit",
+      "source": "baseline"
+    },
+    "hall.sound": {
+      "selector": "testid=hall.sound",
+      "source": "baseline"
+    },
+    "hall.view": {
+      "selector": "testid=hall.view",
+      "source": "baseline"
     }
   },
   "auth_flows": {

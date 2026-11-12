@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, '.vercel', 'output');
-const ACTIONS = { health: 'GET', join: 'POST', hall: 'GET', sit: 'POST', stand: 'POST', bow: 'POST', leave: 'POST' };
+const ACTIONS = { health: 'GET', join: 'POST', hall: 'GET', sit: 'POST', stand: 'POST', bow: 'POST', leave: 'POST', knock: 'POST' };
 
 rmSync(out, { recursive: true, force: true });
 if (!process.env.SKIP_WEB_EXPORT) {

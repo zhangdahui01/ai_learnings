@@ -15,12 +15,14 @@ export class QuietHall {
   myState() { return this.page.getByTestId('hall.me.state'); }
   timer() { return this.page.getByTestId('hall.me.timer'); }
   total() { return this.page.getByTestId('hall.me.total'); }
+  merit() { return this.page.getByTestId('hall.me.merit'); }
   present() { return this.page.getByTestId('hall.count'); }
   sittingCount() { return this.page.getByTestId('hall.sitting'); }
   async number(of: 'present' | 'sitting'): Promise<number> {
     return Number(await (of === 'present' ? this.present() : this.sittingCount()).innerText());
   }
 
+  async knock() { await this.page.getByTestId('hall.knock').click(); }
   async sit() { await this.page.getByTestId('hall.sit').click(); }
   async stand() { await this.page.getByTestId('hall.stand').click(); }
   async leave() { await this.page.getByTestId('hall.leave').click(); await expect(this.enterButton()).toBeVisible(); }

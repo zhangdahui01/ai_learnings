@@ -54,12 +54,12 @@ export const server = createServer(async (req, res) => {
       if (me) hall.touch(me);                       // reading the hall is the heartbeat
       return send(res, 200, { ...hall.snapshot(), me: me ? hall.view(me) : null });
     }
-    if (req.method === 'POST' && ['/api/sit', '/api/stand', '/api/bow', '/api/leave'].includes(path)) {
+    if (req.method === 'POST' && ['/api/sit', '/api/stand', '/api/bow', '/api/leave', '/api/knock'].includes(path)) {
       const me = hall.auth(token);
       if (!me) return send(res, 401, { error: '请先入寺' });
       const data = await body(req);
       const action = path.slice(5);
-      const result = action === 'bow' ? hall.bow(me, data.to) : hall[action](me);
+      const result = action === 'bow' ? hall.bow(me, data.to) : action === 'knock' ? hall.knock(me, data.count) : hall[action](me);
       dirty = true;
       return send(res, 200, { ...(action === 'bow' ? result : {}), me: hall.view(me) });
     }

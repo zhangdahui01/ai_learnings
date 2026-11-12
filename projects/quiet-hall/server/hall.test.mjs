@@ -57,6 +57,16 @@ test('bowing is the only interaction', () => {
   assert.equal(h.view(b).bows, 2);
 });
 
+test('knocking the wooden fish adds merit, in capped batches', () => {
+  const { h } = hall();
+  const a = h.auth(h.join('alice').token);
+  assert.equal(h.knock(a).merit, 1);
+  assert.equal(h.knock(a, 5).merit, 6);
+  assert.equal(h.knock(a, 100000).merit, 66);
+  assert.equal(h.knock(a, -3).merit, 66);
+  assert.equal(h.knock(a, 'x').merit, 66);
+});
+
 test('residents fill the hall and cannot be impersonated', () => {
   const { h } = hall();
   h.seedResidents(5);

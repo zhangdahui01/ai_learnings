@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { playBell, unlockSound } from './sound';
 import { Canvas } from './three/r3f';
 import { TempleScene } from './three/TempleScene';
 import { api, HallError, type Session } from './api';
@@ -21,6 +22,7 @@ export function Gate({ initialServer, onEnter }: { initialServer: string; onEnte
 
   async function enter() {
     if (busy) return;
+    unlockSound(); playBell();                     // the tap that enters the temple also allows sound
     setBusy(true); setError('');
     try {
       for (let attempt = 0; ; attempt += 1) {
