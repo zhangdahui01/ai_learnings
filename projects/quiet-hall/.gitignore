@@ -5,3 +5,4 @@ app/android/
 app/ios/
 data/
 public/
+.vercel/
