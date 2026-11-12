@@ -15,6 +15,7 @@ quiet-hall/
 - Every visit draws a random ID. The dharma name, gender and look are derived from it; you stay that monk until you leave the temple.
 - An ID belongs to whoever used it first (a token is kept in the app). Nobody else can enter with it.
 - Sitting time counts while you sit and is kept when you stand or leave. A monk who goes silent for 90 seconds leaves the hall and frees the cushion.
+- Faces: every monk and every celestial maiden has their own drawn face (eyes, brows, nose, mouth, age, and how well the features go together), head shape, build and height, all derived from their ID. They are illustrations, not photographs of real people. Native builds keep the simple face.
 - Sound: chanting is two openly licensed recordings from Wikimedia Commons, monks at Lingyin Temple (CC BY-SA 3.0) and a Mandarin Heart Sutra (CC0); credits are in `app/public/audio/CREDITS.md` and on the gate screen. The wooden fish and bell strokes are synthesized. The web build has sound; native builds are silent for now.
 - Wooden fish: it sits beside your cushion. Tap it (or the button) and the mallet strikes, it sounds, and you gain one merit. Knocks are sent in batches (at most 60 per batch) and are delivered even when the page is closing.
 - Walking: stand up, then use the thumb stick or tap the floor; others see you move. You do not pass through pillars or other monks.

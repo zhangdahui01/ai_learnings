@@ -1,5 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
+import { FACE_PATCH, faceTexture, featuresFor } from './faces';
 import { useFrame } from './r3f';
 
 export type TrialKind = 'dog' | 'fairies';
@@ -40,17 +41,49 @@ function Dog({ center }: { center: [number, number, number] }) {
 }
 
 const ROBES = ['#f2a6c8', '#a9d8f5', '#c7b5f2', '#f6d98a', '#a8e6c4', '#f7b79a', '#ffd3e6'];
+const SKINS = ['#fbe4d2', '#f6d9bd', '#f9e2cf', '#eec7a4'];
 
-/** Seven celestial maidens drifting in a ring around the cushion, ribbons trailing. */
+/** One celestial maiden: her own face, hair up in a knot, long sleeves. Faces -z. */
+function Maiden({ id, color }: { id: string; color: string }) {
+  const feat = useMemo(() => featuresFor(id, 'f', 'fairy'), [id]);
+  const face = useMemo(() => faceTexture(id, 'f', false, 'fairy'), [id]);
+  const skin = SKINS[Math.floor(feat.age * 97) % SKINS.length];
+  const hair = <meshStandardMaterial color="#1e1612" roughness={0.5} />;
+  return (
+    <group scale={[feat.build * 0.95, feat.height, feat.build * 0.95]}>
+      <mesh position={[0, 0.5, 0]}><coneGeometry args={[0.46, 1.1, 18]} /><meshStandardMaterial color={color} roughness={0.55} /></mesh>
+      <mesh position={[0, 1.02, 0]} scale={[1, 1.15, 0.8]}><sphereGeometry args={[0.2, 14, 12]} /><meshStandardMaterial color={color} roughness={0.55} /></mesh>
+      <mesh position={[0, 0.98, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.2, 0.03, 6, 20]} /><meshStandardMaterial color="#c0392b" roughness={0.5} /></mesh>
+      {[-1, 1].map(s => (                                          // sleeves, held out as she dances
+        <mesh key={s} position={[s * 0.38, 1.0, -0.05]} rotation={[0, 0, s * 1.15]}><coneGeometry args={[0.16, 0.7, 10]} /><meshStandardMaterial color={color} roughness={0.55} /></mesh>
+      ))}
+      <mesh position={[0.72, 0.86, 0]} rotation={[0, 0, -0.5]}><boxGeometry args={[0.07, 1.0, 0.02]} /><meshBasicMaterial color={color} toneMapped={false} /></mesh>
+      <mesh position={[0, 1.18, 0]}><cylinderGeometry args={[0.06, 0.07, 0.12, 10]} /><meshStandardMaterial color={skin} roughness={0.7} /></mesh>
+      <group position={[0, 1.42, 0]} scale={[feat.headWide * 0.82, feat.headTall * 0.9, 0.84]}>
+        <mesh><sphereGeometry args={[0.27, 22, 18]} /><meshStandardMaterial color={skin} roughness={0.7} /></mesh>
+        {face && <mesh geometry={FACE_PATCH}><meshStandardMaterial map={face} transparent roughness={0.75} polygonOffset polygonOffsetFactor={-2} /></mesh>}
+        <mesh position={[0, 0.05, 0.07]} scale={[1.06, 1.02, 1.0]}><sphereGeometry args={[0.27, 18, 14, 0, Math.PI * 2, 0, 1.25]} />{hair}</mesh>
+        <mesh position={[0, -0.14, 0.2]} scale={[0.9, 1.5, 0.5]}><sphereGeometry args={[0.2, 12, 10]} />{hair}</mesh>
+        <mesh position={[0, 0.33, 0.02]}><sphereGeometry args={[0.11, 12, 10]} />{hair}</mesh>
+        <mesh position={[0.12, 0.36, 0.02]} rotation={[0, 0, 0.9]}><cylinderGeometry args={[0.012, 0.012, 0.3, 6]} /><meshStandardMaterial color="#e2b24a" metalness={0.7} roughness={0.3} /></mesh>
+      </group>
+    </group>
+  );
+}
+
+/** Seven celestial maidens drifting in a ring around the cushion, each a different person every time they come. */
 function Fairies({ center }: { center: [number, number, number] }) {
   const ring = useRef<THREE.Group>(null);
+  const visit = useMemo(() => Math.random().toString(36).slice(2, 8), []);
   useFrame(({ clock }) => {
     const t = clock.elapsedTime;
     if (ring.current) {
-      ring.current.rotation.y = t * 0.55;
+      ring.current.rotation.y = t * 0.45;
       ring.current.children.forEach((f, i) => {
-        f.position.y = 0.55 + Math.sin(t * 1.8 + i * 0.9) * 0.22;
-        f.rotation.y = Math.sin(t * 1.2 + i) * 0.5;
+        if (f.type !== 'Group') return;
+        const a = (i / ROBES.length) * Math.PI * 2;
+        f.position.y = 0.25 + Math.sin(t * 1.8 + i * 0.9) * 0.18;
+        f.rotation.y = Math.atan2(Math.cos(a), Math.sin(a)) + Math.sin(t * 1.2 + i) * 0.35;      // looking at the monk, swaying
       });
     }
   });
@@ -58,17 +91,9 @@ function Fairies({ center }: { center: [number, number, number] }) {
     <group ref={ring} position={center}>
       {ROBES.map((color, i) => {
         const a = (i / ROBES.length) * Math.PI * 2;
-        return (
-          <group key={i} position={[Math.cos(a) * 2.3, 0.55, Math.sin(a) * 2.3]}>
-            <mesh position={[0, 0.55, 0]}><coneGeometry args={[0.42, 1.25, 14]} /><meshStandardMaterial color={color} roughness={0.6} /></mesh>
-            <mesh position={[0, 1.28, 0]}><sphereGeometry args={[0.19, 14, 12]} /><meshStandardMaterial color="#fbe4d2" roughness={0.7} /></mesh>
-            <mesh position={[0, 1.47, -0.02]}><sphereGeometry args={[0.13, 12, 10]} /><meshStandardMaterial color="#2a1f18" roughness={0.6} /></mesh>
-            <mesh position={[0, 1.02, 0]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.5, 0.035, 6, 24]} /><meshBasicMaterial color="#fff6c8" toneMapped={false} /></mesh>
-            <mesh position={[0.5, 0.75, 0]} rotation={[0, 0, -0.9]}><boxGeometry args={[0.07, 1.1, 0.02]} /><meshBasicMaterial color={color} toneMapped={false} /></mesh>
-          </group>
-        );
+        return <group key={i} position={[Math.cos(a) * 2.2, 0.25, Math.sin(a) * 2.2]}><Maiden id={`${visit}-${i}`} color={color} /></group>;
       })}
-      <pointLight position={[0, 2.4, 0]} intensity={18} distance={9} color="#ffd9f0" />
+      <pointLight position={[0, 2.6, 0]} intensity={22} distance={10} color="#ffe6f4" />
     </group>
   );
 }

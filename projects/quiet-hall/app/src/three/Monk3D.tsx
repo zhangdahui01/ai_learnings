@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import type { Monk } from '../api';
+import { FACE_PATCH, faceTexture, featuresFor } from './faces';
 import { useFrame } from './r3f';
 
 // Geometry is shared by every monk in the hall.
@@ -80,12 +81,16 @@ export function Monk3D({ monk, position, me, onPress, bowTick }: {
     b.position.z = -fold * (monk.sitting ? 0.1 : 0.25);
     b.scale.y = 1 + Math.sin(t * 0.9 + phase) * (monk.sitting ? 0.018 : 0.006);     // slow breathing
   });
+  // Each monk is their own person: their own face, head shape, build and height.
+  const feat = useMemo(() => featuresFor(monk.handle, monk.gender), [monk.handle, monk.gender]);
+  const face = useMemo(() => faceTexture(monk.handle, monk.gender, monk.sitting), [monk.handle, monk.gender, monk.sitting]);
   const skin = mat(monk.look.skin, 0.7);
   const robe = mat(monk.look.robe);
   const headY = monk.sitting ? 1.02 : 1.62;
   return (
     <group ref={root} position={position} onClick={onPress ? e => { e.stopPropagation(); onPress(monk); } : undefined}>
       {me && <mesh geometry={G.ring} material={M.ring} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} />}
+      <group scale={[feat.build, feat.height, feat.build]}>
       <group ref={body}>
         {monk.sitting ? (
           <>
@@ -101,10 +106,12 @@ export function Monk3D({ monk, position, me, onPress, bowTick }: {
         )}
         <mesh geometry={G.sash} material={mat('#00000033')} position={[0, monk.sitting ? 0.62 : 1.0, 0]}
           rotation={[Math.PI / 2 - 0.5, 0.4, 0]} scale={monk.sitting ? 0.92 : 0.7} visible={false} />
-        <group position={[0, headY, 0]}>
+        <group position={[0, headY, 0]} scale={[feat.headWide / feat.build, feat.headTall / feat.height, 1 / feat.build]}>
           <mesh geometry={G.head} material={skin} />
+          {face && <mesh geometry={FACE_PATCH}><meshStandardMaterial map={face} transparent roughness={0.75} polygonOffset polygonOffsetFactor={-2} /></mesh>}
           <mesh geometry={G.ear} material={skin} position={[-0.27, -0.02, 0]} />
           <mesh geometry={G.ear} material={skin} position={[0.27, -0.02, 0]} />
+          {!face && (<>
           {monk.sitting ? (
             <>
               <mesh geometry={G.lid} material={M.ink} position={[-0.1, 0.02, -0.25]} rotation={[0, 0.35, 0.12]} />
@@ -124,10 +131,12 @@ export function Monk3D({ monk, position, me, onPress, bowTick }: {
             </>
           )}
           {monk.look.face >= 2 && <mesh geometry={G.dot} material={M.mark} position={[0, 0.13, -0.245]} />}
+          </>)}
         </group>
         {monk.look.beads && (
           <mesh geometry={G.beads} material={M.beads} position={[0, headY - 0.27, -0.03]} rotation={[Math.PI / 2 - 0.35, 0, 0]} />
         )}
+      </group>
       </group>
     </group>
   );
