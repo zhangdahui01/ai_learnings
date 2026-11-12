@@ -15,6 +15,7 @@ if (!process.env.SKIP_WEB_EXPORT) {
   execSync('npx expo export -p web --output-dir dist', { cwd: join(root, 'app'), stdio: 'inherit' });
 }
 cpSync(join(root, 'app', 'dist'), join(out, 'static'), { recursive: true });
+cpSync(join(root, 'admin'), join(out, 'static', 'admin'), { recursive: true, filter: src => !src.endsWith('.test.mjs') });   // the visit dashboard
 
 // The page is empty until the app's script has loaded and started. Show that it is loading, and if the
 // script fails (an old browser, a blocked request) say so on the page instead of leaving it blank.
@@ -46,7 +47,8 @@ writeFileSync(join(fn, '.vc-config.json'), JSON.stringify({
 writeFileSync(join(out, 'config.json'), JSON.stringify({
   version: 3,
   routes: [
-    { src: `/api/(${Object.keys(ACTIONS).join('|')})/?`, dest: '/api?action=$1' },
+    { src: `/api/(${[...Object.keys(ACTIONS), 'admin'].join('|')})/?`, dest: '/api?action=$1' },
+    { src: '/admin/?', dest: '/admin/index.html' },
     { handle: 'filesystem' },                               // static files next
     { src: '/(?!api/).*', dest: '/index.html' },            // everything else is the single-page app
   ],

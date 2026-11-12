@@ -4,6 +4,7 @@ import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { networkInterfaces } from 'node:os';
+import { admin } from '../lib/admin.mjs';
 import { apply, ROUTES } from '../lib/api.mjs';
 import { record } from '../lib/log.mjs';
 import { Hall } from './hall.mjs';
@@ -15,6 +16,7 @@ function arg(name, fallback) {
 const port = Number(arg('port', 8787));
 const dataFile = arg('data', 'data/hall.json');
 process.env.HALL_EVENTS_FILE ??= join(dirname(dataFile), 'events.jsonl');
+process.env.HALL_ADMIN_FILE ??= join(dirname(dataFile), 'admin.json');
 const hall = new Hall({ state: existsSync(dataFile) ? JSON.parse(readFileSync(dataFile, 'utf8')) : undefined });
 hall.seedResidents(Number(arg('residents', 0)));
 
@@ -46,6 +48,10 @@ export const server = createServer(async (req, res) => {
     if (req.method === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
     const path = new URL(req.url, 'http://x').pathname;
     const action = path.startsWith('/api/') ? path.slice(5) : '';
+    if (action === 'admin' && req.method === 'POST') {
+      const out = await admin(await body(req), (req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+      return send(res, out.status, out.body);
+    }
     if (!ROUTES[action]) return send(res, 404, { error: 'not found' });
     if (req.method !== ROUTES[action]) return send(res, 405, { error: 'method not allowed' });
     const out = apply(hall, action, { token: (req.headers.authorization || '').replace(/^Bearer\s+/i, ''),

@@ -13,7 +13,8 @@
     "Every change of merit is written down with its time, its reason, the amount and the total afterwards; the latest 100 are kept and shown newest first.",
     "Trials of composure happen only to a seated monk. They come at random (can be switched off) or when the monk calls one with a button. Composure drains with real time; gathering the mind, knocking, beads and prostrations restore it. The monk cannot stand during a trial. Reaching zero ends the visit: merit drops and the monk leaves the hall.",
     "A visitor may register an ID. A registered monk and their merit are kept; a return code, shown once, brings them back on another device and signs the old device out. Five wrong codes pause that ID for five minutes. Unregistered visitors are forgotten six hours after leaving.",
-    "Entering, registering, sitting, practices, trials, bows and leaving are written to the visit log with the monk's ID, a browser label and the country, region and city of the request. Polling and walking are not logged. IP addresses are not stored."
+    "Entering, registering, sitting, practices, trials, bows and leaving are written to the visit log with the monk's ID, a browser label and the country, region and city of the request. Polling and walking are not logged. IP addresses are not stored.",
+    "The visit dashboard at /admin belongs to one admin account. The first visitor to /admin sets it; afterwards only its password opens the visit log. Five wrong passwords pause it for five minutes. Without a valid session the log is never returned."
   ],
   "coverage_map": {
     "smoke": [
@@ -226,7 +227,11 @@
         "code_paths": [
           "lib/log.mjs",
           "lib/api.mjs",
-          "lib/handler.mjs"
+          "lib/handler.mjs",
+          "lib/admin.mjs",
+          "admin/index.html",
+          "admin/report.mjs",
+          "sql/admin.sql"
         ],
         "specs": [],
         "cases": []

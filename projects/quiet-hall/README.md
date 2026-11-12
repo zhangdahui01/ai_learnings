@@ -44,6 +44,15 @@ select * from quiet_hall_events order by at desc limit 200;   -- the raw log
 
 The table is not readable with the public key; only the project owner sees it.
 
+### The dashboard at `/admin`
+
+`/admin` shows the same log as a dashboard: totals, visits and visitors per day, how often each feature was used, where visitors came from and with what, one row per visitor, and the raw log with filters.
+
+- The first person to open `/admin` sets the one admin account (3 to 20 lowercase letters, digits or underscores; a password of at least 8 characters). After that the page only offers a login. Five wrong passwords pause the account for five minutes; a session lasts seven days.
+- Deployed, the account and every check live in the database (`sql/admin.sql`, run once in the Supabase SQL editor), because the key the site calls the database with is public. Only hashes of the password and of session tokens are stored.
+- To change the password or the admin: `delete from quiet_hall_admin_session; delete from quiet_hall_admin;` in the SQL editor, then open `/admin` and set a new one.
+- Locally the account is kept in `data/admin.json` and `node server/static.mjs` passes `/api/*` on to the hall server, so `http://localhost:8790/admin` works the same way.
+
 ## Run it
 
 ```bash
@@ -62,7 +71,7 @@ npx expo start            # scan the QR code with Expo Go on your phone, or pres
 ## Tests
 
 ```bash
-node --test server/hall.test.mjs lib/handler.test.mjs                   # hall rules, API and visit log
+node --test server/hall.test.mjs lib/*.test.mjs admin/report.test.mjs   # hall rules, API, visit log, admin and dashboard figures
 cd app && npx tsc --noEmit                                   # types
 
 cd ../../clientx-autopilot

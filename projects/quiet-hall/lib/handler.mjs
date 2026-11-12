@@ -1,5 +1,6 @@
 // The hall API as stateless functions: load the hall, apply one action, save if it changed, log the visit.
 import { Hall } from '../server/hall.mjs';
+import { admin } from './admin.mjs';
 import { apply, ROUTES } from './api.mjs';
 import { record } from './log.mjs';
 import { load, save } from './store.mjs';
@@ -44,10 +45,27 @@ export function route(action, method = ROUTES[action]) {
 export function dispatch(req, res) {
   const url = new URL(req.url ?? '/', 'http://hall');
   const action = url.searchParams.get('action') ?? url.pathname.match(/\/api\/([a-z]+)\/?$/)?.[1] ?? '';
+  if (action === 'admin') return adminRoute(req, res);
   if (!Object.hasOwn(ROUTES, action)) {
     res.statusCode = 404;
     res.setHeader('content-type', 'application/json; charset=utf-8');
     return res.end(JSON.stringify({ error: 'not found' }));
   }
   return route(action)(req, res);
+}
+
+/** The visit dashboard's API: POST { op, ... }. Not part of the hall, so it neither loads nor saves it. */
+async function adminRoute(req, res) {
+  res.setHeader('cache-control', 'no-store');
+  res.setHeader('content-type', 'application/json; charset=utf-8');
+  if (req.method !== 'POST') { res.statusCode = 405; return res.end(JSON.stringify({ error: 'method not allowed' })); }
+  try {
+    const out = await admin(req.body && typeof req.body === 'object' ? req.body : {}, (req.headers.authorization || '').replace(/^Bearer\s+/i, ''));
+    res.statusCode = out.status;
+    res.end(JSON.stringify(out.body));
+  } catch (err) {
+    console.error(err);
+    res.statusCode = 500;
+    res.end(JSON.stringify({ error: '后台暂时不可用（数据库里的管理员函数可能还没建好）' }));
+  }
 }
