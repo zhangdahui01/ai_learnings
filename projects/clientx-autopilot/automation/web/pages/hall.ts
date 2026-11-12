@@ -16,12 +16,19 @@ export class QuietHall {
   timer() { return this.page.getByTestId('hall.me.timer'); }
   total() { return this.page.getByTestId('hall.me.total'); }
   merit() { return this.page.getByTestId('hall.me.merit'); }
+  prostrations() { return this.page.getByTestId('hall.me.prostrations'); }
+  beads() { return this.page.getByTestId('hall.me.beads'); }
+  beadsInRound() { return this.page.getByTestId('beads.count'); }
   present() { return this.page.getByTestId('hall.count'); }
   sittingCount() { return this.page.getByTestId('hall.sitting'); }
   async number(of: 'present' | 'sitting'): Promise<number> {
     return Number(await (of === 'present' ? this.present() : this.sittingCount()).innerText());
   }
 
+  async prostrate() { await this.page.getByTestId('hall.prostrate').click(); }
+  async openBeads() { await this.page.getByTestId('hall.beads').click(); await expect(this.page.getByTestId('beads.panel')).toBeVisible(); }
+  async turnBead() { await this.page.getByTestId('beads.bead').click(); }
+  async closeBeads() { await this.page.getByTestId('beads.close').click(); await expect(this.page.getByTestId('beads.panel')).toHaveCount(0); }
   async knock() { await this.page.getByTestId('hall.knock').click(); }
   async sit() { await this.page.getByTestId('hall.sit').click(); }
   async stand() { await this.page.getByTestId('hall.stand').click(); }

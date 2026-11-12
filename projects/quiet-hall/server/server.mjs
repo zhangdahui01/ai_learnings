@@ -25,6 +25,16 @@ function save() {
 setInterval(save, 5000).unref();
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { dirty = true; save(); process.exit(0); });
 
+const ACTIONS = ['sit', 'stand', 'bow', 'leave', 'knock', 'prostrate', 'beads', 'move'];
+function run(hall, me, action, data) {
+  switch (action) {
+    case 'bow': return hall.bow(me, data.to);
+    case 'knock': case 'prostrate': case 'beads': return hall[action](me, data.count);
+    case 'move': return hall.move(me, data.x, data.z);
+    default: return hall[action](me);                       // sit, stand, leave
+  }
+}
+
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, authorization',
                'access-control-allow-methods': 'GET, POST, OPTIONS' };
 function send(res, status, body) {
@@ -54,12 +64,12 @@ export const server = createServer(async (req, res) => {
       if (me) hall.touch(me);                       // reading the hall is the heartbeat
       return send(res, 200, { ...hall.snapshot(), me: me ? hall.view(me) : null });
     }
-    if (req.method === 'POST' && ['/api/sit', '/api/stand', '/api/bow', '/api/leave', '/api/knock'].includes(path)) {
+    if (req.method === 'POST' && ACTIONS.includes(path.slice(5)) && path.startsWith('/api/')) {
       const me = hall.auth(token);
       if (!me) return send(res, 401, { error: '请先入寺' });
       const data = await body(req);
       const action = path.slice(5);
-      const result = action === 'bow' ? hall.bow(me, data.to) : action === 'knock' ? hall.knock(me, data.count) : hall[action](me);
+      const result = run(hall, me, action, data);
       dirty = true;
       return send(res, 200, { ...(action === 'bow' ? result : {}), me: hall.view(me) });
     }

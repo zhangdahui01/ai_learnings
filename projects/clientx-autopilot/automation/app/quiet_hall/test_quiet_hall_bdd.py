@@ -86,3 +86,23 @@ def knock(hall, times):
 @then(parsers.parse("the merit shows {merit:d}"))
 def merit_shows(hall, merit):
     hall.expect_text(HallPage.MERIT, str(merit))
+
+
+@when(parsers.parse("the monk prostrates {times:d} times"))
+def prostrate(hall, times):
+    hall.prostrate(times)
+
+
+@when(parsers.parse("the monk turns {beads:d} prayer beads"))
+def turn_beads(hall, beads):
+    hall.turn_beads(beads)
+
+
+@then(parsers.parse("the prostration count shows {count:d}"))
+def prostration_count(hall, count):
+    hall.expect_text(HallPage.PROSTRATIONS, str(count))
+
+
+@then(parsers.parse("the bead count shows {count:d}"))
+def bead_count(hall, count):
+    hall.expect_text(HallPage.BEADS, str(count))

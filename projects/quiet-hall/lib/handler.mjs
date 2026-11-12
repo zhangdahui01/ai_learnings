@@ -7,6 +7,15 @@ const HEARTBEAT_WRITE_MS = 15_000;       // polling reads the hall every 2 s; on
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, authorization',
                'access-control-allow-methods': 'GET, POST, OPTIONS' };
 
+function run(hall, me, action, data) {
+  switch (action) {
+    case 'bow': return hall.bow(me, data.to);
+    case 'knock': case 'prostrate': case 'beads': return hall[action](me, data.count);
+    case 'move': return hall.move(me, data.x, data.z);
+    default: return hall[action](me);                       // sit, stand, leave
+  }
+}
+
 function apply(hall, action, { token, body }) {
   if (action === 'health') return { status: 200, body: { ok: true } };
   if (action === 'join') {
@@ -19,7 +28,7 @@ function apply(hall, action, { token, body }) {
     return { status: 200, body: { ...hall.snapshot(), me: me ? hall.view(me) : null } };
   }
   if (!me) return { status: 401, body: { error: '请先入寺' } };
-  const result = action === 'bow' ? hall.bow(me, body.to) : action === 'knock' ? hall.knock(me, body.count) : hall[action](me);
+  const result = run(hall, me, action, body);
   return { status: 200, body: { ...(action === 'bow' ? result : {}), me: hall.view(me) } };
 }
 

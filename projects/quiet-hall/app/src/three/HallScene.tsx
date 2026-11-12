@@ -187,14 +187,20 @@ function CameraRig({ orbit, target, bounds }: { orbit: React.RefObject<Orbit>; t
   return null;
 }
 
-export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onKnock }: {
+export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onKnock, bowTick, onFloor }: {
   monks: Monk[]; seats: number; meHandle: string; orbit: React.RefObject<Orbit>; onBow: (m: Monk) => void;
-  knockTick: number; onKnock: () => void;
+  knockTick: number; onKnock: () => void; bowTick: number; onFloor: (x: number, z: number) => void;
 }) {
   const { width: W, depth: D, front } = hallSize(seats);
   const taken = useMemo(() => new Set(monks.map(m => m.seat ?? -1)), [monks]);
   const me = monks.find(m => m.handle === meHandle);
-  const mine = me && me.seat !== null ? seatPosition(me.seat, seats) : ([0, 0, 0] as [number, number, number]);
+  const mySeat = me && me.seat !== null ? seatPosition(me.seat, seats) : ([0, 0, 0] as [number, number, number]);
+  // A standing monk who has walked is wherever they walked to, kept inside the walls and clear of the altar.
+  const stand = (m: Monk): [number, number, number] => {
+    if (m.sitting || !m.pos || m.seat === null) return seatPosition(m.seat ?? 0, seats);
+    return [clamp(m.pos.x, -(W / 2 - 3.2), W / 2 - 3.2), 0, clamp(m.pos.z, front + 7.6, D / 2 - 1.2)];
+  };
+  const mine = me ? stand(me) : mySeat;
   const pillarZ = useMemo(() => { const out: number[] = []; for (let z = front + 7.5; z < D / 2 - 1; z += 5.4) out.push(z); return out; }, [front, D]);
   const px = W / 2 - 2.3;
   return (
@@ -209,7 +215,9 @@ export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onK
       <pointLight position={[0, H - 3, D / 2 - 8]} intensity={50} distance={36} decay={1.6} color="#ffd9a0" />
 
       {/* floor: wooden boards running toward the altar */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[W, D]} /><meshStandardMaterial color="#9a6a3e" roughness={0.55} /></mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} onClick={e => { e.stopPropagation(); onFloor(e.point.x, e.point.z); }}>
+        <planeGeometry args={[W, D]} /><meshStandardMaterial color="#9a6a3e" roughness={0.55} />
+      </mesh>
       {Array.from({ length: Math.floor(W / 1.3) }, (_, i) => (
         <mesh key={i} rotation={[-Math.PI / 2, 0, 0]} position={[-W / 2 + (i + 0.5) * 1.3, 0.004, 0]}>
           <planeGeometry args={[0.035, D]} /><meshBasicMaterial color="#5e3d22" />
@@ -244,11 +252,11 @@ export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onK
       <Lanterns width={W} depth={D} />
       <Cushions seats={seats} taken={taken} />
       {monks.filter(m => m.seat !== null).map(m => (
-        <Monk3D key={m.handle} monk={m} position={seatPosition(m.seat as number, seats)} me={m.handle === meHandle}
-          onPress={m.handle === meHandle ? undefined : onBow} />
+        <Monk3D key={m.handle} monk={m} position={stand(m)} me={m.handle === meHandle}
+          bowTick={m.handle === meHandle ? bowTick : undefined} onPress={m.handle === meHandle ? undefined : onBow} />
       ))}
-      {me && me.seat !== null && <WoodenFish position={[mine[0] + 0.86, 0, mine[2] - 0.5]} tick={knockTick} onKnock={onKnock} />}
-      <CameraRig orbit={orbit} target={[mine[0] * 0.55, 1.5, mine[2] - 2.5]} bounds={{ x: px - 1.3, z0: front + 8.6, z1: D / 2 - 0.9 }} />
+      {me && me.seat !== null && <WoodenFish position={[mySeat[0] + 0.86, 0, mySeat[2] - 0.5]} tick={knockTick} onKnock={onKnock} />}
+      <CameraRig orbit={orbit} target={[mine[0] * 0.8, 1.5, mine[2] - 2.2]} bounds={{ x: px - 1.3, z0: front + 8.6, z1: D / 2 - 0.9 }} />
     </>
   );
 }

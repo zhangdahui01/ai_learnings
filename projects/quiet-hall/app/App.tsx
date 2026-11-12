@@ -2,7 +2,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { api, defaultServer, store, type Session } from './src/api';
+import { api, defaultServer, HallError, store, type Session } from './src/api';
 import { Gate } from './src/Gate';
 import { HallScreen } from './src/HallScreen';
 import { C } from './src/theme';
@@ -20,7 +20,12 @@ export default function App() {
         try {                                    // walk back in as the same monk
           const joined = await api.join(saved.server, saved.handle, saved.token);
           setSession({ ...saved, token: joined.token });
-        } catch { await store.clear(); }
+        } catch (e) {
+          // Only the hall saying "this ID is not yours" ends the identity. A failed request (bad signal, a busy
+          // phone) must not: go in anyway and let the hall screen keep trying.
+          if (e instanceof HallError && (e.status === 409 || e.status === 400)) await store.clear();
+          else setSession(saved);
+        }
       }
       setReady(true);
     })();

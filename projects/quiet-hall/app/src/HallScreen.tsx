@@ -1,8 +1,10 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, HallError, type HallSnapshot, type Session } from './api';
+import { BeadsPanel, MALA } from './BeadsPanel';
 import { MonkFigure } from './MonkFigure';
-import { playBell, playKnock, setChanting, soundStatus, soundSupported, TRACKS } from './sound';
+import { playBell, playKnock, playTick, setChanting, soundStatus, soundSupported, TRACKS } from './sound';
+import { useBatched } from './useBatched';
 import { HallScene } from './three/HallScene';
 import { useOrbit, type Orbit } from './three/orbit';
 import { Canvas } from './three/r3f';
@@ -26,9 +28,11 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [track, setTrack] = useState(soundSupported && TRACKS.length ? 0 : -1);       // -1 = chanting off
   const [knockTick, setKnockTick] = useState(0);
+  const [bowTick, setBowTick] = useState(0);
+  const [beadsOpen, setBeadsOpen] = useState(false);
+  const [walkTo, setWalkTo] = useState<{ x: number; z: number } | null>(null);        // where I am walking, before the hall confirms
   const rise = useRef(new Animated.Value(0)).current;
-  const [knocks, setKnocks] = useState(0);            // knocks not yet sent to the hall
-  const pendingKnocks = useRef(0);
+  const [riseText, setRiseText] = useState('功德 +1');
   const [view, setView] = useState(0);
   const { orbit, handlers, zoom } = useOrbit(VIEWS[0].orbit);
   const nextView = useCallback(() => {
@@ -40,6 +44,10 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
     noticeTimer.current = setTimeout(() => setNotice(''), 2500);
   }, []);
+  const float = useCallback((text: string) => {
+    setRiseText(text); rise.setValue(0);
+    Animated.timing(rise, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== 'web' }).start();
+  }, [rise]);
 
   const refresh = useCallback(async () => {
     try {
@@ -76,47 +84,47 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
     return () => clearInterval(check);
   }, [track]);
 
-  // The wooden fish answers at once. Knocks are sent as a batch shortly after the last one, so a burst
-  // is one request, and nothing waits long enough to be lost when the page is closed or reloaded.
-  const inFlight = useRef(0);
-  const flushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const flushKnocks = useCallback(async () => {
-    if (flushTimer.current) { clearTimeout(flushTimer.current); flushTimer.current = null; }
-    const count = pendingKnocks.current;
-    if (!count || inFlight.current) return;
-    pendingKnocks.current = 0; inFlight.current = count;
-    try {
-      const res = await api.knock(session, count);
-      inFlight.current = 0;
-      setHall(h => (h ? { ...h, me: res.me } : h));          // the hall's count and the local remainder change together
-      setKnocks(pendingKnocks.current);
-    } catch {
-      inFlight.current = 0; pendingKnocks.current += count;   // keep them for the next try
-    }
-    if (pendingKnocks.current && !flushTimer.current) flushTimer.current = setTimeout(flushKnocks, 400);
-  }, [session]);
-  const knock = useCallback(() => {
-    playKnock();
-    setKnockTick(t => t + 1);                         // swings the mallet in the hall
-    rise.setValue(0);
-    Animated.timing(rise, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== 'web' }).start();
-    pendingKnocks.current += 1;
-    setKnocks(pendingKnocks.current + inFlight.current);
-    if (flushTimer.current) clearTimeout(flushTimer.current);
-    flushTimer.current = setTimeout(flushKnocks, 400);
-  }, [flushKnocks, rise]);
-  useEffect(() => {                                              // leaving the hall or closing the page sends what is left
-    const onHide = () => { flushKnocks(); };
-    if (Platform.OS === 'web') window.addEventListener('pagehide', onHide);
-    return () => { if (Platform.OS === 'web') window.removeEventListener('pagehide', onHide); flushKnocks(); };
-  }, [flushKnocks]);
+  // Counted practices answer at once and reach the hall in batches.
+  const saved = useCallback((me: HallSnapshot['me']) => setHall(h => (h ? { ...h, me } : h)), []);
+  const knocks = useBatched(n => api.knock(session, n), saved);
+  const bows = useBatched(n => api.prostrate(session, n), saved);
+  const beads = useBatched(n => api.beads(session, n), saved);
 
   const me = hall?.me ?? null;
+  const knock = useCallback(() => {
+    playKnock(); setKnockTick(t => t + 1); float('功德 +1'); knocks.add();
+  }, [knocks, float]);
+  const prostrate = useCallback(() => {
+    playBell(); setBowTick(t => t + 1); bows.add();
+    const total = (me?.prostrations ?? 0) + bows.extra + 1;
+    float(total % MALA === 0 ? `礼拜 ${total} · 一百零八拜圆满` : `礼拜 ${total}`);
+  }, [bows, float, me]);
+  const bead = useCallback(() => {
+    playTick(); beads.add();
+    const total = (me?.beads ?? 0) + beads.extra + 1;
+    if (total % MALA === 0) { playBell(); say(`念珠第 ${total / MALA} 圈圆满`); }
+  }, [beads, me, say]);
+
+  // Tap the floor to walk there. A seated monk stays seated: stand up first.
+  const walk = useCallback((x: number, z: number) => {
+    if (!me) return;
+    if (me.sitting) { say('先起身，再走动'); return; }
+    setWalkTo({ x, z });
+    api.move(session, x, z).then(res => saved(res.me)).catch(() => say('没走成，请再试一次'));
+  }, [me, session, saved, say]);
+  useEffect(() => { if (me?.sitting) setWalkTo(null); }, [me?.sitting]);
+
   const drift = me?.sitting ? Math.floor((Date.now() - fetchedAt) / 1000) : 0;   // seconds since the last poll
   void tick;
+
   if (!hall || !me) {
     return <View style={styles.loading}><Text testID="hall.loading" style={styles.muted}>{offline ? '连不上大殿，正在重试…' : '正在入殿…'}</Text></View>;
   }
+  const mine = walkTo && !me.sitting ? { ...me, pos: walkTo } : me;
+  const monks = hall.monks.map(m => (m.handle === me.handle ? mine : m));
+  const stat = (label: string, id: string, value: string | number) => (
+    <View style={styles.stat} key={id}><Text style={styles.statLabel}>{label} </Text><Text testID={id} style={styles.statValue}>{value}</Text></View>
+  );
 
   return (
     <View style={styles.root}>
@@ -136,8 +144,8 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
       <View testID="hall.scene" style={styles.stage} {...handlers}
         {...(Platform.OS === 'web' ? { onWheel: (e: { deltaY: number }) => zoom(e.deltaY > 0 ? 1.1 : 0.9) } : {})}>
         <Canvas style={styles.canvas} dpr={[1, 2]} camera={{ fov: 58, near: 0.1, far: 220, position: [6, 5, 14] }}>
-          <HallScene monks={hall.monks} seats={hall.seats} meHandle={me.handle} orbit={orbit} knockTick={knockTick} onKnock={knock}
-            onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
+          <HallScene monks={monks} seats={hall.seats} meHandle={me.handle} orbit={orbit} knockTick={knockTick} onKnock={knock}
+            bowTick={bowTick} onFloor={walk} onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
         </Canvas>
         <View style={styles.viewBar} pointerEvents="box-none">
           {soundSupported && TRACKS.length > 0 && (
@@ -155,29 +163,30 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           <Pressable testID="hall.zoom.out" onPress={() => zoom(1.25)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
             accessibilityRole="button" accessibilityLabel="拉远"><Text style={styles.chipText}>－</Text></Pressable>
         </View>
-        <Animated.Text testID="hall.merit.rise" pointerEvents="none" style={[styles.rise, {
+        <Animated.Text testID="hall.rise" pointerEvents="none" style={[styles.rise, {
           opacity: rise.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0] }),
           transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [0, -70] }) }] }]}>
-          功德 +1
+          {riseText}
         </Animated.Text>
+        {!!notice && <View style={styles.toast} pointerEvents="none"><Text testID="hall.notice" style={styles.toastText}>{notice}</Text></View>}
         <Text testID="hall.hint" style={styles.hint} pointerEvents="none">
-          {blocked ? '点一下屏幕，开启诵经声' : '拖动环顾大殿 · 点木鱼敲一下 · 点和尚向他合十'}
+          {blocked ? '点一下屏幕，开启诵经声' : me.sitting ? '拖动环顾 · 点木鱼敲一下 · 点和尚向他合十' : '点地面走过去 · 拖动环顾 · 点和尚向他合十'}
         </Text>
       </View>
 
-      {!!notice && <View style={styles.toast} pointerEvents="none"><Text testID="hall.notice" style={styles.toastText}>{notice}</Text></View>}
-
       <View style={styles.panel}>
         <View style={styles.meRow}>
-          <MonkFigure monk={me} size={46} />
+          <MonkFigure monk={me} size={42} />
           <View style={styles.meText}>
             <View style={styles.inline}>
               <Text testID="hall.me.name" style={styles.meName}>{me.name}</Text><Text testID="hall.me.handle" style={styles.muted}>  @{me.handle}</Text>
             </View>
-            <View style={styles.inline}>
-              <Text style={styles.muted}>累计 </Text><Text testID="hall.me.total" style={styles.muted}>{clock(me.totalSeconds + drift)}</Text>
-              <Text style={styles.muted}> · 受礼 </Text><Text testID="hall.me.bows" style={styles.muted}>{me.bows}</Text>
-              <Text style={styles.muted}> · 功德 </Text><Text testID="hall.me.merit" style={styles.muted}>{me.merit + knocks}</Text>
+            <View style={styles.stats}>
+              {stat('累计', 'hall.me.total', clock(me.totalSeconds + drift))}
+              {stat('功德', 'hall.me.merit', me.merit + knocks.extra)}
+              {stat('礼拜', 'hall.me.prostrations', me.prostrations + bows.extra)}
+              {stat('念珠', 'hall.me.beads', me.beads + beads.extra)}
+              {stat('受礼', 'hall.me.bows', me.bows)}
             </View>
           </View>
           <View style={styles.timerBox}>
@@ -188,29 +197,40 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         <View style={styles.actions}>
           {me.sitting ? (
             <Pressable testID="hall.stand" style={({ pressed }) => [styles.primary, styles.secondary, pressed && styles.pressed]}
-              onPress={() => { playBell(); act(() => api.stand(session), '起身'); }} accessibilityRole="button" accessibilityLabel="起身">
+              onPress={() => { playBell(); act(() => api.stand(session), '起身，可以在殿内走动'); }} accessibilityRole="button" accessibilityLabel="起身">
               <Text style={[styles.primaryText, styles.secondaryText]}>起身</Text>
             </Pressable>
           ) : (
             <Pressable testID="hall.sit" style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-              onPress={() => { playBell(); act(() => api.sit(session), '入坐'); }} accessibilityRole="button" accessibilityLabel="坐下">
+              onPress={() => { playBell(); act(() => api.sit(session), '回到蒲团入坐'); }} accessibilityRole="button" accessibilityLabel="坐下">
               <Text style={styles.primaryText}>坐下</Text>
             </Pressable>
           )}
-          <Pressable testID="hall.knock" style={({ pressed }) => [styles.ghost, pressed && styles.knockPressed]}
+          <Pressable testID="hall.prostrate" style={({ pressed }) => [styles.ghost, pressed && styles.tapped]}
+            onPress={prostrate} accessibilityRole="button" accessibilityLabel="礼拜一次">
+            <Text style={styles.ghostText}>礼拜</Text>
+          </Pressable>
+          <Pressable testID="hall.knock" style={({ pressed }) => [styles.ghost, pressed && styles.tapped]}
             onPress={knock} accessibilityRole="button" accessibilityLabel="敲木鱼，功德加一">
             <Text style={styles.ghostText}>木鱼</Text>
           </Pressable>
-          <Pressable testID="hall.bow" style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
-            onPress={() => act(() => api.bow(session), '向大众合十')} accessibilityRole="button" accessibilityLabel="向大众合十">
-            <Text style={styles.ghostText}>合十</Text>
-          </Pressable>
-          <Pressable testID="hall.leave" style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
-            onPress={async () => { try { await api.leave(session); } catch { /* leaving locally is enough */ } onLeft(); }}
-            accessibilityRole="button" accessibilityLabel="离寺">
-            <Text style={styles.ghostText}>离寺</Text>
+          <Pressable testID="hall.beads" style={({ pressed }) => [styles.ghost, pressed && styles.pressed]}
+            onPress={() => setBeadsOpen(true)} accessibilityRole="button" accessibilityLabel="拿起念珠">
+            <Text style={styles.ghostText}>念珠</Text>
           </Pressable>
         </View>
+        <View style={styles.actions}>
+          <Pressable testID="hall.bow" style={({ pressed }) => [styles.minor, pressed && styles.pressed]}
+            onPress={() => act(() => api.bow(session), '向大众合十')} accessibilityRole="button" accessibilityLabel="向大众合十">
+            <Text style={styles.minorText}>向大众合十</Text>
+          </Pressable>
+          <Pressable testID="hall.leave" style={({ pressed }) => [styles.minor, pressed && styles.pressed]}
+            onPress={async () => { try { await api.leave(session); } catch { /* leaving locally is enough */ } onLeft(); }}
+            accessibilityRole="button" accessibilityLabel="离寺">
+            <Text style={styles.minorText}>离寺</Text>
+          </Pressable>
+        </View>
+        {beadsOpen && <BeadsPanel count={me.beads + beads.extra} onBead={bead} onClose={() => setBeadsOpen(false)} />}
       </View>
     </View>
   );
@@ -234,22 +254,28 @@ const styles = StyleSheet.create({
   count: { color: '#e9dcc3', fontSize: 14 },
   countNum: { color: '#fff', fontWeight: '700', fontVariant: ['tabular-nums'] },
   offline: { color: '#f2c9a0', fontSize: 12 },
-  toast: { position: 'absolute', left: 0, right: 0, bottom: 176, alignItems: 'center' },
+  toast: { position: 'absolute', left: 0, right: 0, bottom: 40, alignItems: 'center' },
   toastText: { backgroundColor: '#2a1f18dd', color: C.paper, paddingHorizontal: 16, paddingVertical: 8, borderRadius: 18, fontSize: 14, overflow: 'hidden' },
-  panel: { backgroundColor: C.paper, borderTopWidth: 1, borderTopColor: C.line, paddingHorizontal: 16, paddingTop: 12, paddingBottom: 18, gap: 12 },
+  panel: { backgroundColor: C.paper, borderTopWidth: 1, borderTopColor: C.line, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 14, gap: 10 },
+  stats: { flexDirection: 'row', flexWrap: 'wrap', columnGap: 10, rowGap: 0 },
+  stat: { flexDirection: 'row', alignItems: 'baseline' },
+  statLabel: { color: C.inkSoft, fontSize: 12 },
+  statValue: { color: C.ink, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] },
+  minor: { flex: 1, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.paperDeep },
+  minorText: { color: C.woodSoft, fontSize: 14 },
   meRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   meText: { flex: 1, gap: 2 },
   meName: { fontSize: 18, fontWeight: '700', color: C.ink },
   muted: { color: C.inkSoft, fontSize: 13 },
   timerBox: { alignItems: 'flex-end' },
-  timer: { fontSize: 26, fontWeight: '700', color: C.wood, fontVariant: ['tabular-nums'] },
-  actions: { flexDirection: 'row', gap: 10 },
-  primary: { flex: 1.5, height: 48, borderRadius: 12, backgroundColor: C.vermilion, alignItems: 'center', justifyContent: 'center' },
+  timer: { fontSize: 24, fontWeight: '700', color: C.wood, fontVariant: ['tabular-nums'] },
+  actions: { flexDirection: 'row', gap: 8 },
+  primary: { flex: 1.3, height: 48, borderRadius: 12, backgroundColor: C.vermilion, alignItems: 'center', justifyContent: 'center' },
   secondary: { backgroundColor: C.wood },
   primaryText: { color: C.paper, fontSize: 17, fontWeight: '600', letterSpacing: 4 },
   secondaryText: { color: C.gold },
   ghost: { flex: 1, height: 48, borderRadius: 12, borderWidth: 1, borderColor: C.woodSoft, alignItems: 'center', justifyContent: 'center' },
   ghostText: { color: C.wood, fontSize: 16 },
   pressed: { opacity: 0.75 },
-  knockPressed: { backgroundColor: C.gold, transform: [{ scale: 0.94 }] },
+  tapped: { backgroundColor: C.gold, transform: [{ scale: 0.94 }] },
 });

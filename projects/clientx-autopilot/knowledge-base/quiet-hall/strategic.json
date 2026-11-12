@@ -6,7 +6,9 @@
     "An ID belongs to whoever holds its token; the server refuses anyone else (covered by the server tests, not reachable from the UI).",
     "Sitting time counts only while the monk sits and is kept when the monk stands or leaves.",
     "There is no chat. The only interaction between monks is a bow. Chanting, wooden fish and bell sounds are synthesized on the device.",
-    "Knocking the wooden fish adds one merit per knock; knocks are sent in batches and one batch counts at most 60."
+    "Knocking the wooden fish adds one merit per knock; knocks are sent in batches and one batch counts at most 60.",
+    "A standing monk can walk anywhere on the hall floor by tapping it; a seated monk stays on the cushion, and sitting down returns the monk to it.",
+    "Prostrations and prayer beads are counted per monk like knocks (batches of at most 60); 108 beads make one round."
   ],
   "coverage_map": {
     "smoke": [
@@ -94,12 +96,51 @@
         ]
       },
       {
+        "id": "practice",
+        "name": "Prostrate and turn prayer beads",
+        "priority": "P1",
+        "code_paths": [
+          "server/hall.mjs",
+          "app/src/HallScreen.tsx",
+          "app/src/BeadsPanel.tsx",
+          "app/src/useBatched.ts"
+        ],
+        "specs": [
+          "specs/hall-practice.md"
+        ],
+        "cases": [
+          {
+            "id": "web_hall_practice",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 6,
+            "run": {
+              "spec": "hall-practice",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          }
+        ]
+      },
+      {
         "id": "bow",
         "name": "Bow to a monk or to the hall",
         "priority": "P1",
         "code_paths": [
           "server/hall.mjs",
           "app/src/HallScreen.tsx"
+        ],
+        "specs": [],
+        "cases": []
+      },
+      {
+        "id": "walk",
+        "name": "Walk around the hall",
+        "priority": "P1",
+        "code_paths": [
+          "server/hall.mjs",
+          "app/src/three/HallScene.tsx",
+          "app/src/three/Monk3D.tsx"
         ],
         "specs": [],
         "cases": []

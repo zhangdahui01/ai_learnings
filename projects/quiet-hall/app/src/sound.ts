@@ -7,3 +7,4 @@ export function setChanting(_trackId: string | null): void {}
 export function playKnock(): void {}
 export function playBell(): void {}
 export function soundStatus(): { state: string; position: number } { return { state: 'unsupported', position: 0 }; }
+export function playTick(): void {}

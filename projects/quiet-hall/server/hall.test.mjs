@@ -67,6 +67,28 @@ test('knocking the wooden fish adds merit, in capped batches', () => {
   assert.equal(h.knock(a, 'x').merit, 66);
 });
 
+test('prostrations and prayer beads are counted like knocks', () => {
+  const { h } = hall();
+  const a = h.auth(h.join('alice').token);
+  assert.equal(h.prostrate(a).prostrations, 1);
+  assert.equal(h.beads(a, 27).beads, 27);
+  assert.equal(h.beads(a, 500).beads, 87);
+  assert.deepEqual([h.view(a).merit, h.view(a).prostrations], [0, 1]);
+});
+
+test('a standing monk can walk; sitting returns to the cushion', () => {
+  const { h } = hall();
+  const a = h.auth(h.join('alice').token);
+  assert.deepEqual(h.move(a, 3.456, -7.891).pos, { x: 3.46, z: -7.89 });
+  assert.deepEqual(h.move(a, 9999, 'x').pos, { x: 3.46, z: -7.89 });       // nonsense is ignored
+  assert.deepEqual(h.move(a, 9999, 1).pos, { x: 40, z: 1 });               // and far away is clamped
+  assert.equal(h.sit(a).pos, null);
+  assert.equal(h.move(a, 1, 1).pos, null);                                 // seated monks do not slide around
+  assert.equal(h.stand(a).pos, null);
+  h.move(a, 2, 2); h.leave(a);
+  assert.equal(h.join('alice', [...h.monks.values()][0] && undefined).status, 409);
+});
+
 test('residents fill the hall and cannot be impersonated', () => {
   const { h } = hall();
   h.seedResidents(5);

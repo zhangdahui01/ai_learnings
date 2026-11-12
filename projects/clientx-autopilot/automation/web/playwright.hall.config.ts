@@ -8,7 +8,9 @@ const web = Number(process.env.HALL_WEB_PORT || 8790);
 
 export default defineConfig({
   testDir: './tests-hall',
-  fullyParallel: true,
+  // The hall is a 3D scene; rendering it in software is heavy, so cases run one at a time.
+  fullyParallel: false,
+  workers: 1,
   retries: Number(process.env.RETRIES || 0),
   timeout: 30_000,
   expect: { timeout: 10_000 },

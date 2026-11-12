@@ -68,6 +68,16 @@ export function playKnock(): void {
   });
 }
 
+/** A prayer bead sliding along the string: one small click. */
+export function playTick(): void {
+  const c = soundSupported ? strokes() : null; if (!c || !out) return;
+  unlockSound();
+  const t = c.currentTime + 0.005;
+  const o = c.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(1500, t); o.frequency.exponentialRampToValueAtTime(900, t + 0.04);
+  const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.002); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.07);
+  o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.09);
+}
+
 export function playBell(): void {
   const c = soundSupported ? strokes() : null; if (!c || !out) return;
   unlockSound();

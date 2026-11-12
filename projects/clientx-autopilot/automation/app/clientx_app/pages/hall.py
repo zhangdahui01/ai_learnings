@@ -33,11 +33,18 @@ class HallPage(Page):
     TOTAL = T("hall.me.total", "hall.me.total")
     BOWS = T("hall.me.bows", "hall.me.bows")
     MERIT = T("hall.me.merit", "hall.me.merit")
+    PROSTRATIONS = T("hall.me.prostrations", "hall.me.prostrations")
+    BEADS = T("hall.me.beads", "hall.me.beads")
     PRESENT = T("hall.count", "hall.count")
     SITTING = T("hall.sitting", "hall.sitting")
     SIT = T("hall.sit", "hall.sit")
     STAND = T("hall.stand", "hall.stand")
     KNOCK = T("hall.knock", "hall.knock")
+    PROSTRATE = T("hall.prostrate", "hall.prostrate")
+    BEADS_OPEN = T("hall.beads", "hall.beads")
+    BEAD = T("beads.bead", "beads.bead")
+    BEADS_IN_ROUND = T("beads.count", "beads.count")
+    BEADS_CLOSE = T("beads.close", "beads.close")
     BOW = T("hall.bow", "hall.bow")
     LEAVE = T("hall.leave", "hall.leave")
     NOTICE = T("hall.notice", "hall.notice")
@@ -58,6 +65,17 @@ class HallPage(Page):
     def knock(self, times: int = 1) -> None:
         for _ in range(times):
             self.tap(self.KNOCK)
+
+    def prostrate(self, times: int = 1) -> None:
+        for _ in range(times):
+            self.tap(self.PROSTRATE)
+
+    def turn_beads(self, beads: int) -> None:
+        self.tap(self.BEADS_OPEN)
+        for _ in range(beads):
+            self.tap(self.BEAD)
+        self.expect_text(self.BEADS_IN_ROUND, str(beads % 108))
+        self.tap(self.BEADS_CLOSE)
 
     def bow_to_all(self) -> None:
         self.tap(self.BOW)

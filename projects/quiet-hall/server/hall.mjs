@@ -53,7 +53,7 @@ export class Hall {
     m.sitting = false; m.sitSince = null;
   }
 
-  #leave(m, at) { this.#stand(m, at); m.inHall = false; m.seat = null; }
+  #leave(m, at) { this.#stand(m, at); m.inHall = false; m.seat = null; m.pos = null; }
 
   join(handle, token) {
     if (typeof handle !== 'string' || !HANDLE.test(handle)) return { status: 400, error: 'ID 需为 2–16 位的字母、数字、汉字、下划线或短横线' };
@@ -84,15 +84,27 @@ export class Hall {
     m.lastSeen = this.now();
   }
 
-  sit(m) { this.touch(m); if (!m.sitting) { m.sitting = true; m.sitSince = this.now(); } return this.view(m); }
+  sit(m) { this.touch(m); m.pos = null; if (!m.sitting) { m.sitting = true; m.sitSince = this.now(); } return this.view(m); }
   stand(m) { this.touch(m); this.#stand(m); return this.view(m); }
   leave(m) { this.#leave(m, this.now()); return this.view(m); }
 
-  // Knocking the wooden fish. The app sends knocks in small batches; one batch is capped so a script cannot inflate it.
-  knock(m, count = 1) {
+  // Counted practices: knocking the wooden fish (merit), prostrations, prayer beads. The app sends them in
+  // small batches; one batch is capped so a script cannot inflate a count.
+  #tally(m, field, count) {
     this.touch(m);
-    const n = Math.min(60, Math.max(0, Math.floor(Number(count) || 0)));
-    m.merit = (m.merit ?? 0) + n;
+    const n = Math.min(60, Math.max(0, Math.floor(Number(count ?? 1) || 0)));
+    m[field] = (m[field] ?? 0) + n;
+    return this.view(m);
+  }
+  knock(m, count) { return this.#tally(m, 'merit', count); }
+  prostrate(m, count) { return this.#tally(m, 'prostrations', count); }
+  beads(m, count) { return this.#tally(m, 'beads', count); }
+
+  // Walking: a standing monk may go anywhere on the hall floor. Sitting down returns the monk to the cushion.
+  move(m, x, z) {
+    this.touch(m);
+    const ok = v => typeof v === 'number' && Number.isFinite(v);
+    if (!m.sitting && ok(x) && ok(z)) m.pos = { x: Math.round(Math.max(-40, Math.min(40, x)) * 100) / 100, z: Math.round(Math.max(-400, Math.min(400, z)) * 100) / 100 };
     return this.view(m);
   }
 
@@ -118,7 +130,8 @@ export class Hall {
   view(m) {
     const live = m.sitting ? Math.max(0, Math.round((this.now() - m.sitSince) / 1000)) : 0;
     return { handle: m.handle, name: m.name, gender: m.gender, look: m.look, seat: m.seat, sitting: m.sitting,
-             sittingSeconds: live, totalSeconds: m.totalSeconds + live, bows: m.bows, merit: m.merit ?? 0, resident: !!m.resident };
+             sittingSeconds: live, totalSeconds: m.totalSeconds + live, bows: m.bows, merit: m.merit ?? 0, prostrations: m.prostrations ?? 0, beads: m.beads ?? 0,
+             pos: m.sitting ? null : m.pos ?? null, resident: !!m.resident };
   }
 
   snapshot() {

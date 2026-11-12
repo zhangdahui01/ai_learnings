@@ -27,3 +27,10 @@ Feature: Quiet Hall
     Given a monk who has entered the hall
     When the monk knocks the wooden fish 3 times
     Then the merit shows 3
+
+  Scenario: A monk prostrates and turns prayer beads
+    Given a monk who has entered the hall
+    When the monk prostrates 2 times
+    And the monk turns 4 prayer beads
+    Then the prostration count shows 2
+    And the bead count shows 4

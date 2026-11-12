@@ -5,7 +5,8 @@ import { Platform } from 'react-native';
 export interface Monk {
   handle: string; name: string; gender: 'm' | 'f';
   look: { skin: string; robe: string; face: number; beads: boolean };
-  seat: number | null; sitting: boolean; sittingSeconds: number; totalSeconds: number; bows: number; merit: number; resident: boolean;
+  seat: number | null; sitting: boolean; sittingSeconds: number; totalSeconds: number; bows: number; merit: number; prostrations: number; beads: number;
+  pos: { x: number; z: number } | null; resident: boolean;
 }
 export interface HallSnapshot { now: number; present: number; sitting: number; seats: number; monks: Monk[]; me: Monk | null }
 export interface Session { server: string; handle: string; token: string }
@@ -32,7 +33,7 @@ export class HallError extends Error {
 
 async function call<T>(server: string, path: string, init: { method?: string; token?: string; body?: unknown; keepalive?: boolean } = {}): Promise<T> {
   const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), 8000);
+  const timer = setTimeout(() => controller.abort(), 15000);
   let res: Response;
   try {
     res = await fetch(`${server.replace(/\/+$/, '')}${path}`, {
@@ -59,6 +60,9 @@ export const api = {
   bow: (s: Session, to?: string) => call<{ bowedTo: number; me: Monk }>(s.server, '/api/bow', { method: 'POST', token: s.token, body: { to } }),
   // keepalive: a batch sent while the page is closing still reaches the hall
   knock: (s: Session, count: number) => call<{ me: Monk }>(s.server, '/api/knock', { method: 'POST', token: s.token, body: { count }, keepalive: true }),
+  prostrate: (s: Session, count: number) => call<{ me: Monk }>(s.server, '/api/prostrate', { method: 'POST', token: s.token, body: { count }, keepalive: true }),
+  beads: (s: Session, count: number) => call<{ me: Monk }>(s.server, '/api/beads', { method: 'POST', token: s.token, body: { count }, keepalive: true }),
+  move: (s: Session, x: number, z: number) => call<{ me: Monk }>(s.server, '/api/move', { method: 'POST', token: s.token, body: { x, z } }),
   leave: (s: Session) => call<{ me: Monk }>(s.server, '/api/leave', { method: 'POST', token: s.token }),
 };
 

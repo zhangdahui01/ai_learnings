@@ -73,13 +73,46 @@
     "hall.view": {
       "selector": "testid=hall.view",
       "source": "baseline"
+    },
+    "hall.prostrate": {
+      "selector": "testid=hall.prostrate",
+      "source": "baseline"
+    },
+    "hall.me.prostrations": {
+      "selector": "testid=hall.me.prostrations",
+      "source": "baseline"
+    },
+    "hall.beads": {
+      "selector": "testid=hall.beads",
+      "source": "baseline"
+    },
+    "hall.me.beads": {
+      "selector": "testid=hall.me.beads",
+      "source": "baseline"
+    },
+    "beads.panel": {
+      "selector": "testid=beads.panel",
+      "source": "baseline"
+    },
+    "beads.bead": {
+      "selector": "testid=beads.bead",
+      "source": "baseline"
+    },
+    "beads.count": {
+      "selector": "testid=beads.count",
+      "source": "baseline"
+    },
+    "beads.close": {
+      "selector": "testid=beads.close",
+      "source": "baseline"
     }
   },
   "auth_flows": {
     "visitor": "no account and nothing to type: tapping Enter draws a random ID; the token is kept in app storage until the visitor leaves"
   },
   "preconditions": {
-    "hall_server": "node projects/quiet-hall/server/server.mjs"
+    "hall_server": "node projects/quiet-hall/server/server.mjs",
+    "walking": "walking is a tap on the 3D floor: it has no element id, so UI cases cannot target it; the server tests cover the rule"
   },
   "environments": {
     "local": {

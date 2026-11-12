@@ -33,20 +33,58 @@ function mat(color: string, roughness = 0.85) {
   return cache.get(key)!;
 }
 
-/** One monk. Faces -z (toward the altar). Drawn from the look the server derived from the person's ID. */
-export function Monk3D({ monk, position, me, onPress }: {
-  monk: Monk; position: [number, number, number]; me: boolean; onPress?: (m: Monk) => void;
+const WALK_SPEED = 2.6;                 // hall units per second
+const BOW_SECONDS = 2.4;
+
+/**
+ * One monk, drawn from the look the server derived from the person's ID. Faces -z (toward the altar).
+ * `position` is where the monk should be: the figure walks there instead of jumping. A prostration plays
+ * when `bowTick` changes (your own monk) or when the hall reports one more prostration (everyone else).
+ */
+export function Monk3D({ monk, position, me, onPress, bowTick }: {
+  monk: Monk; position: [number, number, number]; me: boolean; onPress?: (m: Monk) => void; bowTick?: number;
 }) {
+  const root = useRef<THREE.Group>(null);
   const body = useRef<THREE.Group>(null);
+  const at = useRef<[number, number] | null>(null);
+  const bowStart = useRef(-100);
+  const seenTick = useRef(bowTick ?? 0);
+  const seenCount = useRef(monk.prostrations);
   const phase = (monk.seat ?? 0) * 0.7;
-  useFrame(({ clock }) => {            // slow breathing, each monk on their own rhythm
-    if (body.current) body.current.scale.y = 1 + Math.sin(clock.elapsedTime * 0.9 + phase) * (monk.sitting ? 0.018 : 0.006);
+  useFrame(({ clock }, dt) => {
+    const g = root.current, b = body.current; if (!g || !b) return;
+    const t = clock.elapsedTime;
+    if (!at.current) at.current = [position[0], position[2]];
+    const dx = position[0] - at.current[0], dz = position[2] - at.current[1], far = Math.hypot(dx, dz);
+    const walking = far > 0.03;
+    if (walking) {
+      const step = Math.min(far, WALK_SPEED * Math.min(dt, 0.1));
+      at.current = [at.current[0] + (dx / far) * step, at.current[1] + (dz / far) * step];
+    }
+    g.position.set(at.current[0], position[1] + (walking ? Math.abs(Math.sin(t * 9)) * 0.06 : 0), at.current[1]);
+    // face the way you walk; otherwise turn back to the altar
+    const heading = walking ? Math.atan2(-dx, -dz) : 0;
+    let turn = heading - g.rotation.y; turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+    g.rotation.y += turn * Math.min(1, dt * 8);
+
+    if (bowTick !== undefined && bowTick !== seenTick.current) { seenTick.current = bowTick; bowStart.current = t; }
+    if (monk.prostrations !== seenCount.current) {
+      if (!me && monk.prostrations > seenCount.current) bowStart.current = t;
+      seenCount.current = monk.prostrations;
+    }
+    // prostration: fold forward until the forehead nears the floor, hold a moment, rise
+    const k = (t - bowStart.current) / BOW_SECONDS;
+    const fold = k >= 0 && k < 1 ? Math.sin(Math.min(1, k * 1.6) * Math.PI / 2) * (k > 0.72 ? (1 - k) / 0.28 : 1) : 0;
+    b.rotation.x = -fold * (monk.sitting ? 1.15 : 1.35);
+    b.position.y = -fold * (monk.sitting ? 0.05 : 0.5);
+    b.position.z = -fold * (monk.sitting ? 0.1 : 0.25);
+    b.scale.y = 1 + Math.sin(t * 0.9 + phase) * (monk.sitting ? 0.018 : 0.006);     // slow breathing
   });
   const skin = mat(monk.look.skin, 0.7);
   const robe = mat(monk.look.robe);
   const headY = monk.sitting ? 1.02 : 1.62;
   return (
-    <group position={position} onClick={onPress ? e => { e.stopPropagation(); onPress(monk); } : undefined}>
+    <group ref={root} position={position} onClick={onPress ? e => { e.stopPropagation(); onPress(monk); } : undefined}>
       {me && <mesh geometry={G.ring} material={M.ring} rotation={[Math.PI / 2, 0, 0]} position={[0, 0.1, 0]} />}
       <group ref={body}>
         {monk.sitting ? (
