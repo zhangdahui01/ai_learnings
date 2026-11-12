@@ -10,9 +10,10 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
 function run(hall, me, action, data) {
   switch (action) {
     case 'bow': return hall.bow(me, data.to);
-    case 'knock': case 'prostrate': case 'beads': return hall[action](me, data.count);
+    case 'knock': case 'prostrate': case 'beads': case 'trial': return hall[action](me, data.count);
+    case 'sit': return hall.sit(me, data.seat);
     case 'move': return hall.move(me, data.x, data.z);
-    default: return hall[action](me);                       // sit, stand, leave
+    default: return hall[action](me);                       // stand, leave
   }
 }
 

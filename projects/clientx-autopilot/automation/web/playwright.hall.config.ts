@@ -8,7 +8,6 @@ const web = Number(process.env.HALL_WEB_PORT || 8790);
 
 export default defineConfig({
   testDir: './tests-hall',
-  // The hall is a 3D scene; rendering it in software is heavy, so cases run one at a time.
   fullyParallel: false,
   workers: 1,
   retries: Number(process.env.RETRIES || 0),
@@ -20,6 +19,10 @@ export default defineConfig({
     actionTimeout: 10_000,
     trace: 'retain-on-failure', screenshot: 'only-on-failure', video: 'retain-on-failure',
     ...devices['Pixel 7'],
+    // These cases check the hall's rules, not its 3D drawing. Without a GPU the 3D scene is rendered in
+    // software, slowly enough to change the outcome of a timed trial, so the cases run with 3D switched off
+    // and the app shows its flat hall. Set HALL_3D=1 to run them against the 3D scene on a machine with a GPU.
+    launchOptions: { args: process.env.HALL_3D ? [] : ['--disable-gpu', '--disable-3d-apis'] },
   },
   projects: [{ name: 'mobile-chromium' }],
   webServer: process.env.HALL_BASE_URL ? undefined : [

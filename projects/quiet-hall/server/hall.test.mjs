@@ -89,6 +89,19 @@ test('a standing monk can walk; sitting returns to the cushion', () => {
   assert.equal(h.join('alice', [...h.monks.values()][0] && undefined).status, 409);
 });
 
+test('a monk can sit on another free cushion, but not on a taken one', () => {
+  const { h } = hall();
+  const a = h.auth(h.join('alice').token); const b = h.auth(h.join('bob').token);
+  assert.deepEqual([a.seat, b.seat], [0, 1]);
+  assert.equal(h.sit(a, 7).seat, 7);                  // a free cushion: taken
+  assert.equal(h.sit(b, 7).seat, 1);                  // alice is on it: bob stays on his own
+  h.stand(a);
+  assert.equal(h.sit(a, 1).seat, 7);                  // bob's cushion, even while he is seated elsewhere in the row
+  for (const bad of [-1, 2.5, '3', 99999, null]) assert.equal(h.sit(a, bad).seat, 7);
+  assert.equal(h.join('carol').me.seat, 0);           // the cushion alice left is free again
+  assert.equal(h.trial(a).trials, 1);
+});
+
 test('residents fill the hall and cannot be impersonated', () => {
   const { h } = hall();
   h.seedResidents(5);

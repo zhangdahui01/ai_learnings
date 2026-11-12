@@ -105,6 +105,38 @@
     "beads.close": {
       "selector": "testid=beads.close",
       "source": "baseline"
+    },
+    "hall.trial": {
+      "selector": "testid=hall.trial",
+      "source": "baseline"
+    },
+    "hall.focus": {
+      "selector": "testid=hall.focus",
+      "source": "baseline"
+    },
+    "hall.focus.value": {
+      "selector": "testid=hall.focus.value",
+      "source": "baseline"
+    },
+    "hall.me.trials": {
+      "selector": "testid=hall.me.trials",
+      "source": "baseline"
+    },
+    "hall.over": {
+      "selector": "testid=hall.over",
+      "source": "baseline"
+    },
+    "hall.over.again": {
+      "selector": "testid=hall.over.again",
+      "source": "baseline"
+    },
+    "hall.joystick": {
+      "selector": "testid=hall.joystick",
+      "source": "baseline"
+    },
+    "hall.trials": {
+      "selector": "testid=hall.trials",
+      "source": "baseline"
     }
   },
   "auth_flows": {
@@ -112,7 +144,8 @@
   },
   "preconditions": {
     "hall_server": "node projects/quiet-hall/server/server.mjs",
-    "walking": "walking is a tap on the 3D floor: it has no element id, so UI cases cannot target it; the server tests cover the rule"
+    "walking": "walking is a tap on the 3D floor: it has no element id, so UI cases cannot target it; the server tests cover the rule",
+    "forced_trial": "web only: open the page with ?trial=dog or ?trial=fairies to make a trial start about 2.5 s after sitting; ?trial=off disables trials (the default for the other cases)"
   },
   "environments": {
     "local": {

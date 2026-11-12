@@ -8,7 +8,10 @@
     "There is no chat. The only interaction between monks is a bow. Chanting, wooden fish and bell sounds are synthesized on the device.",
     "Knocking the wooden fish adds one merit per knock; knocks are sent in batches and one batch counts at most 60.",
     "A standing monk can walk anywhere on the hall floor by tapping it; a seated monk stays on the cushion, and sitting down returns the monk to it.",
-    "Prostrations and prayer beads are counted per monk like knocks (batches of at most 60); 108 beads make one round."
+    "Prostrations and prayer beads are counted per monk like knocks (batches of at most 60); 108 beads make one round.",
+    "A standing monk may sit on any free cushion; the app picks the nearest one and the wooden fish goes with the monk. A cushion someone else holds cannot be taken.",
+    "Walking never passes through pillars or other monks, and two standing monks are never drawn on the same spot.",
+    "Trials of composure happen only to a seated monk: a distraction drains composure, gathering the mind restores it, the monk cannot stand during a trial, sitting through it adds 1 to the composure count, and reaching zero ends the visit (the monk leaves the hall)."
   ],
   "coverage_map": {
     "smoke": [
@@ -123,6 +126,44 @@
         ]
       },
       {
+        "id": "trial",
+        "name": "Trial of composure",
+        "priority": "P1",
+        "code_paths": [
+          "server/hall.mjs",
+          "app/src/HallScreen.tsx",
+          "app/src/three/Trials.tsx"
+        ],
+        "specs": [
+          "specs/hall-trial-hold.md",
+          "specs/hall-trial-lose.md"
+        ],
+        "cases": [
+          {
+            "id": "web_hall_trial_hold",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 6,
+            "run": {
+              "spec": "hall-trial-hold",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          },
+          {
+            "id": "web_hall_trial_lose",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 3,
+            "run": {
+              "spec": "hall-trial-lose",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          }
+        ]
+      },
+      {
         "id": "bow",
         "name": "Bow to a monk or to the hall",
         "priority": "P1",
@@ -140,7 +181,9 @@
         "code_paths": [
           "server/hall.mjs",
           "app/src/three/HallScene.tsx",
-          "app/src/three/Monk3D.tsx"
+          "app/src/three/Monk3D.tsx",
+          "app/src/three/layout.ts",
+          "app/src/Joystick.tsx"
         ],
         "specs": [],
         "cases": []

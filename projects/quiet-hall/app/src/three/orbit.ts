@@ -15,7 +15,7 @@ export function useOrbit(initial: Orbit, limits = { minDist: 4, maxDist: 60 }) {
   const orbit = useRef<Orbit>({ ...initial });
   const start = useRef({ yaw: 0, pitch: 0, dist: 0, spread: 0 });
   const responder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (e, g) => Math.abs(g.dx) + Math.abs(g.dy) > 6 || spread(e) > 0,
+    onMoveShouldSetPanResponder: (e, g) => Math.abs(g.dx) + Math.abs(g.dy) > 14 || spread(e) > 0,
     onPanResponderGrant: e => { start.current = { ...orbit.current, spread: spread(e) }; },
     onPanResponderMove: (e, g) => {
       const now = spread(e);

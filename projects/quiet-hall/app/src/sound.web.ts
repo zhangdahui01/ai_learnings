@@ -78,6 +78,32 @@ export function playTick(): void {
   o.connect(g); g.connect(out); o.start(t); o.stop(t + 0.09);
 }
 
+/** A dog's bark: two short rough yelps. */
+export function playBark(): void {
+  const c = soundSupported ? strokes() : null; if (!c || !out) return;
+  unlockSound();
+  [0, 0.19].forEach(offset => {
+    const t = c.currentTime + 0.01 + offset;
+    const o = c.createOscillator(); o.type = 'sawtooth';
+    o.frequency.setValueAtTime(520, t); o.frequency.exponentialRampToValueAtTime(210, t + 0.11);
+    const f = c.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = 900; f.Q.value = 1.2;
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.5, t + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.13);
+    o.connect(f); f.connect(g); g.connect(out!); o.start(t); o.stop(t + 0.15);
+  });
+}
+
+/** A light run of high notes, for the celestial visitors. */
+export function playChime(): void {
+  const c = soundSupported ? strokes() : null; if (!c || !out) return;
+  unlockSound();
+  [1318, 1568, 1976, 2349].forEach((hz, i) => {
+    const t = c.currentTime + 0.01 + i * 0.09;
+    const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = hz;
+    const g = c.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + 0.7);
+    o.connect(g); g.connect(out!); o.start(t); o.stop(t + 0.75);
+  });
+}
+
 export function playBell(): void {
   const c = soundSupported ? strokes() : null; if (!c || !out) return;
   unlockSound();

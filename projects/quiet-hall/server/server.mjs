@@ -25,13 +25,14 @@ function save() {
 setInterval(save, 5000).unref();
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { dirty = true; save(); process.exit(0); });
 
-const ACTIONS = ['sit', 'stand', 'bow', 'leave', 'knock', 'prostrate', 'beads', 'move'];
+const ACTIONS = ['sit', 'stand', 'bow', 'leave', 'knock', 'prostrate', 'beads', 'move', 'trial'];
 function run(hall, me, action, data) {
   switch (action) {
     case 'bow': return hall.bow(me, data.to);
-    case 'knock': case 'prostrate': case 'beads': return hall[action](me, data.count);
+    case 'knock': case 'prostrate': case 'beads': case 'trial': return hall[action](me, data.count);
+    case 'sit': return hall.sit(me, data.seat);
     case 'move': return hall.move(me, data.x, data.z);
-    default: return hall[action](me);                       // sit, stand, leave
+    default: return hall[action](me);                       // stand, leave
   }
 }
 

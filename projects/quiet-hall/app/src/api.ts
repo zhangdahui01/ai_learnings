@@ -5,7 +5,7 @@ import { Platform } from 'react-native';
 export interface Monk {
   handle: string; name: string; gender: 'm' | 'f';
   look: { skin: string; robe: string; face: number; beads: boolean };
-  seat: number | null; sitting: boolean; sittingSeconds: number; totalSeconds: number; bows: number; merit: number; prostrations: number; beads: number;
+  seat: number | null; sitting: boolean; sittingSeconds: number; totalSeconds: number; bows: number; merit: number; prostrations: number; beads: number; trials: number;
   pos: { x: number; z: number } | null; resident: boolean;
 }
 export interface HallSnapshot { now: number; present: number; sitting: number; seats: number; monks: Monk[]; me: Monk | null }
@@ -55,7 +55,8 @@ export const api = {
   join: (server: string, handle: string, token?: string) =>
     call<{ token: string; me: Monk }>(server, '/api/join', { method: 'POST', body: { handle, token } }),
   hall: (s: Session) => call<HallSnapshot>(s.server, '/api/hall', { token: s.token }),
-  sit: (s: Session) => call<{ me: Monk }>(s.server, '/api/sit', { method: 'POST', token: s.token }),
+  sit: (s: Session, seat?: number | null) => call<{ me: Monk }>(s.server, '/api/sit', { method: 'POST', token: s.token, body: { seat: seat ?? undefined } }),
+  trial: (s: Session, count: number) => call<{ me: Monk }>(s.server, '/api/trial', { method: 'POST', token: s.token, body: { count }, keepalive: true }),
   stand: (s: Session) => call<{ me: Monk }>(s.server, '/api/stand', { method: 'POST', token: s.token }),
   bow: (s: Session, to?: string) => call<{ bowedTo: number; me: Monk }>(s.server, '/api/bow', { method: 'POST', token: s.token, body: { to } }),
   // keepalive: a batch sent while the page is closing still reaches the hall

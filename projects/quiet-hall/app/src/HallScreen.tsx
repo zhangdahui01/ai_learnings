@@ -1,17 +1,33 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
-import { api, HallError, type HallSnapshot, type Session } from './api';
+import { api, HallError, type HallSnapshot, type Monk, type Session } from './api';
+import { Joystick } from './Joystick';
 import { BeadsPanel, MALA } from './BeadsPanel';
 import { MonkFigure } from './MonkFigure';
-import { playBell, playKnock, playTick, setChanting, soundStatus, soundSupported, TRACKS } from './sound';
+import { playBark, playBell, playChime, playKnock, playTick, setChanting, soundStatus, soundSupported, TRACKS } from './sound';
 import { useBatched } from './useBatched';
 import { HallScene } from './three/HallScene';
+import { nearestFreeSeat, resolvePosition, seatPosition } from './three/layout';
 import { useOrbit, type Orbit } from './three/orbit';
+import type { TrialKind } from './three/Trials';
 import { FlatHall } from './FlatHall';
 import { Stage3D } from './three/Stage3D';
 import { C, clock } from './theme';
 
 const POLL_MS = 2000;
+const WALK_SPEED = 2.6;                 // hall units per second, same as the monk's stride
+// Trials of composure: a distraction arrives while you sit. Your composure drains; gather your mind to hold it.
+const TRIALS: Record<TrialKind, { title: string; drain: number; seconds: number; passed: string }> = {
+  dog: { title: '野狗闯进大殿，绕着你狂吠', drain: 13, seconds: 9, passed: '野狗悻悻而去' },
+  fairies: { title: '七位仙女飘然而至，绕着你起舞', drain: 17, seconds: 10, passed: '仙女化作一阵清风' },
+};
+const FOCUS_GAIN = 15;
+function trialSetting(): { forced: TrialKind | null; off: boolean } {
+  if (Platform.OS !== 'web' || typeof location === 'undefined') return { forced: null, off: false };
+  const v = new URLSearchParams(location.search).get('trial');
+  return { forced: v === 'dog' || v === 'fairies' ? v : null, off: v === 'off' };
+}
+interface Trial { kind: TrialKind; focus: number; endsAt: number; at: number }      // `at`: when composure was last updated
 // Where you stand to look at the hall: behind your cushion, from the side, or from the altar looking back.
 const VIEWS: { label: string; orbit: Orbit }[] = [
   { label: '身后', orbit: { yaw: 0.55, pitch: 0.34, dist: 9.5 } },
@@ -34,6 +50,13 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const [walkTo, setWalkTo] = useState<{ x: number; z: number } | null>(null);        // where I am walking, before the hall confirms
   const rise = useRef(new Animated.Value(0)).current;
   const [riseText, setRiseText] = useState('功德 +1');
+  const [trial, setTrial] = useState<Trial | null>(null);
+  const [trialsOn, setTrialsOn] = useState(() => !trialSetting().off);
+  const [expelled, setExpelled] = useState<Monk | null>(null);       // set when composure runs out: the game is over
+  const trialRef = useRef<Trial | null>(null);       // the trial as the timer sees it; `trial` is the copy that is drawn
+  const nextTrialAt = useRef(0);
+  const lastNoise = useRef(0);
+  const stick = useRef({ x: 0, y: 0 });
   const [flat, setFlat] = useState(false);            // true when this device cannot draw the 3D hall
   const noThreeD = useCallback(() => setFlat(true), []);
   const [view, setView] = useState(0);
@@ -52,7 +75,9 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
     Animated.timing(rise, { toValue: 1, duration: 900, useNativeDriver: Platform.OS !== 'web' }).start();
   }, [rise]);
 
+  const gone = useRef(false);                          // once expelled, stop talking to the hall: reading it would walk you back in
   const refresh = useCallback(async () => {
+    if (gone.current) return;
     try {
       const snap = await api.hall(session);
       if (!snap.me) { onLeft(); return; }
@@ -92,6 +117,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const knocks = useBatched(n => api.knock(session, n), saved);
   const bows = useBatched(n => api.prostrate(session, n), saved);
   const beads = useBatched(n => api.beads(session, n), saved);
+  const trials = useBatched(n => api.trial(session, n), saved);
 
   const me = hall?.me ?? null;
   const knock = useCallback(() => {
@@ -108,18 +134,121 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
     if (total % MALA === 0) { playBell(); say(`念珠第 ${total / MALA} 圈圆满`); }
   }, [beads, me, say]);
 
+  // Where I am and where everyone else is, for walking without passing through people or pillars.
+  const seats = hall?.seats ?? 0;
+  const spot = (m: Monk): [number, number] => {
+    if (!m.sitting && m.pos) return [m.pos.x, m.pos.z];
+    const [x, , z] = seatPosition(m.seat ?? 0, seats); return [x, z];
+  };
+  const myPos: [number, number] = me ? (walkTo && !me.sitting ? [walkTo.x, walkTo.z] : spot(me)) : [0, 0];
+  const others = (hall?.monks ?? []).filter(m => m.handle !== me?.handle && m.seat !== null).map(spot);
+  const live = useRef({ me, myPos, others, seats }); live.current = { me, myPos, others, seats };
+  const lastSent = useRef(0);
+  const sendMove = useCallback((x: number, z: number) => {
+    lastSent.current = Date.now();
+    api.move(session, x, z).then(res => saved(res.me)).catch(() => { /* the next move or poll will catch up */ });
+  }, [session, saved]);
+
   // Tap the floor to walk there. A seated monk stays seated: stand up first.
   const walk = useCallback((x: number, z: number) => {
-    if (!me) return;
-    if (me.sitting) { say('先起身，再走动'); return; }
-    setWalkTo({ x, z });
-    api.move(session, x, z).then(res => saved(res.me)).catch(() => say('没走成，请再试一次'));
-  }, [me, session, saved, say]);
+    const now = live.current;
+    if (!now.me) return;
+    if (now.me.sitting) { say('先起身，再走动'); return; }
+    const [rx, rz] = resolvePosition(x, z, now.seats, now.others);
+    setWalkTo({ x: rx, z: rz });
+    sendMove(rx, rz);
+  }, [say, sendMove]);
   useEffect(() => { if (me?.sitting) setWalkTo(null); }, [me?.sitting]);
+
+  // The thumb stick walks continuously, relative to where the camera is looking.
+  useEffect(() => {
+    const step = setInterval(() => {
+      const { x, y } = stick.current, now = live.current;
+      if ((!x && !y) || !now.me || now.me.sitting) return;
+      const yaw = orbit.current.yaw, d = WALK_SPEED * 0.05;
+      const dx = (Math.cos(yaw) * x - Math.sin(yaw) * y) * d, dz = (-Math.sin(yaw) * x - Math.cos(yaw) * y) * d;
+      const [rx, rz] = resolvePosition(now.myPos[0] + dx, now.myPos[1] + dz, now.seats, now.others);
+      setWalkTo({ x: rx, z: rz });
+      if (Date.now() - lastSent.current > 600) sendMove(rx, rz);
+    }, 50);
+    return () => clearInterval(step);
+  }, [orbit, sendMove]);
+  const stickReleased = useCallback(() => {
+    const now = live.current;
+    if (now.me && !now.me.sitting) sendMove(now.myPos[0], now.myPos[1]);
+  }, [sendMove]);
+
+  // Sit on the free cushion nearest to where you stand; the wooden fish comes with you.
+  const sit = useCallback(() => {
+    const now = live.current; if (!now.me) return;
+    const taken = new Set((hall?.monks ?? []).filter(m => m.handle !== now.me!.handle && m.seat !== null).map(m => m.seat as number));
+    const seat = nearestFreeSeat(now.myPos[0], now.myPos[1], now.seats, taken, now.me.seat);
+    playBell();
+    act(() => api.sit(session, seat), seat !== null && seat !== now.me.seat ? '换到这个蒲团入坐' : '入坐');
+  }, [hall, session, act]);
+
+  // Trials of composure, only while seated.
+  const sitting = !!me?.sitting;
+  useEffect(() => {
+    if (!sitting || !trialsOn) { trialRef.current = null; setTrial(null); return; }
+    const setting = trialSetting();
+    nextTrialAt.current = Date.now() + (setting.forced ? 2500 : 14000 + Math.random() * 10000);
+    const tickTrial = setInterval(() => {
+      const now = Date.now(), t = trialRef.current;
+      let next: Trial | null = t;
+      if (!t) {
+        if (now < nextTrialAt.current) return;
+        const kind: TrialKind = setting.forced ?? (Math.random() < 0.5 ? 'dog' : 'fairies');
+        lastNoise.current = 0;
+        next = { kind, focus: 100, endsAt: now + TRIALS[kind].seconds * 1000, at: now };
+      } else if (now >= t.endsAt && t.focus - TRIALS[t.kind].drain * Math.min(2, (now - t.at) / 1000) > 0) {      // sat through it
+        nextTrialAt.current = now + (setting.forced ? 6000 : 35000 + Math.random() * 40000);
+        playBell(); trials.add(); float('定力 +1'); say(TRIALS[t.kind].passed);
+        next = null;
+      } else {
+        if (now - lastNoise.current > (t.kind === 'dog' ? 1100 : 2200)) { lastNoise.current = now; (t.kind === 'dog' ? playBark : playChime)(); }
+        // drain by the time that really passed, so a slow device does not make the trial easier
+        next = { ...t, at: now, focus: Math.max(0, t.focus - TRIALS[t.kind].drain * Math.min(2, (now - t.at) / 1000)) };
+      }
+      trialRef.current = next; setTrial(next);
+    }, 200);
+    return () => clearInterval(tickTrial);
+  }, [sitting, trialsOn]);                                           // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {                                                   // composure gone: shown out of the temple
+    if (trial && trial.focus <= 0 && me && !expelled) {
+      gone.current = true;
+      setExpelled({ ...me, trials: me.trials + trials.extra });
+      trialRef.current = null; setTrial(null);
+      setChanting(null);
+      api.leave(session).catch(() => { /* the hall lets a silent monk go by itself */ });
+    }
+  }, [trial, me, expelled, session, trials.extra]);
+  const gather = useCallback(() => {
+    playTick();
+    const t = trialRef.current;
+    if (t) { trialRef.current = { ...t, focus: Math.min(100, t.focus + FOCUS_GAIN) }; setTrial(trialRef.current); }
+  }, []);
 
   const drift = me?.sitting ? Math.floor((Date.now() - fetchedAt) / 1000) : 0;   // seconds since the last poll
   void tick;
 
+  if (expelled) {
+    return (
+      <View style={styles.over} testID="hall.over">
+        <Text style={styles.overTitle} accessibilityRole="header">定力不足</Text>
+        <Text style={styles.overText}>心随境转，{expelled.name}被请出了山门。</Text>
+        <View style={styles.overStats}>
+          <Text style={styles.overStat}>静坐 {clock(expelled.totalSeconds)}</Text>
+          <Text style={styles.overStat}>守住考验 {expelled.trials} 次</Text>
+          <Text style={styles.overStat}>功德 {expelled.merit} · 礼拜 {expelled.prostrations} · 念珠 {expelled.beads}</Text>
+        </View>
+        <Pressable testID="hall.over.again" onPress={onLeft} style={({ pressed }) => [styles.overButton, pressed && styles.pressed]}
+          accessibilityRole="button" accessibilityLabel="回到山门，重新入寺">
+          <Text style={styles.primaryText}>回到山门</Text>
+        </Pressable>
+      </View>
+    );
+  }
   if (!hall || !me) {
     return <View style={styles.loading}><Text testID="hall.loading" style={styles.muted}>{offline ? '连不上大殿，正在重试…' : '正在入殿…'}</Text></View>;
   }
@@ -149,7 +278,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         <Stage3D onFail={noThreeD} style={styles.canvas} dpr={[1, 2]} camera={{ fov: 58, near: 0.1, far: 220, position: [6, 5, 14] }}
           fallback={<FlatHall monks={monks} seats={hall.seats} meHandle={me.handle} onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />}>
           <HallScene monks={monks} seats={hall.seats} meHandle={me.handle} orbit={orbit} knockTick={knockTick} onKnock={knock}
-            bowTick={bowTick} onFloor={walk} onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
+            bowTick={bowTick} onFloor={walk} trial={trial?.kind ?? null} onBow={m => act(() => api.bow(session, m.handle), `向${m.name}合十`)} />
         </Stage3D>
         <View style={styles.viewBar} pointerEvents="box-none">
           {soundSupported && TRACKS.length > 0 && (
@@ -158,6 +287,10 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
               <Text style={styles.chipText}>诵经 · {track >= 0 ? TRACKS[track].title : '关'}</Text>
             </Pressable>
           )}
+          <Pressable testID="hall.trials" onPress={() => setTrialsOn(v => !v)} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
+            accessibilityRole="switch" accessibilityState={{ checked: trialsOn }} accessibilityLabel="定力考验">
+            <Text style={styles.chipText}>考验 · {trialsOn ? '开' : '关'}</Text>
+          </Pressable>
           {!flat && <Pressable testID="hall.view" onPress={nextView} style={({ pressed }) => [styles.chip, pressed && styles.pressed]}
             accessibilityRole="button" accessibilityLabel={`切换视角，当前${VIEWS[view].label}`}>
             <Text style={styles.chipText}>视角 · {VIEWS[view].label}</Text>
@@ -167,6 +300,23 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           {!flat && <Pressable testID="hall.zoom.out" onPress={() => zoom(1.25)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
             accessibilityRole="button" accessibilityLabel="拉远"><Text style={styles.chipText}>－</Text></Pressable>}
         </View>
+        {trial && (
+          <View style={styles.trial} pointerEvents="box-none">
+            <Text testID="hall.trial" style={styles.trialTitle}>{TRIALS[trial.kind].title}</Text>
+            <View style={styles.meter} accessibilityRole="progressbar" accessibilityValue={{ min: 0, max: 100, now: Math.round(trial.focus) }}>
+              <View style={[styles.meterFill, { width: `${trial.focus}%`, backgroundColor: trial.focus > 40 ? C.gold : C.vermilion }]} />
+            </View>
+            <View style={styles.inline}>
+              <Text style={styles.trialNote}>定力 </Text><Text testID="hall.focus.value" style={styles.trialNote}>{Math.round(trial.focus)}</Text>
+              <Text style={styles.trialNote}> · 归零会被请出寺庙</Text>
+            </View>
+            <Pressable testID="hall.focus" onPress={gather} style={({ pressed }) => [styles.focus, pressed && styles.tapped]}
+              accessibilityRole="button" accessibilityLabel="收摄心神，稳住定力">
+              <Text style={styles.focusText}>收摄心神</Text>
+            </Pressable>
+          </View>
+        )}
+        {!flat && !me.sitting && !trial && <Joystick vector={stick} onRelease={stickReleased} />}
         <Animated.Text testID="hall.rise" pointerEvents="none" style={[styles.rise, {
           opacity: rise.interpolate({ inputRange: [0, 0.15, 1], outputRange: [0, 1, 0] }),
           transform: [{ translateY: rise.interpolate({ inputRange: [0, 1], outputRange: [0, -70] }) }] }]}>
@@ -174,7 +324,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         </Animated.Text>
         {!!notice && <View style={styles.toast} pointerEvents="none"><Text testID="hall.notice" style={styles.toastText}>{notice}</Text></View>}
         <Text testID="hall.hint" style={[styles.hint, flat && styles.hintFlat]} pointerEvents="none">
-          {blocked ? '点一下屏幕，开启诵经声' : flat ? '这台设备不支持 3D，已切换为平面大殿 · 点和尚向他合十' : me.sitting ? '拖动环顾 · 点木鱼敲一下 · 点和尚向他合十' : '点地面走过去 · 拖动环顾 · 点和尚向他合十'}
+          {blocked ? '点一下屏幕，开启诵经声' : flat ? '这台设备不支持 3D，已切换为平面大殿 · 点和尚向他合十' : me.sitting ? '拖动环顾 · 点木鱼敲一下 · 点和尚向他合十' : '用摇杆或点地面走动 · 走到别的蒲团旁可以坐下'}
         </Text>
       </View>
 
@@ -190,6 +340,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
               {stat('功德', 'hall.me.merit', me.merit + knocks.extra)}
               {stat('礼拜', 'hall.me.prostrations', me.prostrations + bows.extra)}
               {stat('念珠', 'hall.me.beads', me.beads + beads.extra)}
+              {stat('定力', 'hall.me.trials', me.trials + trials.extra)}
               {stat('受礼', 'hall.me.bows', me.bows)}
             </View>
           </View>
@@ -201,12 +352,13 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         <View style={styles.actions}>
           {me.sitting ? (
             <Pressable testID="hall.stand" style={({ pressed }) => [styles.primary, styles.secondary, pressed && styles.pressed]}
-              onPress={() => { playBell(); act(() => api.stand(session), '起身，可以在殿内走动'); }} accessibilityRole="button" accessibilityLabel="起身">
+              onPress={() => { if (trial) { say('考验当前，不可起身'); return; } playBell(); act(() => api.stand(session), '起身，可以在殿内走动'); }}
+              accessibilityRole="button" accessibilityLabel="起身">
               <Text style={[styles.primaryText, styles.secondaryText]}>起身</Text>
             </Pressable>
           ) : (
             <Pressable testID="hall.sit" style={({ pressed }) => [styles.primary, pressed && styles.pressed]}
-              onPress={() => { playBell(); act(() => api.sit(session), '回到蒲团入坐'); }} accessibilityRole="button" accessibilityLabel="坐下">
+              onPress={sit} accessibilityRole="button" accessibilityLabel="在最近的空蒲团坐下">
               <Text style={styles.primaryText}>坐下</Text>
             </Pressable>
           )}
@@ -249,6 +401,20 @@ const styles = StyleSheet.create({
   chipRound: { width: 44, paddingHorizontal: 0 },
   chipText: { color: '#f3ead9', fontSize: 14 },
   rise: { position: 'absolute', left: 0, right: 0, bottom: 96, textAlign: 'center', color: '#ffd978', fontSize: 22, fontWeight: '700' },
+  trial: { position: 'absolute', left: 12, right: 12, bottom: 34, alignItems: 'center', gap: 8, backgroundColor: '#2a1f18d9', borderRadius: 16,
+           paddingVertical: 12, paddingHorizontal: 14, borderWidth: 1, borderColor: '#c9a24a88' },
+  trialTitle: { color: '#f3ead9', fontSize: 16, fontWeight: '700', textAlign: 'center' },
+  trialNote: { color: '#e9dcc3', fontSize: 13 },
+  meter: { width: '100%', height: 12, borderRadius: 6, backgroundColor: '#ffffff26', overflow: 'hidden' },
+  meterFill: { height: '100%', borderRadius: 6 },
+  focus: { minWidth: 200, height: 52, borderRadius: 26, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 },
+  focusText: { color: C.wood, fontSize: 18, fontWeight: '700', letterSpacing: 4 },
+  over: { flex: 1, backgroundColor: C.wood, alignItems: 'center', justifyContent: 'center', padding: 28, gap: 14 },
+  overTitle: { color: C.gold, fontSize: 34, fontWeight: '700', letterSpacing: 8 },
+  overText: { color: '#f3ead9', fontSize: 17, textAlign: 'center', lineHeight: 26 },
+  overStats: { gap: 6, alignItems: 'center', marginVertical: 8 },
+  overStat: { color: '#e9dcc3', fontSize: 15 },
+  overButton: { width: 220, height: 50, marginTop: 8, borderRadius: 12, backgroundColor: C.vermilion, alignItems: 'center', justifyContent: 'center' },
   hintFlat: { color: C.wood, backgroundColor: '#f3ead9cc', paddingVertical: 4 },
   hint: { position: 'absolute', left: 0, right: 0, bottom: 8, textAlign: 'center', color: '#f3ead9aa', fontSize: 12 },
   loading: { flex: 1, backgroundColor: C.paper, alignItems: 'center', justifyContent: 'center' },

@@ -84,7 +84,17 @@ export class Hall {
     m.lastSeen = this.now();
   }
 
-  sit(m) { this.touch(m); m.pos = null; if (!m.sitting) { m.sitting = true; m.sitSince = this.now(); } return this.view(m); }
+  // Sit on your own cushion, or on another one if `seat` names a cushion nobody else holds.
+  sit(m, seat) {
+    this.touch(m);
+    if (Number.isInteger(seat) && seat >= 0 && seat < 5000 && seat !== m.seat) {
+      const held = [...this.monks.values()].some(o => o !== m && this.#present(o) && o.seat === seat);
+      if (!held) m.seat = seat;
+    }
+    m.pos = null;
+    if (!m.sitting) { m.sitting = true; m.sitSince = this.now(); }
+    return this.view(m);
+  }
   stand(m) { this.touch(m); this.#stand(m); return this.view(m); }
   leave(m) { this.#leave(m, this.now()); return this.view(m); }
 
@@ -99,6 +109,7 @@ export class Hall {
   knock(m, count) { return this.#tally(m, 'merit', count); }
   prostrate(m, count) { return this.#tally(m, 'prostrations', count); }
   beads(m, count) { return this.#tally(m, 'beads', count); }
+  trial(m, count) { return this.#tally(m, 'trials', count); }          // distractions sat through without losing composure
 
   // Walking: a standing monk may go anywhere on the hall floor. Sitting down returns the monk to the cushion.
   move(m, x, z) {
@@ -130,7 +141,7 @@ export class Hall {
   view(m) {
     const live = m.sitting ? Math.max(0, Math.round((this.now() - m.sitSince) / 1000)) : 0;
     return { handle: m.handle, name: m.name, gender: m.gender, look: m.look, seat: m.seat, sitting: m.sitting,
-             sittingSeconds: live, totalSeconds: m.totalSeconds + live, bows: m.bows, merit: m.merit ?? 0, prostrations: m.prostrations ?? 0, beads: m.beads ?? 0,
+             sittingSeconds: live, totalSeconds: m.totalSeconds + live, bows: m.bows, merit: m.merit ?? 0, prostrations: m.prostrations ?? 0, beads: m.beads ?? 0, trials: m.trials ?? 0,
              pos: m.sitting ? null : m.pos ?? null, resident: !!m.resident };
   }
 

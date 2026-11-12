@@ -5,22 +5,10 @@ import { Monk3D } from './Monk3D';
 import { clamp, type Orbit } from './orbit';
 import { useFrame, useThree } from './r3f';
 
-export const COLS = 8;
-const SX = 1.7, SZ = 1.8, H = 9.5;
+import { H, hallPlan, hallSize, seatPosition, spreadApart } from './layout';
+import { TrialVisitors, type TrialKind } from './Trials';
 
-/** Hall dimensions grow with the number of cushions, so there is always room. */
-export function hallSize(seats: number) {
-  const rows = Math.max(6, Math.ceil(seats / COLS));
-  const width = COLS * SX + 9;
-  const depth = 15 + rows * SZ + 5;
-  return { rows, width, depth, front: -depth / 2, firstRow: -depth / 2 + 12.5 };
-}
-export function seatPosition(seat: number, seats: number): [number, number, number] {
-  const { firstRow } = hallSize(seats);
-  const col = seat % COLS, row = Math.floor(seat / COLS);
-  const aisle = col >= COLS / 2 ? 0.7 : -0.7;                // a central aisle from the door to the altar
-  return [(col - (COLS - 1) / 2) * SX + aisle, 0, firstRow + row * SZ];
-}
+export { hallSize, seatPosition };
 
 const cushionGeo = new THREE.CylinderGeometry(0.56, 0.6, 0.16, 24);
 const lanternGeo = new THREE.SphereGeometry(0.2, 12, 10);
@@ -187,22 +175,26 @@ function CameraRig({ orbit, target, bounds }: { orbit: React.RefObject<Orbit>; t
   return null;
 }
 
-export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onKnock, bowTick, onFloor }: {
+export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onKnock, bowTick, onFloor, trial }: {
   monks: Monk[]; seats: number; meHandle: string; orbit: React.RefObject<Orbit>; onBow: (m: Monk) => void;
-  knockTick: number; onKnock: () => void; bowTick: number; onFloor: (x: number, z: number) => void;
+  knockTick: number; onKnock: () => void; bowTick: number; onFloor: (x: number, z: number) => void; trial: TrialKind | null;
 }) {
   const { width: W, depth: D, front } = hallSize(seats);
   const taken = useMemo(() => new Set(monks.map(m => m.seat ?? -1)), [monks]);
   const me = monks.find(m => m.handle === meHandle);
   const mySeat = me && me.seat !== null ? seatPosition(me.seat, seats) : ([0, 0, 0] as [number, number, number]);
-  // A standing monk who has walked is wherever they walked to, kept inside the walls and clear of the altar.
-  const stand = (m: Monk): [number, number, number] => {
-    if (m.sitting || !m.pos || m.seat === null) return seatPosition(m.seat ?? 0, seats);
-    return [clamp(m.pos.x, -(W / 2 - 3.2), W / 2 - 3.2), 0, clamp(m.pos.z, front + 7.6, D / 2 - 1.2)];
-  };
+  // Everyone's place on the floor: seated monks on their cushions, walkers where they walked, and no two
+  // standing monks on the same spot.
+  const plan = hallPlan(seats);
+  const places = useMemo(() => spreadApart(monks.filter(m => m.seat !== null).map(m => {
+    const [sx, , sz] = seatPosition(m.seat as number, seats);
+    const walked = !m.sitting && !!m.pos;
+    return { handle: m.handle, fixed: m.sitting || m.handle === meHandle,
+             x: walked ? clamp(m.pos!.x, plan.minX, plan.maxX) : sx, z: walked ? clamp(m.pos!.z, plan.minZ, plan.maxZ) : sz };
+  })), [monks, seats, meHandle, plan.minX, plan.maxX, plan.minZ, plan.maxZ]);
+  const stand = (m: Monk): [number, number, number] => { const p = places.get(m.handle); return p ? [p[0], 0, p[1]] : seatPosition(m.seat ?? 0, seats); };
   const mine = me ? stand(me) : mySeat;
-  const pillarZ = useMemo(() => { const out: number[] = []; for (let z = front + 7.5; z < D / 2 - 1; z += 5.4) out.push(z); return out; }, [front, D]);
-  const px = W / 2 - 2.3;
+  const { pillarZ, px } = plan;
   return (
     <>
       <color attach="background" args={['#1c120c']} />
@@ -256,6 +248,7 @@ export function HallScene({ monks, seats, meHandle, orbit, onBow, knockTick, onK
           bowTick={m.handle === meHandle ? bowTick : undefined} onPress={m.handle === meHandle ? undefined : onBow} />
       ))}
       {me && me.seat !== null && <WoodenFish position={[mySeat[0] + 0.86, 0, mySeat[2] - 0.5]} tick={knockTick} onKnock={onKnock} />}
+      {trial && <TrialVisitors kind={trial} center={mine} />}
       <CameraRig orbit={orbit} target={[mine[0] * 0.8, 1.5, mine[2] - 2.2]} bounds={{ x: px - 1.3, z0: front + 8.6, z1: D / 2 - 0.9 }} />
     </>
   );

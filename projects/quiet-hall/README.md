@@ -17,7 +17,9 @@ quiet-hall/
 - Sitting time counts while you sit and is kept when you stand or leave. A monk who goes silent for 90 seconds leaves the hall and frees the cushion.
 - Sound: chanting is two openly licensed recordings from Wikimedia Commons, monks at Lingyin Temple (CC BY-SA 3.0) and a Mandarin Heart Sutra (CC0); credits are in `app/public/audio/CREDITS.md` and on the gate screen. The wooden fish and bell strokes are synthesized. The web build has sound; native builds are silent for now.
 - Wooden fish: it sits beside your cushion. Tap it (or the button) and the mallet strikes, it sounds, and you gain one merit. Knocks are sent in batches (at most 60 per batch) and are delivered even when the page is closing.
-- Walking: stand up, then tap the floor and your monk walks there; others see you move. Sitting down takes you back to your cushion.
+- Walking: stand up, then use the thumb stick or tap the floor; others see you move. You do not pass through pillars or other monks.
+- Changing cushion: sit down anywhere and you take the nearest free cushion; your wooden fish moves with you.
+- Trials of composure: while you sit, a stray dog or seven celestial maidens may come to distract you. Your composure drains; tap to gather your mind. Sit through it and your composure count grows; let it reach zero and you are shown out of the temple. Trials can be switched off.
 - Prostration: your monk folds forward to the floor and rises; the count is kept, and every 108th is announced.
 - Prayer beads: a loop of beads you turn one at a time; 108 make a round.
 - No 3D, no problem: where WebGL is unavailable (many office computers and in-app browsers) the gate and the hall fall back to flat drawings instead of a blank page; everything except walking still works.
