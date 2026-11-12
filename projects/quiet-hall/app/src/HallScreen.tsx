@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { api, HallError, type HallSnapshot, type Session } from './api';
 import { MonkFigure } from './MonkFigure';
-import { playBell, playKnock, setChanting, soundSupported } from './sound';
+import { playBell, playKnock, setChanting, soundStatus, soundSupported } from './sound';
 import { HallScene } from './three/HallScene';
 import { useOrbit, type Orbit } from './three/orbit';
 import { Canvas } from './three/r3f';
@@ -62,6 +62,13 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   }, [refresh, say]);
 
   useEffect(() => { setChanting(chant); return () => setChanting(false); }, [chant]);
+  // A page restored without a tap (reload, coming back later) is not allowed to make sound yet: say so.
+  const [blocked, setBlocked] = useState(false);
+  useEffect(() => {
+    if (!soundSupported) return;
+    const check = setInterval(() => setBlocked(chant && soundStatus().state !== 'running'), 1000);
+    return () => clearInterval(check);
+  }, [chant]);
 
   // The wooden fish answers at once. Knocks are sent as a batch shortly after the last one, so a burst
   // is one request, and nothing waits long enough to be lost when the page is closed or reloaded.
@@ -139,7 +146,9 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           <Pressable testID="hall.zoom.out" onPress={() => zoom(1.25)} style={({ pressed }) => [styles.chip, styles.chipRound, pressed && styles.pressed]}
             accessibilityRole="button" accessibilityLabel="拉远"><Text style={styles.chipText}>－</Text></Pressable>
         </View>
-        <Text style={styles.hint} pointerEvents="none">拖动环顾大殿 · 点一位和尚向他合十</Text>
+        <Text testID="hall.hint" style={styles.hint} pointerEvents="none">
+          {blocked ? '点一下屏幕，开启诵经声' : '拖动环顾大殿 · 点一位和尚向他合十'}
+        </Text>
       </View>
 
       {!!notice && <View style={styles.toast} pointerEvents="none"><Text testID="hall.notice" style={styles.toastText}>{notice}</Text></View>}

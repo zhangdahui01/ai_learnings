@@ -6,10 +6,11 @@ const BEAT = 0.92;                                   // seconds per syllable
 // Vowel shapes as formant frequencies (Hz). The voice moves between them, one per beat.
 const VOWELS: [number, number, number][] = [[700, 1150, 2600], [450, 820, 2600], [330, 720, 2500], [520, 1650, 2500], [300, 2100, 2950], [260, 950, 2300]];
 const PITCH = [0, 0, 0, 2, 0, 0, -2, 0, 0, 0, 3, 2, 0, 0, -2, -2];      // semitones around the reciting note
-const BASE = 98;                                     // G2
+const BASE = 147;                                    // D3: high enough to carry on a phone speaker
 
 let ctx: AudioContext | null = null;
 let out: GainNode, voiceBus: GainNode, voice: GainNode, formants: BiquadFilterNode[] = [], oscs: OscillatorNode[] = [];
+let meter: AnalyserNode | null = null, silent: HTMLAudioElement | null = null;
 let chanting = false, nextBeat = 0, beat = 0, timer: ReturnType<typeof setInterval> | null = null;
 
 function hallReverb(c: AudioContext): ConvolverNode {
@@ -25,7 +26,12 @@ function build(): AudioContext {
   if (ctx) return ctx;
   const AC: typeof AudioContext = window.AudioContext || (window as any).webkitAudioContext;
   const c = (ctx = new AC());
-  out = c.createGain(); out.gain.value = 0.9; out.connect(c.destination);
+  // Everything goes through a limiter so the louder mix cannot clip.
+  const limiter = c.createDynamicsCompressor();
+  limiter.threshold.value = -10; limiter.knee.value = 8; limiter.ratio.value = 12; limiter.attack.value = 0.003; limiter.release.value = 0.2;
+  limiter.connect(c.destination);
+  meter = c.createAnalyser(); meter.fftSize = 2048; limiter.connect(meter);
+  out = c.createGain(); out.gain.value = 1.6; out.connect(limiter);
   const wet = c.createGain(); wet.gain.value = 0.5;
   const reverb = hallReverb(c); reverb.connect(wet); wet.connect(out);
   voiceBus = c.createGain(); voiceBus.gain.value = 0; voiceBus.connect(out); voiceBus.connect(reverb);
@@ -34,7 +40,7 @@ function build(): AudioContext {
   voice = c.createGain(); voice.gain.value = 0;
   formants = VOWELS[0].map((f, i) => {
     const bp = c.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = f; bp.Q.value = [9, 11, 12][i];
-    const g = c.createGain(); g.gain.value = [1, 0.55, 0.22][i];
+    const g = c.createGain(); g.gain.value = [1.6, 1.3, 0.7][i];
     voice.connect(bp); bp.connect(g); g.connect(voiceBus);
     return bp;
   });
@@ -44,8 +50,8 @@ function build(): AudioContext {
     const o = c.createOscillator(); o.type = 'sawtooth'; o.frequency.value = BASE; o.detune.value = cents;
     depth.connect(o.frequency); o.connect(voice); o.start(); return o;
   });
-  const drone = c.createOscillator(); drone.type = 'sine'; drone.frequency.value = BASE / 2;
-  const dg = c.createGain(); dg.gain.value = 0.16; drone.connect(dg); dg.connect(voiceBus); drone.start();
+  const drone = c.createOscillator(); drone.type = 'sine'; drone.frequency.value = BASE;
+  const dg = c.createGain(); dg.gain.value = 0.1; drone.connect(dg); dg.connect(voiceBus); drone.start();
   return c;
 }
 
@@ -86,20 +92,53 @@ function schedule(): void {
   }
 }
 
-/** Browsers only allow sound after a tap: call this from a press handler. */
+// iPhones mute Web Audio when the ringer switch is on silent. Playing a silent, looping media element
+// (and asking for the "playback" audio session where the browser offers it) moves the page to the media
+// channel, which the switch does not mute.
+function silentTrack(): string {
+  const rate = 8000, n = rate / 2, bytes = new DataView(new ArrayBuffer(44 + n * 2));
+  const text = (at: number, t: string) => { for (let i = 0; i < t.length; i += 1) bytes.setUint8(at + i, t.charCodeAt(i)); };
+  text(0, 'RIFF'); bytes.setUint32(4, 36 + n * 2, true); text(8, 'WAVEfmt '); bytes.setUint32(16, 16, true);
+  bytes.setUint16(20, 1, true); bytes.setUint16(22, 1, true); bytes.setUint32(24, rate, true); bytes.setUint32(28, rate * 2, true);
+  bytes.setUint16(32, 2, true); bytes.setUint16(34, 16, true); text(36, 'data'); bytes.setUint32(40, n * 2, true);
+  return URL.createObjectURL(new Blob([bytes.buffer], { type: 'audio/wav' }));
+}
+function useMediaChannel(): void {
+  try { const session = (navigator as any).audioSession; if (session) session.type = 'playback'; } catch { /* not offered */ }
+  try {
+    if (!silent) { silent = new Audio(silentTrack()); silent.loop = true; silent.setAttribute('playsinline', ''); }
+    if (silent.paused) silent.play().catch(() => {});
+  } catch { /* sound still works where the switch is not an issue */ }
+}
+
+/** Browsers only allow sound after a tap: this runs on every tap and key press, and is cheap once sound is running. */
 export function unlockSound(): void {
   if (!soundSupported) return;
   const c = build();
-  if (c.state === 'suspended') c.resume().catch(() => {});
+  useMediaChannel();
+  if (c.state !== 'running') c.resume().then(() => { if (chanting) schedule(); }).catch(() => {});
 }
+if (soundSupported) {
+  for (const type of ['pointerdown', 'touchend', 'keydown'] as const) window.addEventListener(type, unlockSound, { passive: true });
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && ctx) unlockSound(); });
+}
+
+/** For checks: is sound allowed to play, and how loud is it right now (0 = silence)? */
+export function soundStatus(): { state: string; level: number } {
+  if (!ctx || !meter) return { state: 'not started', level: 0 };
+  const data = new Float32Array(meter.fftSize); meter.getFloatTimeDomainData(data);
+  let sum = 0; for (const v of data) sum += v * v;
+  return { state: ctx.state, level: Math.sqrt(sum / data.length) };
+}
+if (typeof window !== 'undefined') (window as any).__quietHallSound = soundStatus;
 
 export function setChanting(on: boolean): void {
   if (!soundSupported) return;
   const c = build();
   chanting = on;
-  voiceBus.gain.setTargetAtTime(on ? 0.55 : 0, c.currentTime, on ? 1.2 : 0.4);      // fade in and out
+  voiceBus.gain.setTargetAtTime(on ? 1 : 0, c.currentTime, on ? 1.2 : 0.4);      // fade in and out
   if (on) {
-    unlockSound();
+    if (c.state !== 'running') c.resume().catch(() => {});
     nextBeat = Math.max(nextBeat, c.currentTime + 0.15);
     if (!timer) timer = setInterval(schedule, 120);
     schedule();

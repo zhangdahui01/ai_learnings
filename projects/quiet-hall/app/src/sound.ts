@@ -4,3 +4,4 @@ export function unlockSound(): void {}
 export function setChanting(_on: boolean): void {}
 export function playKnock(): void {}
 export function playBell(): void {}
+export function soundStatus(): { state: string; level: number } { return { state: 'unsupported', level: 0 }; }
