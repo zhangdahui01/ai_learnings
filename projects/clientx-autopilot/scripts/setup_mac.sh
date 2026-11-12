@@ -99,8 +99,13 @@ appium driver list --installed 2>&1 | grep -q uiautomator2 || appium driver inst
 appium driver list --installed 2>&1 | grep -q xcuitest     || appium driver install xcuitest
 
 say "Python packages"
-python3 -m pip install --user --quiet pytest pytest-bdd Appium-Python-Client graphifyy || \
-  python3 -m pip install --user --quiet --break-system-packages pytest pytest-bdd Appium-Python-Client graphifyy
+PY_PKGS="pytest pytest-bdd Appium-Python-Client graphifyy"
+# conda and virtualenv Pythons take a plain install; a system Python needs --user (and sometimes --break-system-packages)
+python3 -m pip install --quiet $PY_PKGS \
+  || python3 -m pip install --user --quiet $PY_PKGS \
+  || python3 -m pip install --user --quiet --break-system-packages $PY_PKGS
+python3 -c "import pytest_bdd, appium; print('   ok       pytest-bdd', pytest_bdd.__version__, '+ Appium-Python-Client, in', __import__('sys').executable)" \
+  || { echo "Python packages are not importable by $(command -v python3)"; exit 1; }
 
 say "Web automation packages"
 (cd "$ROOT/automation/web" && npm install --silent && npx playwright install chromium)
