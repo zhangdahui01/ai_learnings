@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 NAME = "static"
-LANG = {".py": "python", ".js": "javascript", ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript",
+LANG = {".py": "python", ".js": "javascript", ".mjs": "javascript", ".cjs": "javascript", ".jsx": "javascript", ".ts": "typescript", ".tsx": "typescript",
         ".java": "java", ".kt": "kotlin", ".swift": "swift", ".go": "go", ".robot": "robot"}
 SKIP_DIRS = {".git", "node_modules", "build", "dist", "target", ".venv", "venv", "__pycache__", "graphify-out",
              "Pods", ".gradle", "var"}
@@ -41,7 +41,7 @@ def _resolve(lang: str, spec: str, src: Path, repo: Path, files: dict[str, str])
         if not spec.startswith("."):
             return None
         base = (src.parent / spec).resolve()
-        for cand in (base, *(base.with_name(base.name + ext) for ext in (".ts", ".tsx", ".js", ".jsx")),
+        for cand in (base, *(base.with_name(base.name + ext) for ext in (".ts", ".tsx", ".js", ".jsx", ".mjs")),
                      *(base / f"index{ext}" for ext in (".ts", ".js"))):
             try:
                 rel = cand.relative_to(repo).as_posix()

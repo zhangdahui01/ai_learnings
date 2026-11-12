@@ -1,0 +1,81 @@
+{
+  "service": "quiet-hall",
+  "layer": "operational",
+  "selectors": {
+    "gate.handle": {
+      "selector": "testid=gate.handle",
+      "source": "baseline"
+    },
+    "gate.enter": {
+      "selector": "testid=gate.enter",
+      "source": "baseline"
+    },
+    "gate.error": {
+      "selector": "testid=gate.error",
+      "source": "baseline"
+    },
+    "hall.me.name": {
+      "selector": "testid=hall.me.name",
+      "source": "baseline"
+    },
+    "hall.me.state": {
+      "selector": "testid=hall.me.state",
+      "source": "baseline"
+    },
+    "hall.me.timer": {
+      "selector": "testid=hall.me.timer",
+      "source": "baseline"
+    },
+    "hall.me.total": {
+      "selector": "testid=hall.me.total",
+      "source": "baseline"
+    },
+    "hall.count": {
+      "selector": "testid=hall.count",
+      "source": "baseline"
+    },
+    "hall.sitting": {
+      "selector": "testid=hall.sitting",
+      "source": "baseline"
+    },
+    "hall.sit": {
+      "selector": "testid=hall.sit",
+      "source": "baseline"
+    },
+    "hall.stand": {
+      "selector": "testid=hall.stand",
+      "source": "baseline"
+    },
+    "hall.bow": {
+      "selector": "testid=hall.bow",
+      "source": "baseline"
+    },
+    "hall.leave": {
+      "selector": "testid=hall.leave",
+      "source": "baseline"
+    },
+    "hall.notice": {
+      "selector": "testid=hall.notice",
+      "source": "baseline"
+    }
+  },
+  "auth_flows": {
+    "visitor": "no account: type an unused ID at the gate; the token is kept in app storage"
+  },
+  "preconditions": {
+    "hall_server": "node projects/quiet-hall/server/server.mjs",
+    "unique_id": "IDs are owned once used: generate a fresh one per test"
+  },
+  "environments": {
+    "local": {
+      "api": "http://127.0.0.1:8787",
+      "web": "http://127.0.0.1:8790",
+      "android_emulator_api": "http://10.0.2.2:8787"
+    },
+    "app": {
+      "android_package": "dev.clientx.quiethall",
+      "android_activity": ".MainActivity",
+      "ios_bundle_id": "dev.clientx.quiethall"
+    }
+  }
+}

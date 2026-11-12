@@ -59,17 +59,24 @@ def select(ctx, gate: str, service: str, changed: list[str]) -> dict[str, Any]:
 def commands(sel: dict[str, Any], device_profile: str, out: Path) -> dict[str, Any]:
     ids = list(sel["blocking"]) + list(sel["warn"])
     cases = sel["cases"]
-    web_specs = sorted({cases[i]["run"]["spec"] for i in ids if cases[i].get("stack") == "web" and "spec" in cases[i].get("run", {})})
     app_tests = sorted({cases[i]["run"]["test"] for i in ids if cases[i].get("stack") == "app" and "test" in cases[i].get("run", {})})
     unmapped = [i for i in ids if not ({"spec", "test"} & set(cases[i].get("run", {})))]
     plan: dict[str, Any] = {"unmapped": unmapped, "web": None, "app": None}
-    if web_specs:
-        plan["web"] = {"cwd": str(WEB), "report": str(WEB / "test-results" / "report.json"),
-                       "argv": ["npx", "playwright", "test", *[f"tests/{s}.spec.ts" for s in web_specs],
-                                "--retries=0", "--trace", "off"]}
+    # a web case may name its own Playwright config and test folder (run.config / run.dir); default: the main suite
+    groups: dict[tuple[str, str], set[str]] = {}
+    for i in ids:
+        run = cases[i].get("run", {})
+        if cases[i].get("stack") == "web" and "spec" in run:
+            groups.setdefault((run.get("config", ""), run.get("dir", "tests")), set()).add(run["spec"])
+    for (config, folder), specs in sorted(groups.items()):
+        key = "web" if not config else f"web:{config}"
+        report = WEB / "test-results" / "report.json"
+        plan[key] = {"cwd": str(WEB), "report": str(report), "stack": "web",
+                     "argv": ["npx", "playwright", "test", *(["-c", config] if config else []),
+                              *[f"{folder}/{s}.spec.ts" for s in sorted(specs)], "--retries=0", "--trace", "off"]}
     if app_tests:
         junit = out / "app-junit.xml"
-        plan["app"] = {"cwd": str(ROOT), "report": str(junit),
+        plan["app"] = {"cwd": str(ROOT), "report": str(junit), "stack": "app",
                        "argv": [sys.executable, "-m", "pytest", "automation/app/tests", "-q", "-p", "no:cacheprovider",
                                 "-k", " or ".join(app_tests), "--device-profile", device_profile,
                                 f"--junitxml={junit}"]}
@@ -78,10 +85,10 @@ def commands(sel: dict[str, Any], device_profile: str, out: Path) -> dict[str, A
 
 def execute(plan: dict[str, Any]) -> list[dict[str, Any]]:
     out: list[dict[str, Any]] = []
-    for stack in ("web", "app"):
-        step = plan[stack]
-        if not step:
+    for name, step in plan.items():
+        if name == "unmapped" or not step:
             continue
+        stack = step["stack"]
         report = Path(step["report"])
         report.unlink(missing_ok=True)
         proc = subprocess.run(step["argv"], cwd=step["cwd"], capture_output=True, text=True)
@@ -177,6 +184,8 @@ def main(argv: list[str] | None = None) -> int:
     r.add_argument("--service", required=True); r.add_argument("--case", required=True)
     r.add_argument("--journey", required=True); r.add_argument("--stack", required=True, choices=["web", "app"])
     r.add_argument("--spec"); r.add_argument("--test"); r.add_argument("--asserts", type=int, default=1)
+    r.add_argument("--config", help="web: Playwright config for this case, when it is not the main suite")
+    r.add_argument("--dir", help="web: test folder for this case (default: tests)")
     r.add_argument("--priority", default="P1"); r.add_argument("--code-paths", nargs="*", default=[])
     p = sub.add_parser("promote")
     p.add_argument("--service", required=True); p.add_argument("--case", required=True)
@@ -200,7 +209,8 @@ def main(argv: list[str] | None = None) -> int:
         if any(c["id"] == args.case for c in journey["cases"]):
             raise SystemExit(f"case '{args.case}' is already registered")
         journey["cases"].append({"id": args.case, "stack": args.stack, "state": "incubating", "asserts": args.asserts,
-                                 "run": {"spec": args.spec} if args.spec else {"test": args.test}})
+                                 "run": ({"spec": args.spec, **({"config": args.config} if args.config else {}),
+                                          **({"dir": args.dir} if args.dir else {})} if args.spec else {"test": args.test})})
         ctx.kb.save(args.service, "strategic", data)
         print(f"{args.case}: registered as incubating (daily run only). It joins the gates after graduation.")
         return 0
@@ -236,9 +246,9 @@ def main(argv: list[str] | None = None) -> int:
     if sel["changed_without_case"]:
         print(f"  changed code reaches journeys with no case: {sel['changed_without_case']}")
     if args.cmd == "plan":
-        for stack in ("web", "app"):
-            if plan[stack]:
-                print(f"  {stack}: {' '.join(plan[stack]['argv'])}")
+        for name, step in plan.items():
+            if name != "unmapped" and step:
+                print(f"  {name}: {' '.join(step['argv'])}")
         return 0
 
     verdict = judge(sel, execute(plan))

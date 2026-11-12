@@ -17,5 +17,7 @@ markers = [
   "gated: blocks a merge or a release",
   "P0: priority 0",
   "P1: priority 1",
+  "progression: new feature",
+  "regression: existing behaviour",
   "payment: side-effect steps; never retried or auto-repaired",
 ]

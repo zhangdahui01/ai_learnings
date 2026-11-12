@@ -1,0 +1,95 @@
+{
+  "service": "quiet-hall",
+  "layer": "strategic",
+  "business_rules": [
+    "One ID is one monk: the look and dharma name are derived from the ID and never change.",
+    "An ID belongs to whoever holds its token; nobody else can enter with it.",
+    "Sitting time counts only while the monk sits and is kept when the monk stands or leaves.",
+    "There is no chat. The only interaction is a bow."
+  ],
+  "coverage_map": {
+    "smoke": [
+      "web_hall_enter"
+    ],
+    "journeys": [
+      {
+        "id": "enter",
+        "name": "Take an ID and enter the hall",
+        "priority": "P0",
+        "code_paths": [
+          "server/hall.mjs",
+          "server/server.mjs",
+          "app/src/Gate.tsx",
+          "app/src/api.ts",
+          "app/App.tsx"
+        ],
+        "specs": [
+          "specs/hall-enter.md",
+          "specs/hall-id-taken.md"
+        ],
+        "cases": [
+          {
+            "id": "web_hall_enter",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 4,
+            "run": {
+              "spec": "hall-enter",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          },
+          {
+            "id": "web_hall_id_taken",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 3,
+            "run": {
+              "spec": "hall-id-taken",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          }
+        ]
+      },
+      {
+        "id": "sit",
+        "name": "Sit, count time, stand",
+        "priority": "P0",
+        "code_paths": [
+          "server/hall.mjs",
+          "app/src/HallScreen.tsx",
+          "app/src/theme.ts"
+        ],
+        "specs": [
+          "specs/hall-sit.md"
+        ],
+        "cases": [
+          {
+            "id": "web_hall_sit",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 6,
+            "run": {
+              "spec": "hall-sit",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          }
+        ]
+      },
+      {
+        "id": "bow",
+        "name": "Bow to a monk or to the hall",
+        "priority": "P1",
+        "code_paths": [
+          "server/hall.mjs",
+          "app/src/HallScreen.tsx"
+        ],
+        "specs": [],
+        "cases": []
+      }
+    ],
+    "incidents": []
+  }
+}

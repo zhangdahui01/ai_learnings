@@ -95,6 +95,10 @@ export XCODE_ORG_ID=... DEVICE_UDID=<iphone udid>
 pytest automation/app/tests --device-profile ios-real
 ```
 
+## Sample app under test
+
+[`projects/quiet-hall`](../quiet-hall/README.md) (静堂) is a real app with a server, built to exercise this framework: web cases in `automation/web/tests-hall` (`npm run test:hall`), Appium scenarios in `automation/app/quiet_hall`, a knowledge base in `knowledge-base/quiet-hall`, and both gates (`python -m ci.gate run --gate cd --service quiet-hall`).
+
 ## What is verified and what is not
 
 - **Run here:** the CI and CD gate runner end to end (web in Chromium, app on the `fake` device), failure diagnosis, the agent runner with the real headless runtime on a simulated locator drift, the farm collector against stubbed tools, the harness loop on fixtures, all workflow rules, farm monitor/doctor/healer/queue/runner (dry-run), the dashboard, both code-graph backends, the web framework against the demo shop in Chromium, the app framework against the in-memory `fake` device.

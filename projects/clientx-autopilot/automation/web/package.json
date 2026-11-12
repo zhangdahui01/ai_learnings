@@ -7,7 +7,9 @@
     "test": "playwright test",
     "test:gate": "playwright test --grep @gated --retries=0",
     "test:daily": "playwright test",
-    "sut": "node sut/serve.mjs"
+    "sut": "node sut/serve.mjs",
+    "hall:build": "cd ../../../quiet-hall/app && npm install && npx expo export -p web",
+    "test:hall": "playwright test -c playwright.hall.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

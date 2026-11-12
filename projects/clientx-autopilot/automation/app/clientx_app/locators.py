@@ -31,6 +31,15 @@ class Loc:
     android: tuple[str, str] | None = None
     ios: tuple[str, str] | None = None
 
+    @classmethod
+    def test_id(cls, name: str, test_id: str) -> "Loc":
+        """A React Native `testID`: the accessibility identifier on iOS, the resource-id on Android.
+
+        UiAutomator's own selector is used on Android because the plain `id` strategy prefixes the
+        app package, and a React Native resource-id has none.
+        """
+        return cls(name, default=test_id, android=(ANDROID_UIAUTOMATOR, f'new UiSelector().resourceId("{test_id}")'))
+
     def strategy(self, platform: str) -> tuple[str, str]:
         specific = {"android": self.android, "ios": self.ios}.get(platform)
         if specific:
@@ -51,6 +60,18 @@ def find(driver: Any, loc: Loc, platform: str, timeout: float = 10.0, poll: floa
             return found[0]
         if time.monotonic() >= deadline:
             raise ElementNotFound(f"'{loc.name}' ({by}={value}) not found within {timeout}s")
+        time.sleep(poll)
+
+
+def wait_until(read, accept, *, what: str, timeout: float = 10.0, poll: float = 0.25):
+    """Poll `read()` until `accept(value)` is true; return the value. A state wait, never a sleep."""
+    deadline = time.monotonic() + timeout
+    while True:
+        value = read()
+        if accept(value):
+            return value
+        if time.monotonic() >= deadline:
+            raise AssertionError(f"{what}: last value was {value!r}")
         time.sleep(poll)
 
 

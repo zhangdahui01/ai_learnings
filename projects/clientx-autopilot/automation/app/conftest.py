@@ -3,6 +3,7 @@
     pytest automation/app/tests --device-profile android-emulator
     pytest automation/app/tests --device-profile ios-simulator
     pytest automation/app/tests --device-profile ios-real
+    pytest automation/app/quiet_hall --device-profile android-emulator      # the Quiet Hall sample app
 Default profile is `fake` (no device): it exercises the framework itself.
 """
 from __future__ import annotations
@@ -12,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-APP_ROOT = Path(__file__).resolve().parent.parent
+APP_ROOT = Path(__file__).resolve().parent
 sys.path.insert(0, str(APP_ROOT))
 
 from clientx_app import driver as drivers  # noqa: E402

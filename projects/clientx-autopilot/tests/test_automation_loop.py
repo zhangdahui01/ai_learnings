@@ -123,6 +123,8 @@ def test_ci_gate_selects_by_change_and_cd_gate_takes_everything(tmp_path):
     cd = gate.select(ctx, "cd", "sample-checkout", [])
     assert len(cd["blocking"]) == 7
     plan = gate.commands(ci, "android-emulator", tmp_path)
+    hall_plan = gate.commands(gate.select(ctx, "cd", "quiet-hall", []), "fake", tmp_path)
+    assert hall_plan["web:playwright.hall.config.ts"]["argv"][3:6] == ["-c", "playwright.hall.config.ts", "tests-hall/hall-enter.spec.ts"]
     assert plan["web"]["argv"][3:5] == ["tests/cart-add.spec.ts", "tests/login.spec.ts"]
     assert "test_member_adds_a_product_to_the_cart" in " ".join(plan["app"]["argv"]) and "android-emulator" in plan["app"]["argv"]
 
