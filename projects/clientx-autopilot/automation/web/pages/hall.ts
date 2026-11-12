@@ -53,8 +53,26 @@ export class QuietHall {
       return (await res.json()).monks.map((m: { handle: string }) => m.handle);
     });
   }
+  async focus(): Promise<number> { return Number(await this.focusValue().innerText()); }
+  /** Call a trial on purpose; the monk must be seated. */
+  async summon(kind: 'dog' | 'fairies') { await this.page.getByTestId(`hall.summon.${kind}`).click(); await expect(this.trialTitle()).toBeVisible(); }
+  /** "My own ID": registers it if it is new, walks back in if this device knows it, otherwise asks for the return code. */
+  async enterWithId(id: string) {
+    await this.page.getByTestId('gate.mine').click();
+    await this.page.getByTestId('gate.handle').fill(id);
+    await this.page.getByTestId('gate.own').click();
+  }
+  returnCode() { return this.page.getByTestId('gate.code'); }
+  async acceptReturnCode() { await this.page.getByTestId('gate.code.done').click(); }
+  async enterReturnCode(code: string) { await this.page.getByTestId('gate.code.input').fill(code); await this.page.getByTestId('gate.own').click(); }
+  registeredBadge() { return this.page.getByTestId('hall.me.registered'); }
+  async openLedger() { await this.page.getByTestId('hall.ledger').click(); await expect(this.page.getByTestId('ledger.panel')).toBeVisible(); }
+  async closeLedger() { await this.page.getByTestId('ledger.close').click(); }
+  ledgerRow(i: number) { return this.page.getByTestId(`ledger.row.${i}`); }
+  ledgerReason(i: number) { return this.page.getByTestId(`ledger.reason.${i}`); }
+  ledgerDelta(i: number) { return this.page.getByTestId(`ledger.delta.${i}`); }
   async knock() { await this.page.getByTestId('hall.knock').click(); }
   async sit() { await this.page.getByTestId('hall.sit').click(); }
   async stand() { await this.page.getByTestId('hall.stand').click(); }
-  async leave() { await this.page.getByTestId('hall.leave').click(); await expect(this.enterButton()).toBeVisible(); }
+  async leave() { await this.page.getByTestId('hall.leave').click(); await expect(this.page.getByTestId('gate.mine')).toBeVisible(); }
 }

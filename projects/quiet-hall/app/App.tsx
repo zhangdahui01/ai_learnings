@@ -19,7 +19,7 @@ export default function App() {
         setServer(saved.server);
         try {                                    // walk back in as the same monk
           const joined = await api.join(saved.server, saved.handle, saved.token);
-          setSession({ ...saved, token: joined.token });
+          setSession({ ...saved, token: joined.token, registered: joined.me.registered });
         } catch (e) {
           // Only the hall saying "this ID is not yours" ends the identity. A failed request (bad signal, a busy
           // phone) must not: go in anyway and let the hall screen keep trying.

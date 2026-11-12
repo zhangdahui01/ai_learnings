@@ -137,10 +137,79 @@
     "hall.trials": {
       "selector": "testid=hall.trials",
       "source": "baseline"
+    },
+    "gate.mine": {
+      "selector": "testid=gate.mine",
+      "source": "baseline"
+    },
+    "gate.handle": {
+      "selector": "testid=gate.handle",
+      "source": "baseline"
+    },
+    "gate.own": {
+      "selector": "testid=gate.own",
+      "source": "baseline"
+    },
+    "gate.code": {
+      "selector": "testid=gate.code",
+      "source": "baseline"
+    },
+    "gate.code.done": {
+      "selector": "testid=gate.code.done",
+      "source": "baseline"
+    },
+    "gate.code.input": {
+      "selector": "testid=gate.code.input",
+      "source": "baseline"
+    },
+    "hall.me.registered": {
+      "selector": "testid=hall.me.registered",
+      "source": "baseline"
+    },
+    "hall.summon.dog": {
+      "selector": "testid=hall.summon.dog",
+      "source": "baseline"
+    },
+    "hall.summon.fairies": {
+      "selector": "testid=hall.summon.fairies",
+      "source": "baseline"
+    },
+    "hall.ledger": {
+      "selector": "testid=hall.ledger",
+      "source": "baseline"
+    },
+    "ledger.panel": {
+      "selector": "testid=ledger.panel",
+      "source": "baseline"
+    },
+    "ledger.row.<n>": {
+      "selector": "testid=ledger.row.<n>",
+      "source": "baseline"
+    },
+    "ledger.reason.<n>": {
+      "selector": "testid=ledger.reason.<n>",
+      "source": "baseline"
+    },
+    "ledger.delta.<n>": {
+      "selector": "testid=ledger.delta.<n>",
+      "source": "baseline"
+    },
+    "ledger.total.<n>": {
+      "selector": "testid=ledger.total.<n>",
+      "source": "baseline"
+    },
+    "ledger.close": {
+      "selector": "testid=ledger.close",
+      "source": "baseline"
+    },
+    "hall.over.merit": {
+      "selector": "testid=hall.over.merit",
+      "source": "baseline"
     }
   },
   "auth_flows": {
-    "visitor": "no account and nothing to type: tapping Enter draws a random ID; the token is kept in app storage until the visitor leaves"
+    "guest": "tap Enter: a random ID is drawn; the token lives in app storage until the visitor leaves",
+    "registered": "'my own ID' form: a new ID is registered and a return code is shown once; on the same device the ID alone walks back in; on another device the ID plus the return code"
   },
   "preconditions": {
     "hall_server": "node projects/quiet-hall/server/server.mjs",
@@ -157,6 +226,10 @@
       "android_package": "dev.clientx.quiethall",
       "android_activity": ".MainActivity",
       "ios_bundle_id": "dev.clientx.quiethall"
+    },
+    "visit_log": {
+      "local": "data/events.jsonl next to the hall data file",
+      "deployed": "Supabase table quiet_hall_events; views quiet_hall_daily and quiet_hall_visitors; readable by the project owner only"
     }
   }
 }

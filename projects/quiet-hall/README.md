@@ -12,20 +12,37 @@ quiet-hall/
 
 ## Rules of the hall
 
-- Every visit draws a random ID. The dharma name, gender and look are derived from it; you stay that monk until you leave the temple.
-- An ID belongs to whoever used it first (a token is kept in the app). Nobody else can enter with it.
+- Guests: "入寺" draws a random ID. The dharma name, gender and look are derived from it; you stay that monk until you leave. A guest is forgotten six hours after leaving.
+- Registered IDs: "用我的 ID 入寺" registers an ID you choose (3 to 16 letters or digits). A registered monk keeps merit, counts and the merit record. The hall shows a return code once: on the same device the ID alone lets you back in; on another device you need the ID and the code, and the old device is signed out. Five wrong codes pause that ID for five minutes. Only hashes of tokens and codes are stored; a lost code cannot be recovered.
+- Merit: wooden fish +1, prayer bead +1, prostration +3, trial held +10, trial lost -20 (never below zero).
+- Merit record: every change is kept with its time, reason, amount and the total afterwards (latest 100, newest first). "功德记录" in the hall shows it.
 - Sitting time counts while you sit and is kept when you stand or leave. A monk who goes silent for 90 seconds leaves the hall and frees the cushion.
 - Faces: every monk and every celestial maiden has their own drawn face (eyes, brows, nose, mouth, age, and how well the features go together), head shape, build and height, all derived from their ID. They are illustrations, not photographs of real people. Native builds keep the simple face.
 - Sound: chanting is two openly licensed recordings from Wikimedia Commons, monks at Lingyin Temple (CC BY-SA 3.0) and a Mandarin Heart Sutra (CC0); credits are in `app/public/audio/CREDITS.md` and on the gate screen. The wooden fish and bell strokes are synthesized. The web build has sound; native builds are silent for now.
 - Wooden fish: it sits beside your cushion. Tap it (or the button) and the mallet strikes, it sounds, and you gain one merit. Knocks are sent in batches (at most 60 per batch) and are delivered even when the page is closing.
 - Walking: stand up, then use the thumb stick or tap the floor; others see you move. You do not pass through pillars or other monks.
 - Changing cushion: sit down anywhere and you take the nearest free cushion; your wooden fish moves with you.
-- Trials of composure: while you sit, a stray dog or seven celestial maidens may come to distract you. Your composure drains; tap to gather your mind. Sit through it and your composure count grows; let it reach zero and you are shown out of the temple. Trials can be switched off.
+- Trials of composure: while you sit, a stray dog or seven celestial maidens come to distract you, at random or when you call one with "唤野狗" / "唤仙女". Composure drains with time; gathering your mind, knocking the wooden fish, turning beads and prostrating restore it. Sit through it for +10 merit; let composure reach zero and you lose 20 merit and are shown out of the temple. Random trials can be switched off.
 - Prostration: your monk folds forward to the floor and rises; the count is kept, and every 108th is announced.
 - Prayer beads: a loop of beads you turn one at a time; 108 make a round.
 - No 3D, no problem: where WebGL is unavailable (many office computers and in-app browsers) the gate and the hall fall back to flat drawings instead of a blank page; everything except walking still works.
 - The hall grows: there are always spare cushions past the last occupied one.
 - `--residents N` seats N resident monks so the hall is never empty. They are marked as residents in the API.
+
+## Who visited and what they did
+
+Every entry, registration, login, sit, practice batch, trial, bow and leave is logged with the monk's ID and dharma name, whether the ID is registered, a browser label (for example `iPhone · WeChat`), and the country, region and city of the request. Polling and walking are not logged. IP addresses are not stored.
+
+- Local server: `data/events.jsonl` (one JSON object per line), or the file named by `HALL_EVENTS_FILE`.
+- Deployed: the Supabase table `quiet_hall_events`. In the Supabase SQL editor:
+
+```sql
+select * from quiet_hall_daily;      -- per day: visits, distinct visitors, registrations, each practice, trials
+select * from quiet_hall_visitors;   -- per ID: first and last seen, visits, what they did, where from
+select * from quiet_hall_events order by at desc limit 200;   -- the raw log
+```
+
+The table is not readable with the public key; only the project owner sees it.
 
 ## Run it
 
@@ -45,7 +62,7 @@ npx expo start            # scan the QR code with Expo Go on your phone, or pres
 ## Tests
 
 ```bash
-node --test server/hall.test.mjs                                        # hall rules
+node --test server/hall.test.mjs lib/handler.test.mjs                   # hall rules, API and visit log
 cd app && npx tsc --noEmit                                   # types
 
 cd ../../clientx-autopilot
@@ -61,6 +78,6 @@ python -m pytest automation/app/quiet_hall --device-profile ios-simulator
 
 ## What has and has not been run
 
-- Run: the server tests, the type check, the web export, and the three BDD web cases in mobile Chromium (two people in the hall at once).
+- Run: the server and handler tests, the type check, the web export, and the seven BDD web cases in mobile Chromium.
 - Not run: the native Android and iOS builds, Expo Go on a phone, and the Appium scenarios in `clientx-autopilot/automation/app/quiet_hall`. They were written against the React Native `testID` contract and need a Mac to build and run.
-- The hall server is for a trusted network: plain HTTP, no accounts, no rate limiting. Put it behind HTTPS and add limits before exposing it to the internet.
+- The hall server is for a trusted network: plain HTTP, no rate limiting beyond the return-code lock. Put it behind HTTPS and add limits before exposing it to the internet.

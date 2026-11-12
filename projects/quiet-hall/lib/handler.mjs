@@ -1,39 +1,14 @@
-// The hall API as stateless functions: load the hall, apply one action, save if it changed.
+// The hall API as stateless functions: load the hall, apply one action, save if it changed, log the visit.
 import { Hall } from '../server/hall.mjs';
+import { apply, ROUTES } from './api.mjs';
+import { record } from './log.mjs';
 import { load, save } from './store.mjs';
 
 const RESIDENTS = Number(process.env.HALL_RESIDENTS ?? 24);
-const HEARTBEAT_WRITE_MS = 15_000;       // polling reads the hall every 2 s; only write a heartbeat this often
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, authorization',
                'access-control-allow-methods': 'GET, POST, OPTIONS' };
 
-function run(hall, me, action, data) {
-  switch (action) {
-    case 'bow': return hall.bow(me, data.to);
-    case 'knock': case 'prostrate': case 'beads': case 'trial': return hall[action](me, data.count);
-    case 'sit': return hall.sit(me, data.seat);
-    case 'move': return hall.move(me, data.x, data.z);
-    default: return hall[action](me);                       // stand, leave
-  }
-}
-
-function apply(hall, action, { token, body }) {
-  if (action === 'health') return { status: 200, body: { ok: true } };
-  if (action === 'join') {
-    const out = hall.join(body.handle, body.token);
-    return { status: out.status, body: out.status === 200 ? { token: out.token, me: out.me } : { error: out.error } };
-  }
-  const me = hall.auth(token);
-  if (action === 'hall') {
-    if (me && (!me.inHall || hall.now() - me.lastSeen > HEARTBEAT_WRITE_MS)) hall.touch(me);
-    return { status: 200, body: { ...hall.snapshot(), me: me ? hall.view(me) : null } };
-  }
-  if (!me) return { status: 401, body: { error: '请先入寺' } };
-  const result = run(hall, me, action, body);
-  return { status: 200, body: { ...(action === 'bow' ? result : {}), me: hall.view(me) } };
-}
-
-export function route(action, method) {
+export function route(action, method = ROUTES[action]) {
   return async function handler(req, res) {
     for (const [k, v] of Object.entries(CORS)) res.setHeader(k, v);
     res.setHeader('cache-control', 'no-store');
@@ -51,6 +26,7 @@ export function route(action, method) {
         const out = apply(hall, action, input);
         const after = JSON.stringify(hall);
         if (after !== before && !(await save(JSON.parse(after), version))) continue;     // lost the race: try again
+        await record(out.log, req.headers);
         res.statusCode = out.status;
         return res.end(JSON.stringify(out.body));
       }

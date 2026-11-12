@@ -3,6 +3,7 @@ import { Animated, Platform, Pressable, StyleSheet, Text, View } from 'react-nat
 import { api, HallError, type HallSnapshot, type Monk, type Session } from './api';
 import { Joystick } from './Joystick';
 import { BeadsPanel, MALA } from './BeadsPanel';
+import { LedgerPanel } from './LedgerPanel';
 import { MonkFigure } from './MonkFigure';
 import { playBark, playBell, playChime, playKnock, playTick, setChanting, soundStatus, soundSupported, TRACKS } from './sound';
 import { useBatched } from './useBatched';
@@ -22,6 +23,9 @@ const TRIALS: Record<TrialKind, { title: string; drain: number; seconds: number;
   fairies: { title: '七位仙女飘然而至，绕着你起舞', drain: 17, seconds: 10, passed: '仙女化作一阵清风' },
 };
 const FOCUS_GAIN = 15;
+// Practising during a trial steadies you too; and each practice is worth merit (the hall keeps the same table).
+const STEADY = { knock: 8, bead: 6, prostrate: 20 };
+const WORTH = { knock: 1, bead: 1, prostrate: 3 };
 function trialSetting(): { forced: TrialKind | null; off: boolean } {
   if (Platform.OS !== 'web' || typeof location === 'undefined') return { forced: null, off: false };
   const v = new URLSearchParams(location.search).get('trial');
@@ -47,12 +51,13 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const [knockTick, setKnockTick] = useState(0);
   const [bowTick, setBowTick] = useState(0);
   const [beadsOpen, setBeadsOpen] = useState(false);
+  const [ledgerOpen, setLedgerOpen] = useState(false);
   const [walkTo, setWalkTo] = useState<{ x: number; z: number } | null>(null);        // where I am walking, before the hall confirms
   const rise = useRef(new Animated.Value(0)).current;
   const [riseText, setRiseText] = useState('功德 +1');
   const [trial, setTrial] = useState<Trial | null>(null);
   const [trialsOn, setTrialsOn] = useState(() => !trialSetting().off);
-  const [expelled, setExpelled] = useState<Monk | null>(null);       // set when composure runs out: the game is over
+  const [expelled, setExpelled] = useState<(Monk & { lostMerit: number }) | null>(null);       // set when composure runs out: the game is over
   const trialRef = useRef<Trial | null>(null);       // the trial as the timer sees it; `trial` is the copy that is drawn
   const nextTrialAt = useRef(0);
   const lastNoise = useRef(0);
@@ -117,22 +122,25 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   const knocks = useBatched(n => api.knock(session, n), saved);
   const bows = useBatched(n => api.prostrate(session, n), saved);
   const beads = useBatched(n => api.beads(session, n), saved);
-  const trials = useBatched(n => api.trial(session, n), saved);
 
   const me = hall?.me ?? null;
+  const steady = useCallback((by: number) => {            // practising during a trial restores composure
+    const t = trialRef.current;
+    if (t) { trialRef.current = { ...t, focus: Math.min(100, t.focus + by) }; setTrial(trialRef.current); }
+  }, []);
   const knock = useCallback(() => {
-    playKnock(); setKnockTick(t => t + 1); float('功德 +1'); knocks.add();
-  }, [knocks, float]);
+    playKnock(); setKnockTick(t => t + 1); float(`功德 +${WORTH.knock}`); knocks.add(); steady(STEADY.knock);
+  }, [knocks, float, steady]);
   const prostrate = useCallback(() => {
-    playBell(); setBowTick(t => t + 1); bows.add();
+    playBell(); setBowTick(t => t + 1); bows.add(); steady(STEADY.prostrate);
     const total = (me?.prostrations ?? 0) + bows.extra + 1;
-    float(total % MALA === 0 ? `礼拜 ${total} · 一百零八拜圆满` : `礼拜 ${total}`);
-  }, [bows, float, me]);
+    float(total % MALA === 0 ? `一百零八拜圆满 · 功德 +${WORTH.prostrate}` : `功德 +${WORTH.prostrate}`);
+  }, [bows, float, me, steady]);
   const bead = useCallback(() => {
-    playTick(); beads.add();
+    playTick(); beads.add(); steady(STEADY.bead);
     const total = (me?.beads ?? 0) + beads.extra + 1;
     if (total % MALA === 0) { playBell(); say(`念珠第 ${total / MALA} 圈圆满`); }
-  }, [beads, me, say]);
+  }, [beads, me, say, steady]);
 
   // Where I am and where everyone else is, for walking without passing through people or pillars.
   const seats = hall?.seats ?? 0;
@@ -190,20 +198,21 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   // Trials of composure, only while seated.
   const sitting = !!me?.sitting;
   useEffect(() => {
-    if (!sitting || !trialsOn) { trialRef.current = null; setTrial(null); return; }
+    if (!sitting) { trialRef.current = null; setTrial(null); return; }
     const setting = trialSetting();
     nextTrialAt.current = Date.now() + (setting.forced ? 2500 : 14000 + Math.random() * 10000);
     const tickTrial = setInterval(() => {
       const now = Date.now(), t = trialRef.current;
       let next: Trial | null = t;
       if (!t) {
-        if (now < nextTrialAt.current) return;
+        if (!trialsOn || now < nextTrialAt.current) return;
         const kind: TrialKind = setting.forced ?? (Math.random() < 0.5 ? 'dog' : 'fairies');
         lastNoise.current = 0;
         next = { kind, focus: 100, endsAt: now + TRIALS[kind].seconds * 1000, at: now };
       } else if (now >= t.endsAt && t.focus - TRIALS[t.kind].drain * Math.min(2, (now - t.at) / 1000) > 0) {      // sat through it
         nextTrialAt.current = now + (setting.forced ? 6000 : 35000 + Math.random() * 40000);
-        playBell(); trials.add(); float('定力 +1'); say(TRIALS[t.kind].passed);
+        playBell(); float('功德 +10'); say(TRIALS[t.kind].passed);
+        api.trial(session, 'held', t.kind).then(res => saved(res.me)).catch(() => { /* the count catches up on the next poll */ });
         next = null;
       } else {
         if (now - lastNoise.current > (t.kind === 'dog' ? 1100 : 2200)) { lastNoise.current = now; (t.kind === 'dog' ? playBark : playChime)(); }
@@ -217,12 +226,24 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
   useEffect(() => {                                                   // composure gone: shown out of the temple
     if (trial && trial.focus <= 0 && me && !expelled) {
       gone.current = true;
-      setExpelled({ ...me, trials: me.trials + trials.extra });
+      const kind = trial.kind;
+      const lostMerit = Math.min(20, me.merit);          // merit never goes below zero
+      setExpelled({ ...me, merit: me.merit - lostMerit, lostMerit });
       trialRef.current = null; setTrial(null);
       setChanting(null);
-      api.leave(session).catch(() => { /* the hall lets a silent monk go by itself */ });
+      // written down as a loss of merit, then out of the hall
+      api.trial(session, 'lost', kind).catch(() => {}).then(() => api.leave(session)).catch(() => { /* the hall lets a silent monk go by itself */ });
     }
-  }, [trial, me, expelled, session, trials.extra]);
+  }, [trial, me, expelled, session]);
+  // Call a trial on purpose, to test yourself.
+  const summon = useCallback((kind: TrialKind) => {
+    if (!live.current.me?.sitting) { say('先坐下，再招来考验'); return; }
+    if (trialRef.current) return;
+    const now = Date.now();
+    lastNoise.current = 0;
+    trialRef.current = { kind, focus: 100, endsAt: now + TRIALS[kind].seconds * 1000, at: now };
+    setTrial(trialRef.current);
+  }, [say]);
   const gather = useCallback(() => {
     playTick();
     const t = trialRef.current;
@@ -240,7 +261,8 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
         <View style={styles.overStats}>
           <Text style={styles.overStat}>静坐 {clock(expelled.totalSeconds)}</Text>
           <Text style={styles.overStat}>守住考验 {expelled.trials} 次</Text>
-          <Text style={styles.overStat}>功德 {expelled.merit} · 礼拜 {expelled.prostrations} · 念珠 {expelled.beads}</Text>
+          <Text testID="hall.over.merit" style={styles.overStat}>{expelled.lostMerit ? `功德 -${expelled.lostMerit}，现有 ${expelled.merit}` : '功德已经是 0，没有可扣的'}</Text>
+          <Text style={styles.overStat}>{expelled.registered ? '你的 ID 和功德都还在，随时可以回来。' : '游客身份到此为止。注册一个 ID，功德就能留下。'}</Text>
         </View>
         <Pressable testID="hall.over.again" onPress={onLeft} style={({ pressed }) => [styles.overButton, pressed && styles.pressed]}
           accessibilityRole="button" accessibilityLabel="回到山门，重新入寺">
@@ -308,7 +330,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
             </View>
             <View style={styles.inline}>
               <Text style={styles.trialNote}>定力 </Text><Text testID="hall.focus.value" style={styles.trialNote}>{Math.round(trial.focus)}</Text>
-              <Text style={styles.trialNote}> · 归零会被请出寺庙</Text>
+              <Text style={styles.trialNote}> · 归零会被请出寺庙 · 木鱼、念珠、礼拜也能稳住</Text>
             </View>
             <Pressable testID="hall.focus" onPress={gather} style={({ pressed }) => [styles.focus, pressed && styles.tapped]}
               accessibilityRole="button" accessibilityLabel="收摄心神，稳住定力">
@@ -333,14 +355,14 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           <MonkFigure monk={me} size={42} />
           <View style={styles.meText}>
             <View style={styles.inline}>
-              <Text testID="hall.me.name" style={styles.meName}>{me.name}</Text><Text testID="hall.me.handle" style={styles.muted}>  @{me.handle}</Text>
+              <Text testID="hall.me.name" style={styles.meName}>{me.name}</Text><Text testID="hall.me.handle" style={styles.muted}>  @{me.handle}</Text>{me.registered && <Text testID="hall.me.registered" style={styles.badge}>已注册</Text>}
             </View>
             <View style={styles.stats}>
               {stat('累计', 'hall.me.total', clock(me.totalSeconds + drift))}
-              {stat('功德', 'hall.me.merit', me.merit + knocks.extra)}
+              {stat('功德', 'hall.me.merit', me.merit + knocks.extra * WORTH.knock + bows.extra * WORTH.prostrate + beads.extra * WORTH.bead)}
               {stat('礼拜', 'hall.me.prostrations', me.prostrations + bows.extra)}
               {stat('念珠', 'hall.me.beads', me.beads + beads.extra)}
-              {stat('定力', 'hall.me.trials', me.trials + trials.extra)}
+              {stat('过关', 'hall.me.trials', me.trials)}
               {stat('受礼', 'hall.me.bows', me.bows)}
             </View>
           </View>
@@ -376,6 +398,20 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           </Pressable>
         </View>
         <View style={styles.actions}>
+          <Pressable testID="hall.summon.dog" style={({ pressed }) => [styles.minor, pressed && styles.pressed]}
+            onPress={() => summon('dog')} accessibilityRole="button" accessibilityLabel="招来野狗，考验定力">
+            <Text style={styles.minorText}>唤野狗</Text>
+          </Pressable>
+          <Pressable testID="hall.summon.fairies" style={({ pressed }) => [styles.minor, pressed && styles.pressed]}
+            onPress={() => summon('fairies')} accessibilityRole="button" accessibilityLabel="请来仙女，考验定力">
+            <Text style={styles.minorText}>请仙女</Text>
+          </Pressable>
+          <Pressable testID="hall.ledger" style={({ pressed }) => [styles.minor, pressed && styles.pressed]}
+            onPress={() => setLedgerOpen(true)} accessibilityRole="button" accessibilityLabel="查看功德记录">
+            <Text style={styles.minorText}>功德记录</Text>
+          </Pressable>
+        </View>
+        <View style={styles.actions}>
           <Pressable testID="hall.bow" style={({ pressed }) => [styles.minor, pressed && styles.pressed]}
             onPress={() => act(() => api.bow(session), '向大众合十')} accessibilityRole="button" accessibilityLabel="向大众合十">
             <Text style={styles.minorText}>向大众合十</Text>
@@ -387,6 +423,7 @@ export function HallScreen({ session, onLeft }: { session: Session; onLeft: () =
           </Pressable>
         </View>
         {beadsOpen && <BeadsPanel count={me.beads + beads.extra} onBead={bead} onClose={() => setBeadsOpen(false)} />}
+        {ledgerOpen && <LedgerPanel session={session} onClose={() => setLedgerOpen(false)} />}
       </View>
     </View>
   );
@@ -432,7 +469,8 @@ const styles = StyleSheet.create({
   stat: { flexDirection: 'row', alignItems: 'baseline' },
   statLabel: { color: C.inkSoft, fontSize: 12 },
   statValue: { color: C.ink, fontSize: 13, fontWeight: '600', fontVariant: ['tabular-nums'] },
-  minor: { flex: 1, height: 44, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.paperDeep },
+  badge: { marginLeft: 6, fontSize: 11, color: C.paper, backgroundColor: C.woodSoft, borderRadius: 8, paddingHorizontal: 6, paddingVertical: 1, overflow: 'hidden' },
+  minor: { flex: 1, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: C.paperDeep },
   minorText: { color: C.woodSoft, fontSize: 14 },
   meRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   meText: { flex: 1, gap: 2 },

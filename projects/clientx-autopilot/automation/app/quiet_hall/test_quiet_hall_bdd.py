@@ -1,4 +1,5 @@
 import re
+import time
 
 from pytest_bdd import given, parsers, scenarios, then, when
 
@@ -106,3 +107,37 @@ def prostration_count(hall, count):
 @then(parsers.parse("the bead count shows {count:d}"))
 def bead_count(hall, count):
     hall.expect_text(HallPage.BEADS, str(count))
+
+
+@when("the visitor registers a new ID", target_fixture="registration")
+def register(gate_page):
+    handle = f"t{int(time.time() * 1000):x}"[-14:]
+    gate_page.enter_with_id(handle)
+    return {"handle": handle, "gate": gate_page}
+
+
+@then("a return code is shown once", target_fixture="hall")
+def return_code(registration):
+    code, hall = registration["gate"].accept_return_code()
+    assert re.fullmatch(r"[0-9A-F]{5}-[0-9A-F]{5}", code), code
+    return hall.loaded()
+
+
+@then("the hall shows the monk as registered")
+def registered(hall):
+    hall.el(HallPage.REGISTERED)
+
+
+@when("the monk leaves and comes back with the same ID")
+def come_back(hall, registration):
+    hall.expect_text(HallPage.MERIT, "3")          # the count has reached the hall before leaving
+    gate = hall.leave()
+    gate.enter_with_id(registration["handle"])
+    hall.loaded()
+
+
+@then(parsers.parse('the newest line of the merit record is "{reason}" with "{change}"'))
+def newest_line(hall, reason, change):
+    hall.open_ledger()
+    assert hall.ledger_entry(0) == (reason, change)
+    hall.close_ledger()

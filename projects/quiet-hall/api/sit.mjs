@@ -1,3 +1,3 @@
 import { route } from '../lib/handler.mjs';
 
-export default route('sit', 'POST');
+export default route('sit');

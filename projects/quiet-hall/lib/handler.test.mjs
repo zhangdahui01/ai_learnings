@@ -2,11 +2,11 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { route } from './handler.mjs';
 
-function call(action, method, { body, token, allowed = method } = {}) {
+function call(action, method, { body, token, allowed = method, headers = {} } = {}) {
   return new Promise(resolve => {
     const res = { headers: {}, statusCode: 200, setHeader(k, v) { this.headers[k] = v; },
                   end(text) { resolve({ status: this.statusCode, body: text ? JSON.parse(text) : null }); } };
-    route(action, allowed)({ method, headers: token ? { authorization: `Bearer ${token}` } : {}, body }, res);
+    route(action, allowed)({ method, headers: { ...headers, ...(token ? { authorization: `Bearer ${token}` } : {}) }, body }, res);
   });
 }
 
@@ -23,6 +23,26 @@ test('stateless handlers keep one hall across calls (memory store)', async () =>
   assert.equal((await call('leave', 'POST', { token: joined.body.token })).body.me.seat, null);
   assert.equal((await call('hall', 'GET', {})).body.present, 24);
   assert.equal((await call('hall', 'POST', { allowed: 'GET' })).status, 405);
+});
+
+test('actions worth counting leave a line in the visit log; polling and walking do not', async () => {
+  const { memory } = await import('./log.mjs');
+  memory.length = 0;
+  const headers = { 'user-agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) MicroMessenger/8.0', 'x-vercel-ip-country': 'KR', 'x-vercel-ip-city': 'Seoul' };
+  const reg = await call('register', 'POST', { body: { handle: 'visitor1' }, headers });
+  assert.match(reg.body.code, /^[0-9A-F]{5}-[0-9A-F]{5}$/);
+  const token = reg.body.token;
+  await call('hall', 'GET', { token, headers });
+  await call('move', 'POST', { token, headers, body: { x: 1, z: 1 } });
+  await call('knock', 'POST', { token, headers, body: { count: 3 } });
+  await call('trial', 'POST', { token, headers, body: { result: 'lost', kind: 'dog' } });
+  const history = await call('history', 'GET', { token, headers });
+  assert.deepEqual(history.body.history.map(e => e.delta), [-3, 3]);
+  await call('login', 'POST', { body: { handle: 'visitor1', code: 'bad' }, headers });
+  assert.deepEqual(memory.map(e => e.event), ['register', 'knock', 'trial_lost', 'history', 'login_failed']);
+  assert.deepEqual([memory[0].handle, memory[0].registered, memory[0].country, memory[0].city, memory[0].device], ['visitor1', true, 'KR', 'Seoul', 'WeChat / iOS']);
+  assert.deepEqual(memory[1].detail, { count: 3, merit: 3 });
+  assert.ok(!JSON.stringify(memory).includes(token) && !JSON.stringify(memory).includes(reg.body.code));
 });
 
 test('concurrent joins do not lose each other', async () => {

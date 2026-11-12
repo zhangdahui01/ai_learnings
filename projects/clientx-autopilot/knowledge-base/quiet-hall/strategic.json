@@ -6,16 +6,19 @@
     "An ID belongs to whoever holds its token; the server refuses anyone else (covered by the server tests, not reachable from the UI).",
     "Sitting time counts only while the monk sits and is kept when the monk stands or leaves.",
     "There is no chat. The only interaction between monks is a bow. Chanting, wooden fish and bell sounds are synthesized on the device.",
-    "Knocking the wooden fish adds one merit per knock; knocks are sent in batches and one batch counts at most 60.",
     "A standing monk can walk anywhere on the hall floor by tapping it; a seated monk stays on the cushion, and sitting down returns the monk to it.",
-    "Prostrations and prayer beads are counted per monk like knocks (batches of at most 60); 108 beads make one round.",
     "A standing monk may sit on any free cushion; the app picks the nearest one and the wooden fish goes with the monk. A cushion someone else holds cannot be taken.",
     "Walking never passes through pillars or other monks, and two standing monks are never drawn on the same spot.",
-    "Trials of composure happen only to a seated monk: a distraction drains composure, gathering the mind restores it, the monk cannot stand during a trial, sitting through it adds 1 to the composure count, and reaching zero ends the visit (the monk leaves the hall)."
+    "Merit: a knock on the wooden fish +1, a prayer bead +1, a prostration +3, a trial held +10, a trial lost -20 (never below 0). Counted practices arrive in batches of at most 60.",
+    "Every change of merit is written down with its time, its reason, the amount and the total afterwards; the latest 100 are kept and shown newest first.",
+    "Trials of composure happen only to a seated monk. They come at random (can be switched off) or when the monk calls one with a button. Composure drains with real time; gathering the mind, knocking, beads and prostrations restore it. The monk cannot stand during a trial. Reaching zero ends the visit: merit drops and the monk leaves the hall.",
+    "A visitor may register an ID. A registered monk and their merit are kept; a return code, shown once, brings them back on another device and signs the old device out. Five wrong codes pause that ID for five minutes. Unregistered visitors are forgotten six hours after leaving.",
+    "Entering, registering, sitting, practices, trials, bows and leaving are written to the visit log with the monk's ID, a browser label and the country, region and city of the request. Polling and walking are not logged. IP addresses are not stored."
   ],
   "coverage_map": {
     "smoke": [
-      "web_hall_enter"
+      "web_hall_enter",
+      "web_hall_register"
     ],
     "journeys": [
       {
@@ -40,6 +43,34 @@
             "asserts": 4,
             "run": {
               "spec": "hall-enter",
+              "config": "playwright.hall.config.ts",
+              "dir": "tests-hall"
+            }
+          }
+        ]
+      },
+      {
+        "id": "register",
+        "name": "Register an ID and come back to it",
+        "priority": "P0",
+        "code_paths": [
+          "server/hall.mjs",
+          "lib/api.mjs",
+          "app/src/Gate.tsx",
+          "app/src/LedgerPanel.tsx",
+          "app/src/api.ts"
+        ],
+        "specs": [
+          "specs/hall-register.md"
+        ],
+        "cases": [
+          {
+            "id": "web_hall_register",
+            "stack": "web",
+            "state": "gated",
+            "asserts": 9,
+            "run": {
+              "spec": "hall-register",
               "config": "playwright.hall.config.ts",
               "dir": "tests-hall"
             }
@@ -184,6 +215,18 @@
           "app/src/three/Monk3D.tsx",
           "app/src/three/layout.ts",
           "app/src/Joystick.tsx"
+        ],
+        "specs": [],
+        "cases": []
+      },
+      {
+        "id": "visit-log",
+        "name": "Visit and feature-use log",
+        "priority": "P1",
+        "code_paths": [
+          "lib/log.mjs",
+          "lib/api.mjs",
+          "lib/handler.mjs"
         ],
         "specs": [],
         "cases": []

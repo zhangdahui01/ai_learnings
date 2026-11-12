@@ -1,3 +1,3 @@
 import { route } from '../lib/handler.mjs';
 
-export default route('beads', 'POST');
+export default route('beads');

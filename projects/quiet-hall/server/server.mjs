@@ -1,8 +1,11 @@
 // Quiet Hall server. No dependencies.   node server/server.mjs [--port 8787] [--residents 24] [--data data/hall.json]
+// The visit log goes to data/events.jsonl (set HALL_EVENTS_FILE to move it).
 import { createServer } from 'node:http';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 import { networkInterfaces } from 'node:os';
+import { apply, ROUTES } from '../lib/api.mjs';
+import { record } from '../lib/log.mjs';
 import { Hall } from './hall.mjs';
 
 function arg(name, fallback) {
@@ -11,6 +14,7 @@ function arg(name, fallback) {
 }
 const port = Number(arg('port', 8787));
 const dataFile = arg('data', 'data/hall.json');
+process.env.HALL_EVENTS_FILE ??= join(dirname(dataFile), 'events.jsonl');
 const hall = new Hall({ state: existsSync(dataFile) ? JSON.parse(readFileSync(dataFile, 'utf8')) : undefined });
 hall.seedResidents(Number(arg('residents', 0)));
 
@@ -24,17 +28,6 @@ function save() {
 }
 setInterval(save, 5000).unref();
 for (const sig of ['SIGINT', 'SIGTERM']) process.on(sig, () => { dirty = true; save(); process.exit(0); });
-
-const ACTIONS = ['sit', 'stand', 'bow', 'leave', 'knock', 'prostrate', 'beads', 'move', 'trial'];
-function run(hall, me, action, data) {
-  switch (action) {
-    case 'bow': return hall.bow(me, data.to);
-    case 'knock': case 'prostrate': case 'beads': case 'trial': return hall[action](me, data.count);
-    case 'sit': return hall.sit(me, data.seat);
-    case 'move': return hall.move(me, data.x, data.z);
-    default: return hall[action](me);                       // stand, leave
-  }
-}
 
 const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers': 'content-type, authorization',
                'access-control-allow-methods': 'GET, POST, OPTIONS' };
@@ -52,29 +45,14 @@ export const server = createServer(async (req, res) => {
   try {
     if (req.method === 'OPTIONS') { res.writeHead(204, CORS); return res.end(); }
     const path = new URL(req.url, 'http://x').pathname;
-    const token = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
-    if (req.method === 'GET' && path === '/api/health') return send(res, 200, { ok: true });
-    if (req.method === 'POST' && path === '/api/join') {
-      const { handle, token: known } = await body(req);
-      const out = hall.join(handle, known);
-      dirty = true;
-      return send(res, out.status, out.status === 200 ? { token: out.token, me: out.me } : { error: out.error });
-    }
-    if (req.method === 'GET' && path === '/api/hall') {
-      const me = hall.auth(token);
-      if (me) hall.touch(me);                       // reading the hall is the heartbeat
-      return send(res, 200, { ...hall.snapshot(), me: me ? hall.view(me) : null });
-    }
-    if (req.method === 'POST' && ACTIONS.includes(path.slice(5)) && path.startsWith('/api/')) {
-      const me = hall.auth(token);
-      if (!me) return send(res, 401, { error: '请先入寺' });
-      const data = await body(req);
-      const action = path.slice(5);
-      const result = run(hall, me, action, data);
-      dirty = true;
-      return send(res, 200, { ...(action === 'bow' ? result : {}), me: hall.view(me) });
-    }
-    send(res, 404, { error: 'not found' });
+    const action = path.startsWith('/api/') ? path.slice(5) : '';
+    if (!ROUTES[action]) return send(res, 404, { error: 'not found' });
+    if (req.method !== ROUTES[action]) return send(res, 405, { error: 'method not allowed' });
+    const out = apply(hall, action, { token: (req.headers.authorization || '').replace(/^Bearer\s+/i, ''),
+                                      body: req.method === 'POST' ? await body(req) : {} });
+    dirty = true;
+    await record(out.log, req.headers);
+    send(res, out.status, out.body);
   } catch (err) {
     send(res, 400, { error: 'bad request' });
   }

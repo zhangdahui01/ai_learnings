@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const out = join(root, '.vercel', 'output');
-const ACTIONS = { health: 'GET', join: 'POST', hall: 'GET', sit: 'POST', stand: 'POST', bow: 'POST', leave: 'POST', knock: 'POST', prostrate: 'POST', beads: 'POST', move: 'POST', trial: 'POST' };
+const { ROUTES: ACTIONS } = await import('../lib/api.mjs');
 
 rmSync(out, { recursive: true, force: true });
 if (!process.env.SKIP_WEB_EXPORT) {
@@ -38,7 +38,7 @@ for (const [action, method] of Object.entries(ACTIONS)) {
   mkdirSync(fn, { recursive: true });
   cpSync(join(root, 'lib'), join(fn, 'lib'), { recursive: true, filter: src => !src.endsWith('.test.mjs') });
   cpSync(join(root, 'server', 'hall.mjs'), join(fn, 'server', 'hall.mjs'));
-  writeFileSync(join(fn, 'index.mjs'), `import { route } from './lib/handler.mjs';\n\nexport default route('${action}', '${method}');\n`);
+  writeFileSync(join(fn, 'index.mjs'), `import { route } from './lib/handler.mjs';\n\nexport default route('${action}');\n`);
   writeFileSync(join(fn, '.vc-config.json'), JSON.stringify({
     runtime: 'nodejs22.x', handler: 'index.mjs', launcherType: 'Nodejs', shouldAddHelpers: true, maxDuration: 15,
   }, null, 2));

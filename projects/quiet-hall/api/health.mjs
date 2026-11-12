@@ -1,3 +1,3 @@
 import { route } from '../lib/handler.mjs';
 
-export default route('health', 'GET');
+export default route('health');

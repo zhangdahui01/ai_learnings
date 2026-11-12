@@ -57,23 +57,80 @@ test('bowing is the only interaction', () => {
   assert.equal(h.view(b).bows, 2);
 });
 
-test('knocking the wooden fish adds merit, in capped batches', () => {
-  const { h } = hall();
+test('every practice earns merit, and each change is written down', () => {
+  const { h, tick } = hall();
   const a = h.auth(h.join('alice').token);
   assert.equal(h.knock(a).merit, 1);
+  tick(1000);
   assert.equal(h.knock(a, 5).merit, 6);
-  assert.equal(h.knock(a, 100000).merit, 66);
-  assert.equal(h.knock(a, -3).merit, 66);
-  assert.equal(h.knock(a, 'x').merit, 66);
+  assert.equal(h.prostrate(a, 2).merit, 12);              // a prostration is worth 3
+  assert.equal(h.beads(a, 4).merit, 16);
+  assert.equal(h.knock(a, 100000).merit, 76);             // a batch counts at most 60
+  for (const junk of [-3, 'x', 0]) assert.equal(h.knock(a, junk).merit, 76);
+  assert.deepEqual([h.view(a).prostrations, h.view(a).beads], [2, 4]);
+  const log = h.history(a);
+  assert.deepEqual(log.map(e => [e.delta, e.reason, e.total]),
+    [[60, '敲木鱼 ×60', 76], [4, '念珠 ×4', 16], [6, '礼拜 ×2', 12], [5, '敲木鱼 ×5', 6], [1, '敲木鱼 ×1', 1]]);
+  assert.equal(log.at(-1).at + 1000, log.at(-2).at);      // each entry carries its time
 });
 
-test('prostrations and prayer beads are counted like knocks', () => {
+test('a trial held adds merit; a trial lost takes it away, never below zero', () => {
   const { h } = hall();
   const a = h.auth(h.join('alice').token);
-  assert.equal(h.prostrate(a).prostrations, 1);
-  assert.equal(h.beads(a, 27).beads, 27);
-  assert.equal(h.beads(a, 500).beads, 87);
-  assert.deepEqual([h.view(a).merit, h.view(a).prostrations], [0, 1]);
+  assert.deepEqual([h.trial(a, 'held', 'dog').merit, h.view(a).trials], [10, 1]);
+  assert.equal(h.trial(a, 'lost', 'fairies').merit, 0);   // 10 - 20 stops at 0
+  assert.deepEqual(h.history(a).map(e => [e.delta, e.reason]), [[-10, '定力不足，被仙女扰乱'], [10, '守住考验：野狗']]);
+  assert.equal(h.trial(a, 'lost', 'dog').merit, 0);
+  assert.equal(h.history(a).length, 2);                   // nothing changed, nothing written
+  assert.equal(h.trial(a, 'nonsense').merit, 0);
+});
+
+test('the ledger keeps the latest hundred changes', () => {
+  const { h } = hall();
+  const a = h.auth(h.join('alice').token);
+  for (let i = 0; i < 130; i += 1) h.knock(a, 1);
+  assert.equal(h.history(a).length, 100);
+  assert.equal(h.history(a)[0].total, 130);
+});
+
+test('a registered ID is kept, and its return code brings the person back on another device', () => {
+  const { h, tick } = hall();
+  const reg = h.register('dahui');
+  assert.equal(reg.status, 200);
+  assert.match(reg.code, /^[0-9A-F]{5}-[0-9A-F]{5}$/);
+  assert.ok(!JSON.stringify(h).includes(reg.code));       // only its hash is stored
+  assert.equal(h.register('Dahui').status, 409);
+  assert.equal(h.join('dahui').status, 409);              // nobody walks in as a registered monk without the token
+  const me = h.auth(reg.token); h.knock(me, 7); h.leave(me);
+  tick(48 * 3600_000); h.sweep();                         // two days later the monk is still on the books
+  assert.equal(h.login('dahui', 'WRONG-CODE0').status, 403);
+  const back = h.login('DAHUI', reg.code.toLowerCase().replace('-', ''));       // forgiving about case and the dash
+  assert.deepEqual([back.status, back.me.merit, back.me.registered], [200, 7, true]);
+  assert.equal(h.auth(reg.token), null);                  // the old device is signed out
+  assert.equal(h.join('dahui', back.token).me.merit, 7);
+  assert.equal(h.login('nobody', 'x').status, 404);
+});
+
+test('wrong return codes are cut off after five tries', () => {
+  const { h, tick } = hall();
+  const reg = h.register('dahui');
+  for (let i = 0; i < 5; i += 1) assert.equal(h.login('dahui', 'nope').status, 403);
+  assert.equal(h.login('dahui', reg.code).status, 429);   // even the right code waits
+  tick(5 * 60_000 + 1);
+  assert.equal(h.login('dahui', reg.code).status, 200);
+});
+
+test('guests who left long ago are forgotten; registered monks and people in the hall are not', () => {
+  const { h, tick } = hall();
+  const guest = h.auth(h.join('guest').token);
+  const keeper = h.auth(h.register('keeper').token);
+  const here = h.auth(h.join('here').token);
+  h.leave(guest); h.leave(keeper);
+  for (let i = 0; i < 300; i += 1) { tick(60_000); h.touch(here); }          // five hours; "here" keeps checking in
+  h.sweep(); assert.ok(h.monks.has('guest'));
+  for (let i = 0; i < 90; i += 1) { tick(60_000); h.touch(here); }
+  h.sweep();
+  assert.deepEqual([h.monks.has('guest'), h.monks.has('keeper'), h.monks.has('here')], [false, true, true]);
 });
 
 test('a standing monk can walk; sitting returns to the cushion', () => {
@@ -99,7 +156,6 @@ test('a monk can sit on another free cushion, but not on a taken one', () => {
   assert.equal(h.sit(a, 1).seat, 7);                  // bob's cushion, even while he is seated elsewhere in the row
   for (const bad of [-1, 2.5, '3', 99999, null]) assert.equal(h.sit(a, bad).seat, 7);
   assert.equal(h.join('carol').me.seat, 0);           // the cushion alice left is free again
-  assert.equal(h.trial(a).trials, 1);
 });
 
 test('residents fill the hall and cannot be impersonated', () => {

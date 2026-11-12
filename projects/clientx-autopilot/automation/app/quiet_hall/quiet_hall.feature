@@ -1,6 +1,6 @@
 @P0 @progression
 Feature: Quiet Hall
-  Service: quiet-hall   Journeys: enter, sit, bow
+  Service: quiet-hall   Journeys: enter, register, sit, bow
 
   Scenario: A visitor enters the temple and becomes a monk
     Given the temple gate is open
@@ -34,3 +34,13 @@ Feature: Quiet Hall
     And the monk turns 4 prayer beads
     Then the prostration count shows 2
     And the bead count shows 4
+
+  Scenario: A visitor registers an ID and finds the merit record on return
+    Given the temple gate is open
+    When the visitor registers a new ID
+    Then a return code is shown once
+    And the hall shows the monk as registered
+    When the monk prostrates 1 times
+    And the monk leaves and comes back with the same ID
+    Then the merit shows 3
+    And the newest line of the merit record is "礼拜 ×1" with "+3"
