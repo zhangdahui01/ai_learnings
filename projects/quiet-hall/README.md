@@ -36,7 +36,7 @@ npx expo start            # scan the QR code with Expo Go on your phone, or pres
 ## Tests
 
 ```bash
-node --test server/                                          # hall rules
+node --test server/hall.test.mjs                                        # hall rules
 cd app && npx tsc --noEmit                                   # types
 
 cd ../../clientx-autopilot
