@@ -9,6 +9,7 @@ if ! java -version >/dev/null 2>&1; then     # macOS java stub without a JDK: us
     [[ -x "$jdk/libexec/openjdk.jdk/Contents/Home/bin/java" ]] && export JAVA_HOME="$jdk/libexec/openjdk.jdk/Contents/Home" PATH="$jdk/bin:$PATH" && break
   done
 fi
+command -v appium >/dev/null 2>&1 || { command -v npm >/dev/null 2>&1 && export PATH="$(npm prefix -g)/bin:$PATH"; }
 export FARM_LOG_DIR="${FARM_LOG_DIR:-$HOME/.clientx-farm/logs}"
 export FARM_STATE_DIR="${FARM_STATE_DIR:-$HOME/.clientx-farm}"
 export APPIUM_PORT="${APPIUM_PORT:-4723}"

@@ -91,7 +91,10 @@ fi
 emulator -list-avds 2>/dev/null | grep -qx "$AVD" && ok "AVD $AVD" || miss "AVD $AVD"
 
 say "Appium + drivers"
+# npm's global bin directory is not always on PATH (Homebrew, nvm and conda each put it elsewhere)
+NPM_BIN="$(npm prefix -g)/bin"; export PATH="$NPM_BIN:$PATH"
 have appium || npm install -g appium
+have appium || { echo "appium was installed but is not in $NPM_BIN; check: npm prefix -g"; exit 1; }
 appium driver list --installed 2>&1 | grep -q uiautomator2 || appium driver install uiautomator2
 appium driver list --installed 2>&1 | grep -q xcuitest     || appium driver install xcuitest
 
@@ -106,13 +109,14 @@ say "Shell profile"
 PROFILE="$HOME/.zshrc"
 mkdir -p "$HOME/.clientx-farm"          # read by farm-scripts/_common.sh so every script uses the same SDK and JDK
 { echo "export ANDROID_HOME=\"$ANDROID_HOME\""; echo "export ANDROID_SDK_ROOT=\"$ANDROID_HOME\""
-  [[ -n "${JAVA_HOME:-}" ]] && echo "export JAVA_HOME=\"$JAVA_HOME\""; } > "$HOME/.clientx-farm/env"
+  [[ -n "${JAVA_HOME:-}" ]] && echo "export JAVA_HOME=\"$JAVA_HOME\"" && echo "export PATH=\"$JAVA_HOME/bin:\$PATH\""
+  [[ -n "${NPM_BIN:-}" ]] && echo "export PATH=\"$NPM_BIN:\$PATH\""; } > "$HOME/.clientx-farm/env"
 grep -q "ANDROID_HOME=\"$ANDROID_HOME\"" "$PROFILE" 2>/dev/null || cat >> "$PROFILE" <<EOP
 
 # ClientX Autopilot
 ${JAVA_HOME:+export JAVA_HOME="$JAVA_HOME"}
 export ANDROID_HOME="$ANDROID_HOME"
-export PATH="\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator:\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH"
+export PATH="${NPM_BIN:+$NPM_BIN:}${JAVA_HOME:+$JAVA_HOME/bin:}\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator:\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH"
 EOP
 
 say "Done. Next: bash scripts/start_local_farm.sh"
