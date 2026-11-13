@@ -1,6 +1,6 @@
 -- The admin account of the visit dashboard. Everything is checked inside the database, because the key the
 -- site uses to call these functions is public. Tables are closed (RLS on, no policies); only password and
--- session-token hashes are stored. Additive: safe to run again.
+-- session-token hashes are stored. Additive (nothing is dropped or deleted; signing out expires the session): safe to run again.
 create table if not exists public.quiet_hall_admin (
   username text primary key, pass_hash text not null, failures int not null default 0,
   locked_until timestamptz, created_at timestamptz not null default now());
@@ -42,7 +42,6 @@ begin
     return jsonb_build_object('status', 401);
   end if;
   update quiet_hall_admin set failures = 0, locked_until = null where username = a.username;
-  delete from quiet_hall_admin_session where expires_at < now();
   v_token := encode(gen_random_bytes(24), 'hex');
   insert into quiet_hall_admin_session values (encode(digest(v_token, 'sha256'), 'hex'), a.username, now() + interval '7 days');
   return jsonb_build_object('status', 200, 'token', v_token, 'username', a.username);
@@ -64,7 +63,7 @@ end $$;
 
 create or replace function public.quiet_hall_admin_logout(p_token text) returns boolean
 language sql security definer set search_path = public, extensions as $$
-  with gone as (delete from quiet_hall_admin_session where token_hash = encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') returning 1)
+  with gone as (update quiet_hall_admin_session set expires_at = now() where token_hash = encode(digest(coalesce(p_token, ''), 'sha256'), 'hex') and expires_at > now() returning 1)
   select exists (select 1 from gone) $$;
 
 grant execute on function public.quiet_hall_admin_status(), public.quiet_hall_admin_claim(text, text), public.quiet_hall_admin_login(text, text),
