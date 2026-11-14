@@ -101,10 +101,12 @@ appium driver list --installed 2>&1 | grep -q xcuitest     || appium driver inst
 say "Python packages"
 PY_PKGS="pytest pytest-bdd Appium-Python-Client graphifyy"
 # conda and virtualenv Pythons take a plain install; a system Python needs --user (and sometimes --break-system-packages)
-python3 -m pip install --quiet $PY_PKGS \
-  || python3 -m pip install --user --quiet $PY_PKGS \
+# The first two attempts are expected to fail on a Homebrew Python (PEP 668), so their errors are hidden.
+python3 -m pip install --quiet $PY_PKGS 2>/dev/null \
+  || python3 -m pip install --user --quiet $PY_PKGS 2>/dev/null \
   || python3 -m pip install --user --quiet --break-system-packages $PY_PKGS
-python3 -c "import pytest_bdd, appium; print('   ok       pytest-bdd', pytest_bdd.__version__, '+ Appium-Python-Client, in', __import__('sys').executable)" \
+# pytest_bdd has no __version__ attribute; read the installed version from the package metadata instead.
+python3 -c "import sys, pytest_bdd, appium; from importlib.metadata import version; print('   ok       pytest-bdd', version('pytest-bdd'), '+ Appium-Python-Client', version('Appium-Python-Client'), 'in', sys.executable)" \
   || { echo "Python packages are not importable by $(command -v python3)"; exit 1; }
 
 say "Web automation packages"
