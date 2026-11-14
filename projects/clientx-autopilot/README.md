@@ -18,7 +18,7 @@ clientx-autopilot/
 ├── code_graph/         Code knowledge graph: Graphify backend + zero-install fallback, queries
 ├── device_farm/        Collector, monitor rules, Farm Doctor, healer policy gate, typed action queue, Mac-side runner, dashboard
 ├── farm-scripts/       Recovery scripts the runner executes on a Mac (emulator, Appium, WDA, mitmproxy, reinstall, quarantine)
-├── scripts/            setup_mac.sh (install SDKs and tools), start_local_farm.sh (boot devices, open the dashboard)
+├── scripts/            setup_mac.sh (install SDKs and tools), start_local_farm.sh (boot devices, open the dashboard), quiet_hall_local.sh (build, install and test the sample app)
 ├── automation/web/     BDD web automation: Markdown Given/When/Then specs → Playwright
 ├── automation/app/     App automation: Appium for Android emulators, iOS Simulators and real iPhones; mitmproxy
 ├── policies/           Routing, gates (CI + CD), case lifecycle, healing policy, farm policy and commands
@@ -102,7 +102,8 @@ pytest automation/app/tests --device-profile ios-real
 ## What is verified and what is not
 
 - **Run here:** the CI and CD gate runner end to end (web in Chromium, app on the `fake` device), failure diagnosis, the agent runner with the real headless runtime on a simulated locator drift, the farm collector against stubbed tools, the harness loop on fixtures, all workflow rules, farm monitor/doctor/healer/queue/runner (dry-run), the dashboard, both code-graph backends, the web framework against the demo shop in Chromium, the app framework against the in-memory `fake` device.
-- **Not run here:** `scripts/setup_mac.sh`, `scripts/start_local_farm.sh` and `farm-scripts/*.sh` (macOS only; syntax-checked, never executed); Appium against a real emulator, Simulator or iPhone; mitmproxy with real traffic; any real gate platform, automation service or log store. The page objects' accessibility ids are those of the sample app — replace them with the real app's ids.
+- **Run on one Mac Studio (Apple Silicon, 2026-11-15):** `scripts/setup_mac.sh` and `scripts/start_local_farm.sh`, which booted the emulator, the Simulator and Appium.
+- **Not run here:** `scripts/quiet_hall_local.sh` and most of `farm-scripts/*.sh` (macOS only; syntax-checked, never executed); Appium against a real emulator, Simulator or iPhone; mitmproxy with real traffic; any real gate platform, automation service or log store. The page objects' accessibility ids are those of the sample app — replace them with the real app's ids.
 - **Not implemented:** real adapters (only the fixture-backed ones exist) and real transports for PRs, Slack and the farm queue. `config/systems.example.json` lists what to connect.
 
 ## Safety rules (enforced in code, covered by tests)
