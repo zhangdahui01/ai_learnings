@@ -81,7 +81,20 @@ if $BUILD; then
   else
     npx expo run:ios --configuration Release --no-bundler --device "$DEVICE_UDID"
   fi
-  log "Quiet Hall installed on $DEVICE_UDID"
+fi
+
+# An interrupted or failed build can still exit 0, so check the device itself before testing.
+app_installed() {
+  if [[ "$PLATFORM" == "android" ]]; then
+    adb -s "$DEVICE_UDID" shell pm list packages 2>/dev/null | tr -d '\r' | grep -qx "package:$APP_ID"
+  else
+    xcrun simctl get_app_container "$DEVICE_UDID" "$APP_ID" >/dev/null 2>&1
+  fi
+}
+if app_installed; then
+  log "Quiet Hall ($APP_ID) is installed on $DEVICE_UDID"
+else
+  die "Quiet Hall ($APP_ID) is not installed on $DEVICE_UDID: the build did not finish. Run this script again without --test-only; a build that stops early continues from its cache."
 fi
 $TEST || exit 0
 
