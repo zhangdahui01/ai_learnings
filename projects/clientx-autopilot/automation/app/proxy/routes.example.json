@@ -1,0 +1,4 @@
+{
+  "api.example-shop.com": "api.staging.example-shop.internal",
+  "*.pay.example-shop.com": "pay.staging.example-shop.internal"
+}

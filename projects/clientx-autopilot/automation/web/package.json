@@ -1,0 +1,19 @@
+{
+  "name": "clientx-web-automation",
+  "private": true,
+  "version": "0.1.0",
+  "description": "BDD web automation: Markdown Given/When/Then specs -> Playwright tests",
+  "scripts": {
+    "test": "playwright test",
+    "test:gate": "playwright test --grep @gated --retries=0",
+    "test:daily": "playwright test",
+    "sut": "node sut/serve.mjs",
+    "hall:build": "cd ../../../quiet-hall/app && npm install && npx expo export -p web",
+    "test:hall": "playwright test -c playwright.hall.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}

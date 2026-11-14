@@ -1,0 +1,15 @@
+{
+  "type": "new_role",
+  "subject": "market-web-listing",
+  "payload": {
+    "role": "market-web-listing",
+    "service": "market-listing",
+    "owner": "team-market",
+    "repo": "market/listing-web",
+    "stack": "web",
+    "slack_channel": "#market-quality",
+    "smoke_journeys": [
+      "create-listing"
+    ]
+  }
+}

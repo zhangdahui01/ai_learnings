@@ -1,0 +1,12 @@
+# runtime state: ledger, outbox, farm queue, scanned graphs, generated dashboards
+var/
+graphify-out/
+__pycache__/
+.pytest_cache/
+node_modules/
+test-results/
+playwright-report/
+# real endpoints, channels and credentials references never enter the repo
+config/systems.local.json
+automation/app/proxy/routes.json
+config/agent_runtime.json

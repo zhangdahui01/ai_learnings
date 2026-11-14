@@ -1,0 +1,69 @@
+{
+  "meta": {
+    "repo": "sample-checkout",
+    "commit": "fixture",
+    "backend": "fixture",
+    "scanned_at": "2026-11-11T00:00:00Z"
+  },
+  "nodes": [
+    {
+      "id": "file:checkout/cart.ts",
+      "label": "cart.ts",
+      "kind": "file",
+      "file": "checkout/cart.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "file:checkout/payment/submit.ts",
+      "label": "submit.ts",
+      "kind": "file",
+      "file": "checkout/payment/submit.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "file:checkout/payment/methods.ts",
+      "label": "methods.ts",
+      "kind": "file",
+      "file": "checkout/payment/methods.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "file:checkout/coupon.ts",
+      "label": "coupon.ts",
+      "kind": "file",
+      "file": "checkout/coupon.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "file:shared/money.ts",
+      "label": "money.ts",
+      "kind": "file",
+      "file": "shared/money.ts",
+      "language": "typescript"
+    },
+    {
+      "id": "file:member/login.ts",
+      "label": "login.ts",
+      "kind": "file",
+      "file": "member/login.ts",
+      "language": "typescript"
+    }
+  ],
+  "edges": [
+    {
+      "source": "file:checkout/payment/submit.ts",
+      "target": "file:shared/money.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:checkout/payment/submit.ts",
+      "target": "file:checkout/payment/methods.ts",
+      "relation": "imports"
+    },
+    {
+      "source": "file:checkout/cart.ts",
+      "target": "file:shared/money.ts",
+      "relation": "imports"
+    }
+  ]
+}

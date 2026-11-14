@@ -1,0 +1,10 @@
+{
+  "service": "<service>",
+  "layer": "strategic",
+  "business_rules": [],
+  "coverage_map": {
+    "smoke": [],
+    "journeys": [],
+    "incidents": []
+  }
+}

@@ -1,0 +1,299 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>静堂 · 访问记录</title>
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f4eadb; --surface: #fffaf1; --line: #e3d5bf; --grid: #eadfcd;
+    --text: #2b1f18; --text-2: #6a584a; --text-3: #8f7d6d;
+    --accent: #7a3b1e; --accent-text: #fffaf1; --danger: #a3261f;
+    --series-1: #2a78d6; --series-2: #eb6834;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --page: #17110e; --surface: #241c17; --line: #3d3027; --grid: #33281f;
+      --text: #f3ebe0; --text-2: #c9b9a6; --text-3: #9c8b7a;
+      --accent: #e0a36a; --accent-text: #1c1410; --danger: #f08a80;
+      --series-1: #3987e5; --series-2: #d95926;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--text); font: 15px/1.5 system-ui, -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+  main { max-width: 1120px; margin: 0 auto; padding: 16px 16px 48px; }
+  h1 { font-size: 20px; margin: 0; letter-spacing: 1px; }
+  h2 { font-size: 15px; margin: 0 0 2px; }
+  .sub { color: var(--text-3); font-size: 13px; margin: 0 0 12px; }
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin-bottom: 16px; }
+  .bar .grow { flex: 1 1 auto; }
+  button, select, input { font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 7px 12px; min-height: 38px; }
+  button { cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 600; }
+  button:focus-visible, select:focus-visible, input:focus-visible { outline: 2px solid var(--series-1); outline-offset: 1px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: var(--accent-text); }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .tile .n { font-size: 30px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+  .tile .l { color: var(--text-2); font-size: 13px; }
+  .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 16px; }
+  .legend { display: flex; gap: 16px; font-size: 13px; color: var(--text-2); margin-bottom: 4px; }
+  .legend i { display: inline-block; width: 14px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 6px; }
+  .chart { position: relative; }
+  .chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .chart text { fill: var(--text-3); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .tip { position: absolute; pointer-events: none; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 6px 10px; font-size: 12px;
+         box-shadow: 0 4px 14px rgba(0,0,0,.14); white-space: nowrap; display: none; z-index: 2; }
+  .tip b { font-variant-numeric: tabular-nums; }
+  .tip i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .rows { display: grid; grid-template-columns: max-content 1fr max-content; gap: 8px 10px; align-items: center; font-size: 13px; }
+  .rows .track { height: 14px; }
+  .rows .fill { height: 100%; min-width: 2px; background: var(--series-1); border-radius: 0 4px 4px 0; }
+  .rows .v { font-variant-numeric: tabular-nums; color: var(--text-2); text-align: right; }
+  .rows .k { color: var(--text); max-width: 46vw; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scroll { overflow-x: auto; margin: 0 -16px; padding: 0 16px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { color: var(--text-3); font-weight: 500; position: sticky; top: 0; background: var(--surface); }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tbody tr.pick { cursor: pointer; }
+  tbody tr.pick:hover { background: var(--grid); }
+  .tag { display: inline-block; padding: 0 8px; border-radius: 999px; border: 1px solid var(--line); font-size: 12px; color: var(--text-2); }
+  .empty { color: var(--text-3); padding: 20px 0; text-align: center; }
+  .note { color: var(--text-3); font-size: 13px; }
+  .err { color: var(--danger); min-height: 1.5em; margin: 8px 0 0; }
+  form { display: grid; gap: 12px; max-width: 360px; margin: 12vh auto 0; }
+  form label { display: grid; gap: 4px; font-size: 13px; color: var(--text-2); }
+  form input { width: 100%; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<main>
+  <form id="auth" class="card" hidden>
+    <h1>静堂 · 访问记录</h1>
+    <p id="auth-hint" class="sub"></p>
+    <label>管理员账号<input id="auth-user" data-testid="admin.user" autocomplete="username" autocapitalize="none" required></label>
+    <label>密码<input id="auth-pass" data-testid="admin.pass" type="password" autocomplete="current-password" required></label>
+    <label id="auth-again-row" hidden>再输一次密码<input id="auth-again" data-testid="admin.again" type="password" autocomplete="new-password"></label>
+    <button class="primary" id="auth-go" data-testid="admin.submit" type="submit">登录</button>
+    <p class="err" id="auth-err" data-testid="admin.error" role="alert"></p>
+  </form>
+
+  <section id="dash" hidden>
+    <div class="bar">
+      <h1>静堂 · 访问记录</h1>
+      <span class="grow"></span>
+      <div class="seg" role="group" aria-label="时间范围" id="range">
+        <button type="button" data-days="7">近 7 天</button><button type="button" data-days="30">近 30 天</button><button type="button" data-days="90">近 90 天</button>
+      </div>
+      <button type="button" id="refresh" data-testid="admin.refresh">刷新</button>
+      <span class="note" id="whoami"></span>
+      <button type="button" id="logout" data-testid="admin.logout">退出</button>
+    </div>
+    <p class="note" id="status" data-testid="admin.status"></p>
+
+    <div class="tiles" id="tiles"></div>
+
+    <div class="grid2">
+      <div class="card">
+        <h2>每天的访问</h2><p class="sub">访问次数是进山门的次数；访客数是当天出现过的不同 ID</p>
+        <div class="legend"><span><i style="background:var(--series-1)"></i>访问次数</span><span><i style="background:var(--series-2)"></i>访客数</span></div>
+        <div class="chart" id="daily"></div>
+      </div>
+      <div class="card">
+        <h2>功能使用次数</h2><p class="sub">木鱼、念珠、礼拜按实际下数计</p>
+        <div class="rows" id="features"></div>
+      </div>
+    </div>
+    <div class="grid2">
+      <div class="card"><h2>访客来自哪里</h2><p class="sub">按进山门次数；位置由网络地址推断，只到城市</p><div class="rows" id="places"></div></div>
+      <div class="card"><h2>用什么打开的</h2><p class="sub">按进山门次数</p><div class="rows" id="devices"></div></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h2>访客</h2><p class="sub">点一行，下面的记录只看这个人</p>
+      <div class="scroll"><table data-testid="admin.visitors"><thead><tr><th>ID</th><th>法号</th><th>身份</th><th class="num">来访</th><th class="num">操作</th><th>首次</th><th>最近</th><th>地区</th><th>设备</th></tr></thead><tbody id="visitors"></tbody></table></div>
+    </div>
+
+    <div class="card">
+      <h2>访问记录</h2><p class="sub">最新的在最上面</p>
+      <div class="bar">
+        <input id="f-who" data-testid="admin.filter.who" placeholder="按 ID 或法号筛选" aria-label="按 ID 或法号筛选">
+        <select id="f-event" data-testid="admin.filter.event" aria-label="按操作筛选"></select>
+        <button type="button" id="f-clear">清除筛选</button>
+        <span class="note" id="f-count" data-testid="admin.count"></span>
+      </div>
+      <div class="scroll"><table data-testid="admin.events"><thead><tr><th>时间</th><th>ID</th><th>法号</th><th>操作</th><th>详情</th><th>地区</th><th>设备</th></tr></thead><tbody id="events"></tbody></table></div>
+      <p style="text-align:center;margin:12px 0 0"><button type="button" id="more" hidden>再看 50 条</button></p>
+    </div>
+  </section>
+</main>
+
+<script type="module">
+import { EVENT_NAMES, clock, describe, place, summarize } from '/admin/report.mjs';
+
+const $ = id => document.getElementById(id);
+const el = (tag, props = {}, kids = []) => { const n = document.createElement(tag); Object.assign(n, props); for (const k of [].concat(kids)) n.append(k); return n; };
+const svg = (tag, attrs = {}) => { const n = document.createElementNS('http://www.w3.org/2000/svg', tag); for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v); return n; };
+const KEY = 'quiet-hall-admin';
+const saved = () => { try { return localStorage.getItem(KEY) || ''; } catch { return ''; } };
+const save = t => { try { t ? localStorage.setItem(KEY, t) : localStorage.removeItem(KEY); } catch { /* private window */ } };
+
+let token = saved(), days = 30, events = [], shown = 30, claimed = true;
+
+async function call(body) {
+  const res = await fetch('/api/admin', { method: 'POST', headers: { 'content-type': 'application/json', ...(token ? { authorization: `Bearer ${token}` } : {}) }, body: JSON.stringify(body) });
+  const data = await res.json().catch(() => ({}));
+  return { status: res.status, data };
+}
+
+// ---- sign in -------------------------------------------------------------------------------------------------
+async function showAuth() {
+  $('dash').hidden = true; $('auth').hidden = false;
+  const s = await call({ op: 'status' });
+  if (s.status !== 200) { $('auth-err').textContent = s.data.error || '后台暂时不可用'; return; }
+  claimed = s.data.claimed;
+  $('auth-hint').textContent = claimed ? '请用管理员账号登录' : '还没有管理员。现在设置的账号和密码就是唯一的管理员，请记好。';
+  $('auth-again-row').hidden = claimed;
+  $('auth-go').textContent = claimed ? '登录' : '设为管理员';
+  $('auth-pass').autocomplete = claimed ? 'current-password' : 'new-password';
+}
+$('auth').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  $('auth-err').textContent = '';
+  const username = $('auth-user').value, password = $('auth-pass').value;
+  if (!claimed && password !== $('auth-again').value) { $('auth-err').textContent = '两次输入的密码不一样'; return; }
+  $('auth-go').disabled = true;
+  const out = await call({ op: claimed ? 'login' : 'claim', username, password }).catch(() => ({ status: 0, data: { error: '网络不通，请重试' } }));
+  $('auth-go').disabled = false;
+  if (out.status !== 200) { $('auth-err').textContent = out.data.error || '失败'; if (out.status === 409) showAuth(); return; }
+  token = out.data.token; save(token);
+  $('auth-pass').value = $('auth-again').value = '';
+  load();
+});
+$('logout').addEventListener('click', async () => { await call({ op: 'logout' }).catch(() => {}); token = ''; save(''); showAuth(); });
+
+// ---- data ----------------------------------------------------------------------------------------------------
+async function load() {
+  $('status').textContent = '正在读取…';
+  const out = await call({ op: 'events', days }).catch(() => ({ status: 0, data: {} }));
+  if (out.status === 401) { token = ''; save(''); return showAuth(); }
+  if (out.status !== 200) { $('auth').hidden = true; $('dash').hidden = false; $('status').textContent = out.data.error || '读取失败，请点刷新重试'; return; }
+  events = out.data.events;
+  $('auth').hidden = true; $('dash').hidden = false;
+  $('whoami').textContent = out.data.username;
+  $('status').textContent = out.data.total > events.length
+    ? `这段时间共 ${out.data.total} 条记录，只取了最新的 ${events.length} 条，较早几天的数字会偏小。请缩短时间范围。`
+    : `近 ${days} 天共 ${events.length} 条记录 · 更新于 ${clock(new Date().toISOString())}`;
+  for (const b of $('range').children) b.setAttribute('aria-pressed', String(Number(b.dataset.days) === days));
+  render();
+}
+$('range').addEventListener('click', ev => { const d = Number(ev.target.dataset?.days); if (d) { days = d; load(); } });
+$('refresh').addEventListener('click', load);
+
+function render() {
+  const r = summarize(events, { days });
+  const today = r.daily.at(-1);
+  $('tiles').replaceChildren(...[
+    [r.totals.visits, '访问次数'], [r.totals.visitors, '访客数'], [r.totals.registered, '其中已注册'],
+    [r.totals.registrations, '新注册'], [today.visits, '今天访问'], [today.visitors, '今天访客'],
+  ].map(([n, l]) => el('div', { className: 'card tile' }, [el('div', { className: 'n', textContent: n.toLocaleString() }), el('div', { className: 'l', textContent: l })])));
+  drawDaily(r.daily);
+  drawRows($('features'), r.features.filter(f => f.value > 0), '这段时间还没有人使用功能');
+  drawRows($('places'), r.places.slice(0, 8), '还没有访问');
+  drawRows($('devices'), r.devices.slice(0, 8), '还没有访问');
+  $('visitors').replaceChildren(...(r.visitors.length ? r.visitors.slice(0, 200).map(v => {
+    const tr = el('tr', { className: 'pick', tabIndex: 0 }, [
+      el('td', { textContent: v.handle }), el('td', { textContent: v.name }),
+      el('td', {}, el('span', { className: 'tag', textContent: v.registered ? '已注册' : '游客' })),
+      el('td', { className: 'num', textContent: v.visits }), el('td', { className: 'num', textContent: v.actions }),
+      el('td', { textContent: clock(v.first) }), el('td', { textContent: clock(v.last) }), el('td', { textContent: v.place }), el('td', { textContent: v.device }),
+    ]);
+    const pick = () => { $('f-who').value = v.handle; shown = 30; drawEvents(); $('f-who').scrollIntoView({ block: 'center' }); };
+    tr.addEventListener('click', pick); tr.addEventListener('keydown', ev => { if (ev.key === 'Enter') pick(); });
+    return tr;
+  }) : [el('tr', {}, el('td', { colSpan: 9, className: 'empty', textContent: '这段时间没有访客' }))]));
+  const seen = [...new Set(events.map(e => e.event))];
+  const keep = $('f-event').value;
+  $('f-event').replaceChildren(el('option', { value: '', textContent: '全部操作' }), ...seen.map(k => el('option', { value: k, textContent: EVENT_NAMES[k] || k })));
+  $('f-event').value = seen.includes(keep) ? keep : '';
+  drawEvents();
+}
+
+function drawRows(box, items, empty) {
+  if (!items.length) return box.replaceChildren(el('div', { className: 'empty', textContent: empty, style: 'grid-column:1/-1' }));
+  const max = Math.max(...items.map(i => i.value));
+  box.replaceChildren(...items.flatMap(i => [
+    el('div', { className: 'k', textContent: i.label, title: i.label }),
+    el('div', { className: 'track' }, el('div', { className: 'fill', style: `width:${(i.value / max) * 100}%` })),
+    el('div', { className: 'v', textContent: i.value.toLocaleString() }),
+  ]));
+}
+
+function drawDaily(daily) {
+  const box = $('daily'), W = 560, H = 220, L = 34, R = 12, T = 10, B = 24;
+  const top = Math.max(4, ...daily.map(d => Math.max(d.visits, d.visitors)));
+  const step = Math.max(1, Math.ceil(top / 4)), yMax = step * 4;
+  const x = i => L + (daily.length === 1 ? (W - L - R) / 2 : (i * (W - L - R)) / (daily.length - 1));
+  const y = v => T + (H - T - B) * (1 - v / yMax);
+  const root = svg('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': '每天的访问次数和访客数，数值见下方表格' });
+  for (let i = 0; i <= 4; i += 1) {
+    root.append(svg('line', { x1: L, x2: W - R, y1: y(i * step), y2: y(i * step), stroke: 'var(--grid)', 'stroke-width': 1 }));
+    const t = svg('text', { x: L - 6, y: y(i * step) + 4, 'text-anchor': 'end' }); t.textContent = i * step; root.append(t);
+  }
+  const every = Math.ceil(daily.length / 7);
+  daily.forEach((d, i) => { if ((daily.length - 1 - i) % every) return; const t = svg('text', { x: x(i), y: H - 6, 'text-anchor': 'middle' }); t.textContent = d.day.slice(5); root.append(t); });
+  for (const [key, color] of [['visits', 'var(--series-1)'], ['visitors', 'var(--series-2)']]) {
+    root.append(svg('polyline', { points: daily.map((d, i) => `${x(i)},${y(d[key])}`).join(' '), fill: 'none', stroke: color, 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+    root.append(svg('circle', { cx: x(daily.length - 1), cy: y(daily.at(-1)[key]), r: 4, fill: color, stroke: 'var(--surface)', 'stroke-width': 2 }));
+  }
+  const cross = svg('line', { y1: T, y2: H - B, stroke: 'var(--text-3)', 'stroke-width': 1, visibility: 'hidden' });
+  const dots = ['var(--series-1)', 'var(--series-2)'].map(c => svg('circle', { r: 4, fill: c, stroke: 'var(--surface)', 'stroke-width': 2, visibility: 'hidden' }));
+  root.append(cross, ...dots);
+  const tip = el('div', { className: 'tip' });
+  const hit = svg('rect', { x: L, y: T, width: W - L - R, height: H - T - B, fill: 'transparent' });
+  const move = ev => {
+    const box = root.getBoundingClientRect(), px = ((ev.clientX - box.left) / box.width) * W;
+    const i = Math.max(0, Math.min(daily.length - 1, Math.round(((px - L) / (W - L - R)) * (daily.length - 1)))), d = daily[i];
+    cross.setAttribute('x1', x(i)); cross.setAttribute('x2', x(i)); cross.setAttribute('visibility', 'visible');
+    dots[0].setAttribute('cx', x(i)); dots[0].setAttribute('cy', y(d.visits)); dots[1].setAttribute('cx', x(i)); dots[1].setAttribute('cy', y(d.visitors));
+    dots.forEach(c => c.setAttribute('visibility', 'visible'));
+    tip.replaceChildren(el('div', { textContent: d.day }),
+      el('div', {}, [el('i', { style: 'background:var(--series-1)' }), '访问次数 ', el('b', { textContent: d.visits })]),
+      el('div', {}, [el('i', { style: 'background:var(--series-2)' }), '访客数 ', el('b', { textContent: d.visitors })]),
+      el('div', { textContent: `操作 ${d.actions} 次`, style: 'color:var(--text-3)' }));
+    tip.style.display = 'block';
+    const left = (x(i) / W) * box.width;
+    tip.style.left = `${left > box.width / 2 ? left - tip.offsetWidth - 10 : left + 10}px`; tip.style.top = '8px';
+  };
+  const out = () => { tip.style.display = 'none'; cross.setAttribute('visibility', 'hidden'); dots.forEach(c => c.setAttribute('visibility', 'hidden')); };
+  hit.addEventListener('pointermove', move); hit.addEventListener('pointerdown', move); hit.addEventListener('pointerleave', out);
+  root.append(hit);
+  box.replaceChildren(root, tip);
+}
+
+function drawEvents() {
+  const who = $('f-who').value.trim().toLowerCase(), kind = $('f-event').value;
+  const rows = events.filter(e => (!kind || e.event === kind) && (!who || `${e.handle ?? ''} ${e.name ?? ''}`.toLowerCase().includes(who)));
+  $('f-count').textContent = `${rows.length} 条`;
+  $('events').replaceChildren(...(rows.length ? rows.slice(0, shown).map(e => el('tr', {}, [
+    el('td', { textContent: clock(e.at) }), el('td', { textContent: e.handle ?? '' }), el('td', { textContent: e.name ?? '' }),
+    el('td', { textContent: EVENT_NAMES[e.event] || e.event }), el('td', { textContent: describe(e) }), el('td', { textContent: place(e) }), el('td', { textContent: e.device ?? '' }),
+  ])) : [el('tr', {}, el('td', { colSpan: 7, className: 'empty', textContent: '没有符合条件的记录' }))]));
+  $('more').hidden = rows.length <= shown;
+}
+$('f-who').addEventListener('input', () => { shown = 30; drawEvents(); });
+$('f-event').addEventListener('change', () => { shown = 30; drawEvents(); });
+$('f-clear').addEventListener('click', () => { $('f-who').value = ''; $('f-event').value = ''; shown = 30; drawEvents(); });
+$('more').addEventListener('click', () => { shown += 50; drawEvents(); });
+
+token ? load() : showAuth();
+</script>
+</body>
+</html>

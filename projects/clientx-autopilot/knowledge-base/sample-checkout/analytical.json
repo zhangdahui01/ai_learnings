@@ -1,0 +1,24 @@
+{
+  "failure_patterns": {
+    "automation_case": {
+      "count": 1,
+      "last_reports": [
+        "ci-20261111-171607"
+      ]
+    }
+  },
+  "layer": "analytical",
+  "reusable_steps": [
+    "login as member",
+    "add product to cart",
+    "open checkout"
+  ],
+  "selector_stability": {
+    "#add-to-cart": {
+      "advice": "use role=button name='Add to cart'",
+      "breaks_90d": 3
+    }
+  },
+  "service": "sample-checkout",
+  "updated_at": "2026-11-11T17:16:07Z"
+}

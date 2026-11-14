@@ -1,0 +1,1959 @@
+{
+ "generated_at": "2026-11-11T09:00:00Z",
+ "now_ts": 1794387600,
+ "regions": [
+  {
+   "id": "shanghai",
+   "macs": [
+    {
+     "id": "sh-and-01",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-01-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-01-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-01-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-01-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-01-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-01-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-01-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-01-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-02",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 9,
+      "oldest_wait_s": 1500
+     },
+     "devices": [
+      {
+       "id": "sh-and-02-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-02-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-02-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-02-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-02-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-02-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-02-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-02-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-03",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-03-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-03-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-03-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-03-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-03-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-03-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-03-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-03-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-04",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-04-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-04-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-04-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-04-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-04-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-04-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": false,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-04-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-04-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-05",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-05-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-05-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-05-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-05-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-05-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-05-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-05-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-05-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-06",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-06-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-06-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-06-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-06-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-06-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-06-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-06-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-06-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-07",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": false,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-07-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-07-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-07-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-07-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-07-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-07-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-07-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-07-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-08",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-08-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-08-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-08-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-08-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-08-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-08-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-08-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-08-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-and-09",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 6,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-and-09-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-09-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-09-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-09-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-09-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-09-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-and-09-d7",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-and-09-d8",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-ios-01",
+     "kind": "ios-real",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-ios-01-d1",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-01-d2",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": false,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-01-d3",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-01-d4",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-01-d5",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-01-d6",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-01-d7",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      }
+     ]
+    },
+    {
+     "id": "sh-ios-02",
+     "kind": "ios-real",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-ios-02-d1",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": false,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-02-d2",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-02-d3",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-02-d4",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-02-d5",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-02-d6",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-02-d7",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-02-d8",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-ios-03",
+     "kind": "ios-real",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-ios-03-d1",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": false,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-03-d2",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": false,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-03-d3",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": false,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-03-d4",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": false,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-03-d5",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": false,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-03-d6",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-ios-04",
+     "kind": "ios-real",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-ios-04-d1",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-04-d2",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-04-d3",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false,
+       "quarantined": true
+      },
+      {
+       "id": "sh-ios-04-d4",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-04-d5",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-04-d6",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-04-d7",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      }
+     ]
+    },
+    {
+     "id": "sh-ios-05",
+     "kind": "ios-real",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-ios-05-d1",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-05-d2",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-05-d3",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-05-d4",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": false,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-05-d5",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-05-d6",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-05-d7",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-05-d8",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-ios-06",
+     "kind": "ios-real",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-ios-06-d1",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-06-d2",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-06-d3",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-06-d4",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-ios-06-d5",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-ios-06-d6",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "sh-sim-01",
+     "kind": "ios-simulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "sh-sim-01-d1",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-sim-01-d2",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-sim-01-d3",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": false,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-sim-01-d4",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "sh-sim-01-d5",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "sh-sim-01-d6",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "id": "seoul",
+   "macs": [
+    {
+     "id": "se-and-01",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "se-and-01-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-01-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-01-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-01-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-01-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-01-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "se-and-02",
+     "kind": "android-emulator",
+     "online": false,
+     "last_heartbeat_s": 1900,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "se-and-02-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-02-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-02-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-02-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-02-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-02-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "se-and-03",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "se-and-03-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-03-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": false,
+       "busy": false
+      },
+      {
+       "id": "se-and-03-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-03-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-03-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-03-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "se-and-04",
+     "kind": "android-emulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "se-and-04-d1",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-04-d2",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-04-d3",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-04-d4",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-and-04-d5",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-and-04-d6",
+       "kind": "android-emulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "se-ios-01",
+     "kind": "ios-real",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": false,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "se-ios-01-d1",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-ios-01-d2",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-ios-01-d3",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-ios-01-d4",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-ios-01-d5",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-ios-01-d6",
+       "kind": "ios-real",
+       "hub": "hub-1",
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      }
+     ]
+    },
+    {
+     "id": "se-sim-01",
+     "kind": "ios-simulator",
+     "online": true,
+     "last_heartbeat_s": 35,
+     "appium_up": true,
+     "proxy_up": true,
+     "disk_free_gb": 180,
+     "cpu_pct": 40,
+     "queue": {
+      "pending": 1,
+      "oldest_wait_s": 20
+     },
+     "devices": [
+      {
+       "id": "se-sim-01-d1",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      },
+      {
+       "id": "se-sim-01-d2",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-sim-01-d3",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": false
+      },
+      {
+       "id": "se-sim-01-d4",
+       "kind": "ios-simulator",
+       "hub": null,
+       "online": true,
+       "booted": true,
+       "wda_up": true,
+       "app_installed": true,
+       "busy": true
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "availability_trend": [
+  {
+   "hour": "22:00",
+   "healthy_pct": 97
+  },
+  {
+   "hour": "23:00",
+   "healthy_pct": 97
+  },
+  {
+   "hour": "00:00",
+   "healthy_pct": 96
+  },
+  {
+   "hour": "01:00",
+   "healthy_pct": 97
+  },
+  {
+   "hour": "02:00",
+   "healthy_pct": 98
+  },
+  {
+   "hour": "03:00",
+   "healthy_pct": 98
+  },
+  {
+   "hour": "04:00",
+   "healthy_pct": 97
+  },
+  {
+   "hour": "05:00",
+   "healthy_pct": 95
+  },
+  {
+   "hour": "06:00",
+   "healthy_pct": 94
+  },
+  {
+   "hour": "07:00",
+   "healthy_pct": 93
+  },
+  {
+   "hour": "08:00",
+   "healthy_pct": 90
+  },
+  {
+   "hour": "09:00",
+   "healthy_pct": 88
+  }
+ ]
+}

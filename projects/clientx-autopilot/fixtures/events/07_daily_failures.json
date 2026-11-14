@@ -1,0 +1,28 @@
+{
+  "type": "case_failure",
+  "subject": "daily:2026-11-11",
+  "payload": {
+    "origin": "daily",
+    "service": "sample-checkout",
+    "pr": "PR-502",
+    "failures": [
+      {
+        "case": "web_cart_add",
+        "kind": "locator",
+        "selector": "#add-to-cart",
+        "message": "0 elements"
+      },
+      {
+        "case": "web_cart_badge",
+        "kind": "locator",
+        "selector": "#add-to-cart",
+        "message": "0 elements"
+      },
+      {
+        "case": "web_checkout_pay",
+        "kind": "assertion",
+        "message": "expected 'Payment complete'"
+      }
+    ]
+  }
+}

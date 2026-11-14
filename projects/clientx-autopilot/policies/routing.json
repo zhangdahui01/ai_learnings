@@ -1,0 +1,20 @@
+{
+  "hop_limit": 4,
+  "merge_window_s": 300,
+  "routes": [
+    {"event": "pr_opened", "workflow": "gate_selection"},
+    {"event": "ci_gate_result", "when": {"status": "failed"}, "workflow": "release_guard"},
+    {"event": "cd_gate_result", "when": {"status": "failed"}, "workflow": "release_guard"},
+    {"event": "case_failure", "workflow": "case_care"},
+    {"event": "device_status", "workflow": "farm_autopilot"},
+    {"event": "queue_timeout", "workflow": "farm_autopilot"},
+    {"event": "device_fault_suspected", "workflow": "farm_autopilot"},
+    {"event": "incident_closed", "workflow": "coverage"},
+    {"event": "pr_merged", "workflow": "coverage"},
+    {"event": "daily_schedule", "workflow": "coverage"},
+    {"event": "daily_schedule", "workflow": "farm_autopilot"},
+    {"event": "coverage_gap", "workflow": "case_factory"},
+    {"event": "new_feature", "workflow": "case_factory"},
+    {"event": "new_role", "workflow": "onboarding"}
+  ]
+}

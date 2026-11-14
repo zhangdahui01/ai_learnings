@@ -1,0 +1,235 @@
+{
+  "service": "quiet-hall",
+  "layer": "operational",
+  "selectors": {
+    "gate.enter": {
+      "selector": "testid=gate.enter",
+      "source": "baseline"
+    },
+    "gate.error": {
+      "selector": "testid=gate.error",
+      "source": "baseline"
+    },
+    "hall.me.name": {
+      "selector": "testid=hall.me.name",
+      "source": "baseline"
+    },
+    "hall.me.state": {
+      "selector": "testid=hall.me.state",
+      "source": "baseline"
+    },
+    "hall.me.timer": {
+      "selector": "testid=hall.me.timer",
+      "source": "baseline"
+    },
+    "hall.me.total": {
+      "selector": "testid=hall.me.total",
+      "source": "baseline"
+    },
+    "hall.count": {
+      "selector": "testid=hall.count",
+      "source": "baseline"
+    },
+    "hall.sitting": {
+      "selector": "testid=hall.sitting",
+      "source": "baseline"
+    },
+    "hall.sit": {
+      "selector": "testid=hall.sit",
+      "source": "baseline"
+    },
+    "hall.stand": {
+      "selector": "testid=hall.stand",
+      "source": "baseline"
+    },
+    "hall.bow": {
+      "selector": "testid=hall.bow",
+      "source": "baseline"
+    },
+    "hall.leave": {
+      "selector": "testid=hall.leave",
+      "source": "baseline"
+    },
+    "hall.notice": {
+      "selector": "testid=hall.notice",
+      "source": "baseline"
+    },
+    "hall.me.handle": {
+      "selector": "testid=hall.me.handle",
+      "source": "baseline"
+    },
+    "hall.knock": {
+      "selector": "testid=hall.knock",
+      "source": "baseline"
+    },
+    "hall.me.merit": {
+      "selector": "testid=hall.me.merit",
+      "source": "baseline"
+    },
+    "hall.sound": {
+      "selector": "testid=hall.sound",
+      "source": "baseline"
+    },
+    "hall.view": {
+      "selector": "testid=hall.view",
+      "source": "baseline"
+    },
+    "hall.prostrate": {
+      "selector": "testid=hall.prostrate",
+      "source": "baseline"
+    },
+    "hall.me.prostrations": {
+      "selector": "testid=hall.me.prostrations",
+      "source": "baseline"
+    },
+    "hall.beads": {
+      "selector": "testid=hall.beads",
+      "source": "baseline"
+    },
+    "hall.me.beads": {
+      "selector": "testid=hall.me.beads",
+      "source": "baseline"
+    },
+    "beads.panel": {
+      "selector": "testid=beads.panel",
+      "source": "baseline"
+    },
+    "beads.bead": {
+      "selector": "testid=beads.bead",
+      "source": "baseline"
+    },
+    "beads.count": {
+      "selector": "testid=beads.count",
+      "source": "baseline"
+    },
+    "beads.close": {
+      "selector": "testid=beads.close",
+      "source": "baseline"
+    },
+    "hall.trial": {
+      "selector": "testid=hall.trial",
+      "source": "baseline"
+    },
+    "hall.focus": {
+      "selector": "testid=hall.focus",
+      "source": "baseline"
+    },
+    "hall.focus.value": {
+      "selector": "testid=hall.focus.value",
+      "source": "baseline"
+    },
+    "hall.me.trials": {
+      "selector": "testid=hall.me.trials",
+      "source": "baseline"
+    },
+    "hall.over": {
+      "selector": "testid=hall.over",
+      "source": "baseline"
+    },
+    "hall.over.again": {
+      "selector": "testid=hall.over.again",
+      "source": "baseline"
+    },
+    "hall.joystick": {
+      "selector": "testid=hall.joystick",
+      "source": "baseline"
+    },
+    "hall.trials": {
+      "selector": "testid=hall.trials",
+      "source": "baseline"
+    },
+    "gate.mine": {
+      "selector": "testid=gate.mine",
+      "source": "baseline"
+    },
+    "gate.handle": {
+      "selector": "testid=gate.handle",
+      "source": "baseline"
+    },
+    "gate.own": {
+      "selector": "testid=gate.own",
+      "source": "baseline"
+    },
+    "gate.code": {
+      "selector": "testid=gate.code",
+      "source": "baseline"
+    },
+    "gate.code.done": {
+      "selector": "testid=gate.code.done",
+      "source": "baseline"
+    },
+    "gate.code.input": {
+      "selector": "testid=gate.code.input",
+      "source": "baseline"
+    },
+    "hall.me.registered": {
+      "selector": "testid=hall.me.registered",
+      "source": "baseline"
+    },
+    "hall.summon.dog": {
+      "selector": "testid=hall.summon.dog",
+      "source": "baseline"
+    },
+    "hall.summon.fairies": {
+      "selector": "testid=hall.summon.fairies",
+      "source": "baseline"
+    },
+    "hall.ledger": {
+      "selector": "testid=hall.ledger",
+      "source": "baseline"
+    },
+    "ledger.panel": {
+      "selector": "testid=ledger.panel",
+      "source": "baseline"
+    },
+    "ledger.row.<n>": {
+      "selector": "testid=ledger.row.<n>",
+      "source": "baseline"
+    },
+    "ledger.reason.<n>": {
+      "selector": "testid=ledger.reason.<n>",
+      "source": "baseline"
+    },
+    "ledger.delta.<n>": {
+      "selector": "testid=ledger.delta.<n>",
+      "source": "baseline"
+    },
+    "ledger.total.<n>": {
+      "selector": "testid=ledger.total.<n>",
+      "source": "baseline"
+    },
+    "ledger.close": {
+      "selector": "testid=ledger.close",
+      "source": "baseline"
+    },
+    "hall.over.merit": {
+      "selector": "testid=hall.over.merit",
+      "source": "baseline"
+    }
+  },
+  "auth_flows": {
+    "guest": "tap Enter: a random ID is drawn; the token lives in app storage until the visitor leaves",
+    "registered": "'my own ID' form: a new ID is registered and a return code is shown once; on the same device the ID alone walks back in; on another device the ID plus the return code"
+  },
+  "preconditions": {
+    "hall_server": "node projects/quiet-hall/server/server.mjs",
+    "walking": "walking is a tap on the 3D floor: it has no element id, so UI cases cannot target it; the server tests cover the rule",
+    "forced_trial": "web only: open the page with ?trial=dog or ?trial=fairies to make a trial start about 2.5 s after sitting; ?trial=off disables trials (the default for the other cases)"
+  },
+  "environments": {
+    "local": {
+      "api": "http://127.0.0.1:8787",
+      "web": "http://127.0.0.1:8790",
+      "android_emulator_api": "http://10.0.2.2:8787"
+    },
+    "app": {
+      "android_package": "dev.clientx.quiethall",
+      "android_activity": ".MainActivity",
+      "ios_bundle_id": "dev.clientx.quiethall"
+    },
+    "visit_log": {
+      "local": "data/events.jsonl next to the hall data file",
+      "deployed": "Supabase table quiet_hall_events; views quiet_hall_daily and quiet_hall_visitors; readable by the project owner only"
+    }
+  }
+}

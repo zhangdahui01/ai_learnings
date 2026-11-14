@@ -1,0 +1,12 @@
+{
+  "service": "quiet-hall",
+  "layer": "analytical",
+  "failure_patterns": {},
+  "selector_stability": {},
+  "reusable_steps": [
+    "enter the temple",
+    "sit down",
+    "stand up",
+    "leave the temple"
+  ]
+}

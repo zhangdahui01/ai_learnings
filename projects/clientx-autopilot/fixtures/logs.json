@@ -1,0 +1,6 @@
+[
+  {
+    "stream": "automation-service",
+    "line": "task t1 heartbeat lost mac=sh-ios-03"
+  }
+]
