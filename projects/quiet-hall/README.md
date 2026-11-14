@@ -66,7 +66,8 @@ npx expo start            # scan the QR code with Expo Go on your phone, or pres
 ```
 
 - **Phone (quickest):** install *Expo Go*, connect the phone to the same Wi-Fi as the computer, scan the QR code. The app finds the hall on the computer that runs `expo start`. If it cannot connect, open "服务器地址" at the gate and type the address the server printed.
-- **Android emulator / iOS Simulator:** `npx expo run:android` / `npx expo run:ios` builds and installs a native app (`dev.clientx.quiethall`). The emulator reaches the hall at `http://10.0.2.2:8787`, the simulator at `http://localhost:8787`; both are the defaults.
+- **Android emulator / iOS Simulator, one command:** from anywhere in the repository, `bash projects/clientx-autopilot/scripts/quiet_hall_local.sh android` (or `ios`). It boots the device, starts the hall server and Appium if they are not running, builds a release app, installs it and runs the BDD app cases. `--build-only` stops after the install.
+- **By hand:** `npx expo run:android` / `npx expo run:ios` builds and installs a debug app (`dev.clientx.quiethall`) and keeps the Metro bundler running in that terminal. The emulator reaches the hall at `http://10.0.2.2:8787`, the simulator at `http://localhost:8787`; both are the defaults.
 - **Browser:** `npx expo export -p web`, then `node ../server/static.mjs dist 8790` and open `http://localhost:8790`.
 
 ## Tests
@@ -79,7 +80,10 @@ cd ../../clientx-autopilot
 (cd automation/web && npm run hall:build && npm run test:hall)   # BDD web cases against the web build
 python -m ci.gate run --gate cd --service quiet-hall             # the same cases through the release gate
 
-# on a Mac with the app installed on an emulator or simulator and the hall server running:
+# on a Mac: build, install and run the app cases in one go
+bash scripts/quiet_hall_local.sh android        # or: ios
+
+# or by hand, with the app installed on an emulator or simulator and the hall server running:
 export ANDROID_APP_PACKAGE=dev.clientx.quiethall ANDROID_APP_ACTIVITY=.MainActivity
 python -m pytest automation/app/quiet_hall --device-profile android-emulator
 export IOS_BUNDLE_ID=dev.clientx.quiethall DEVICE_UDID=<booted simulator udid>

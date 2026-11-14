@@ -27,6 +27,7 @@ else
   log "skip Android emulator: AVD $AVD not found (run scripts/setup_mac.sh)"
 fi
 
+SIM_UDID=""
 if xcrun simctl list devices >/dev/null 2>&1; then
   SIM_UDID="$(xcrun simctl list devices available -j | python3 -c "
 import json,sys,os
@@ -60,9 +61,21 @@ nohup python3 -m device_farm.collector --out var/farm_snapshot.json --history va
 log "collector refreshes the dashboard every 2 minutes"
 open var/farm-dashboard.html 2>/dev/null || echo "dashboard: $ROOT/var/farm-dashboard.html"
 
+state() { printf '  %-18s %s\n' "$1" "$2"; }
+port_state() { nc -z 127.0.0.1 "$1" 2>/dev/null && echo "running on port $1" || echo "NOT RUNNING (see $FARM_LOG_DIR)"; }
+ANDROID_STATE="$(adb devices 2>/dev/null | awk '/^emulator-/{printf "%s (%s) ", $1, $2}')"
+echo
+echo "Status:"
+state "Android emulator" "${ANDROID_STATE:-NOT RUNNING}"
+state "iOS Simulator"    "${SIM_UDID:-NOT RUNNING}"
+state "Appium"           "$(port_state "$APPIUM_PORT")"
+state "mitmproxy"        "$(port_state "$PROXY_PORT")"
+
 cat <<EOT
 
 Local farm is up. Try:
+  bash scripts/quiet_hall_local.sh android                               # build, install and test the Quiet Hall app
+  bash scripts/quiet_hall_local.sh ios
   python3 -m pytest automation/app/tests --device-profile fake          # framework smoke, no device
   ANDROID_APP_PACKAGE=<pkg> ANDROID_APP_ACTIVITY=<activity> \\
     python3 -m pytest automation/app/tests --device-profile android-emulator

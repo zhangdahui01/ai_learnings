@@ -37,6 +37,10 @@ use_brew_jdk() {
 }
 have_java() { java -version >/dev/null 2>&1; }
 have brew && ! have_java && use_brew_jdk || true
+# npm's global bin directory is not always on PATH (Homebrew, nvm and conda each put it elsewhere).
+# Add it before the report, otherwise an installed Appium is reported as MISSING.
+NPM_BIN=""
+if have npm; then NPM_BIN="$(npm prefix -g)/bin"; export PATH="$NPM_BIN:$PATH"; fi
 say()  { printf '\n== %s\n' "$*"; }
 ok()   { printf '   ok       %s\n' "$*"; }
 miss() { printf '   MISSING  %s\n' "$*"; }
@@ -91,8 +95,7 @@ fi
 emulator -list-avds 2>/dev/null | grep -qx "$AVD" && ok "AVD $AVD" || miss "AVD $AVD"
 
 say "Appium + drivers"
-# npm's global bin directory is not always on PATH (Homebrew, nvm and conda each put it elsewhere)
-NPM_BIN="$(npm prefix -g)/bin"; export PATH="$NPM_BIN:$PATH"
+NPM_BIN="$(npm prefix -g)/bin"; export PATH="$NPM_BIN:$PATH"      # again: Node may have been installed just now
 have appium || npm install -g appium
 have appium || { echo "appium was installed but is not in $NPM_BIN; check: npm prefix -g"; exit 1; }
 appium driver list --installed 2>&1 | grep -q uiautomator2 || appium driver install uiautomator2
@@ -113,17 +116,35 @@ say "Web automation packages"
 (cd "$ROOT/automation/web" && npm install --silent && npx playwright install chromium)
 
 say "Shell profile"
+# One env file holds every setting. farm-scripts/_common.sh reads it, and ~/.zshrc sources it, so the
+# scripts and your own terminal windows always agree on the SDK, the JDK and where adb and appium are.
+ENV_FILE="$HOME/.clientx-farm/env"
 PROFILE="$HOME/.zshrc"
-mkdir -p "$HOME/.clientx-farm"          # read by farm-scripts/_common.sh so every script uses the same SDK and JDK
-{ echo "export ANDROID_HOME=\"$ANDROID_HOME\""; echo "export ANDROID_SDK_ROOT=\"$ANDROID_HOME\""
-  [[ -n "${JAVA_HOME:-}" ]] && echo "export JAVA_HOME=\"$JAVA_HOME\"" && echo "export PATH=\"$JAVA_HOME/bin:\$PATH\""
-  [[ -n "${NPM_BIN:-}" ]] && echo "export PATH=\"$NPM_BIN:\$PATH\""; } > "$HOME/.clientx-farm/env"
-grep -q "ANDROID_HOME=\"$ANDROID_HOME\"" "$PROFILE" 2>/dev/null || cat >> "$PROFILE" <<EOP
+mkdir -p "$HOME/.clientx-farm"
+{
+  echo "# Written by scripts/setup_mac.sh. Re-run that script instead of editing this file."
+  echo "export ANDROID_HOME=\"$ANDROID_HOME\""
+  echo "export ANDROID_SDK_ROOT=\"$ANDROID_HOME\""
+  if [[ -n "${JAVA_HOME:-}" ]]; then
+    echo "export JAVA_HOME=\"$JAVA_HOME\""
+    echo "export PATH=\"$JAVA_HOME/bin:\$PATH\""
+  fi
+  if [[ -n "${NPM_BIN:-}" ]]; then echo "export PATH=\"$NPM_BIN:\$PATH\""; fi
+  echo "export PATH=\"\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator:\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH\""
+} > "$ENV_FILE"
+if ! grep -q 'clientx-farm/env' "$PROFILE" 2>/dev/null; then
+  cat >> "$PROFILE" <<'EOP'
 
-# ClientX Autopilot
-${JAVA_HOME:+export JAVA_HOME="$JAVA_HOME"}
-export ANDROID_HOME="$ANDROID_HOME"
-export PATH="${NPM_BIN:+$NPM_BIN:}${JAVA_HOME:+$JAVA_HOME/bin:}\$ANDROID_HOME/platform-tools:\$ANDROID_HOME/emulator:\$ANDROID_HOME/cmdline-tools/latest/bin:\$PATH"
+# ClientX Autopilot: Android SDK, JDK, adb, emulator and appium on PATH
+[ -f "$HOME/.clientx-farm/env" ] && source "$HOME/.clientx-farm/env"
 EOP
+fi
+ok "$ENV_FILE (sourced from $PROFILE)"
 
-say "Done. Next: bash scripts/start_local_farm.sh"
+say "Done"
+cat <<EOT
+   This terminal window was opened before the settings were written, so adb and appium
+   are not on its PATH yet. Either open a new terminal window, or run:
+       source ~/.clientx-farm/env
+   Next: bash scripts/start_local_farm.sh
+EOT
