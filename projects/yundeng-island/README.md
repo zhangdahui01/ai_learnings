@@ -13,6 +13,7 @@ yundeng-island/
 
 - Rendering: three.js, toon shading, instanced grass with wind, a shadow map, bloom and a colour grade. All models are built in code from primitives.
 - Controls: on-screen joystick or tap the ground to walk, drag to turn; WASD and mouse on a desktop.
+- Guidance: the next deed is always written at the top left with a direction arrow and the distance, a golden beam stands on its location, Bingo runs ahead to it, and a minimap (tap to enlarge) marks every location. Tapping an open square on the bingo card makes it the next deed.
 - Saves: without an account, progress is kept in `localStorage`. With an account, every completed deed is saved to the cloud, the player can save by hand, and any earlier save can be restored.
 - Backend: a Supabase project. The page calls seven Postgres functions through the REST API (`game_register`, `game_login`, `game_logout`, `game_save`, `game_list_saves`, `game_load_save`, `game_delete_save`). Tables have row level security on and no policies, so the browser can reach data only through those functions. Passwords are stored as bcrypt hashes, session tokens as SHA-256 hashes. The key in `index.html` is the project's public browser key, not a secret.
 - The schema is in the Supabase project's migration `game_accounts_and_saves`; it is not yet copied into this folder.
@@ -20,7 +21,7 @@ yundeng-island/
 
 ## Deployment
 
-Live at https://yundeng-island.vercel.app. That deployment was made before this folder existed in the repository: its build step reads the page from the Supabase table `game_build`. Deploying from this folder instead (static, output directory `app`) is the intended next step.
+Live at https://yundeng-island.vercel.app. The Vercel project has a one-file build step that downloads `app/index.html` from this repository at a pinned commit and serves it as a static page. Connecting the Vercel project to the repository directly (root directory `projects/yundeng-island/app`) would remove that step.
 
 ## Tests
 
