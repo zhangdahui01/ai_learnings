@@ -9,11 +9,13 @@
     "test:daily": "playwright test",
     "sut": "node sut/serve.mjs",
     "hall:build": "cd ../../../quiet-hall/app && npm install && npx expo export -p web",
-    "test:hall": "playwright test -c playwright.hall.config.ts"
+    "test:hall": "playwright test -c playwright.hall.config.ts",
+    "test:island": "playwright test -c playwright.island.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",
     "@types/node": "^22.0.0",
-    "typescript": "^5.6.0"
+    "typescript": "^5.6.0",
+    "three": "0.128.0"
   }
 }
