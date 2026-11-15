@@ -20,7 +20,11 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 #dlg{position:fixed;left:12px;right:12px;bottom:16px;max-width:680px;margin:0 auto;padding:16px 18px 22px;z-index:8;display:none;cursor:pointer;font-size:18px;line-height:1.65}
 #who{font-size:15px;color:#b0562f;margin-bottom:4px;min-height:0}
 #dlg:after{content:"▾ 点一下继续";position:absolute;right:14px;bottom:5px;font-size:12px;color:#a58c66}
-#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);padding:8px 18px;font-size:16px;z-index:7;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
+#goal{position:fixed;top:66px;left:10px;padding:7px 12px;font-size:15px;z-index:5;display:none;cursor:pointer;max-width:calc(100vw - 148px);line-height:1.4}
+#map{position:fixed;top:66px;right:10px;left:auto;bottom:auto;width:112px;height:112px;border-radius:50%;border:2px solid #b89a6a;z-index:5;display:none;cursor:pointer;box-shadow:0 4px 14px rgba(60,40,10,.25)}
+#map.big{width:min(88vw,380px);height:min(88vw,380px);top:50%;left:50%;right:auto;transform:translate(-50%,-50%);border-radius:18px;z-index:16}
+#gArrow{display:inline-block;color:#e9764a;font-size:17px;margin-right:4px}
+#toast{position:fixed;top:190px;left:50%;transform:translateX(-50%);padding:8px 18px;font-size:16px;z-index:7;opacity:0;transition:opacity .4s;pointer-events:none;white-space:nowrap}
 #banner{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:9;pointer-events:none;opacity:0;transition:opacity .5s}
 #banner span{font-size:74px;color:#fff6d8;text-shadow:0 0 18px #ffb347,0 4px 0 #c9632b;letter-spacing:6px;transform:rotate(-6deg)}
 .ov{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(#9fd0ee,#fbe7c2 70%,#f7d9a8)}
@@ -57,16 +61,18 @@ canvas{touch-action:none}
 <canvas id="c"></canvas>
 <div id="hud"><div id="prog" data-testid="progress" class="paper">🐾 心愿 0/9</div>
 <div id="btns"><div class="ib paper" id="bSave" data-testid="open-saves" title="存档">💾</div><div class="ib paper" id="bCard" data-testid="open-card" title="Bingo 卡">🎴</div><div class="ib paper" id="bGuide" title="让 Bingo 带路">🐕</div><div class="ib paper" id="bSnd" title="声音">🔔</div></div></div>
+<div id="goal" data-testid="goal" class="paper"><span id="gArrow">➤</span><span id="gTxt"></span></div>
+<canvas id="map" data-testid="map" width="480" height="480"></canvas>
 <div id="toast" data-testid="toast" class="paper"></div>
 <button id="act" data-testid="act" class="paper"></button>
 <div id="dlg" data-testid="dialog" class="paper"><div id="who"></div><div id="txt"></div></div>
 <div id="banner"><span>BINGO!</span></div>
 <div id="joy"><div id="knob"></div></div>
-<div id="card"><div class="box paper"><h2>心愿 Bingo 卡</h2><div style="font-size:14px;color:#8d7755">连成一条线，山顶的老树就会醒来</div><div id="grid"></div><button class="go alt" id="cClose">收起来</button></div></div>
+<div id="card"><div class="box paper"><h2>心愿 Bingo 卡</h2><div style="font-size:14px;color:#8d7755">连成一条线，山顶的老树就会醒来<br>点一个没完成的格子，Bingo 就带你去</div><div id="grid"></div><button class="go alt" id="cClose">收起来</button></div></div>
 <div id="start" class="ov"><div class="box paper">
 <h1>云灯岛</h1><p>和雪白的萨摩耶 <b>Bingo</b> 一起<br>在云海上的小岛，找回忘记的自己</p>
 <button class="go" id="bStart" data-testid="start">开始旅程</button><button class="go alt" id="bNew" data-testid="restart" style="display:none">重新开始</button><br><button class="go alt sm" id="bAcct" data-testid="open-account">登录 / 注册</button><div id="sUser" data-testid="start-user">未登录：进度只存在这台设备上</div>
-<small>手机：拖左下角摇杆或直接点地面走路，其他地方拖动转视角<br>电脑：WASD / 方向键走路，鼠标拖动转视角，E 或空格互动<br>🎴 看心愿卡　🐕 让 Bingo 带路</small></div></div>
+<small>左上角一直写着下一件该做的事，跟着箭头和光柱走；右上角是小地图，点一下放大<br>手机：拖左下角摇杆或直接点地面走路，其他地方拖动转视角<br>电脑：WASD / 方向键走路，鼠标拖动转视角，E 或空格互动<br>🎴 看心愿卡　🐕 让 Bingo 带路</small></div></div>
 <div id="panel"><div class="box paper" data-testid="panel"><div id="pBody"></div></div></div>
 <div id="end" class="ov"><div class="box paper"><h1 style="font-size:38px">云灯岛</h1><p id="endTxt"></p><div id="endBtns"></div></div></div>
 
@@ -176,10 +182,11 @@ const avoid=[P.wind,P.hat,P.scare,P.moss,P.tea,P.pond,P.dand,P.tree,[0,30],[0,38
 // trees
 const LG=[0,1,2].map(k=>{const g=new T.IcosahedronGeometry(1,6),p=g.attributes.position,col=[];for(let i=0;i<p.count;i++){let x=p.getX(i),y=p.getY(i),z=p.getZ(i);const d=1+.17*Math.sin(x*4+k*2)*Math.sin(y*4.3+k)*Math.sin(z*3.7-k)+.07*Math.sin(x*9+y*7+k);x*=d;y*=d*.9;z*=d;p.setXYZ(i,x,y,z);const q=.5+.5*y;col.push(.58+.52*q,.66+.44*q,.84+.18*q);}g.setAttribute('color',new T.Float32BufferAttribute(col,3));const nr=g.attributes.normal;for(let i=0;i<p.count;i++){const l=Math.hypot(p.getX(i),p.getY(i),p.getZ(i));nr.setXYZ(i,p.getX(i)/l,p.getY(i)/l,p.getZ(i)/l);}return g;});
 const vm={};function blob(r,c,x,y,z){if(!vm[c])vm[c]=new T.MeshToonMaterial({color:c,gradientMap:grad,vertexColors:true});const m=new T.Mesh(LG[Math.floor(rnd()*3)],vm[c]);m.position.set(x,y,z);m.scale.setScalar(r);m.rotation.y=rnd()*6;return m;}
+const TREES=[];
 function tree(x,z,s,blossom){const g=new T.Group();g.add(cyl(.28,.42,2.4,0x7a5236,0,1.2,0,7));
  const cs=blossom?[0xf6b9c6,0xfad0d8,0xee9fb2]:[[0x5fa052,0x7cb85c,0x4f8f5a],[0x6aa84f,0x93c66a,0x4c8a4c]][Math.floor(rnd()*2)];
  g.add(blob(1.7,cs[0],0,3.2,0));g.add(blob(1.2,cs[1],1,3.9,.3));g.add(blob(1.1,cs[2],-.9,3.7,-.4));g.add(blob(1,cs[1],.1,4.7,-.2));g.add(blob(.9,cs[2],.3,3.4,1));g.add(blob(.85,cs[0],-.3,3.6,-1.1));
- g.scale.setScalar(s);g.rotation.y=rnd()*6;COL.push([x,z,.55*s,0]);return place(g,x,z,-.1);}
+ g.scale.setScalar(s);g.rotation.y=rnd()*6;COL.push([x,z,.55*s,0]);TREES.push({g,x,z,r:1.8*s});return place(g,x,z,-.1);}
 for(let i=0,n=0;i<600&&n<85;i++){const a=rnd()*6.283,r=Math.sqrt(rnd())*72,x=Math.cos(a)*r,z=Math.sin(a)*r;
  if(avoid.some(p=>Math.hypot(x-p[0],z-p[1])<(p===P.tree?13:8)))continue;tree(x,z,rr(.9,1.9),rnd()<.18);n++;}
 // flowers
@@ -306,6 +313,7 @@ const whale=new T.Group(),wTail=new T.Group();
  for(let i=0;i<5;i++)whale.add(new T.Mesh(SG,cloudMat).translateX(rr(-1.5,1.5)).translateY(2.3).translateZ(rr(-4,3)).rotateY(0)).scale.setScalar(rr(.7,1.2));
  scene.add(whale);}
 const marker=new T.Mesh(new T.RingGeometry(.45,.7,24),new T.MeshBasicMaterial({color:0xfff6c8,transparent:true,opacity:.85,depthWrite:false}));marker.rotation.x=-Math.PI/2;marker.visible=false;scene.add(marker);
+const beacon=new T.Mesh(new T.CylinderGeometry(.55,.55,70,12,1,true),new T.MeshBasicMaterial({color:0xfff0a8,transparent:true,opacity:.3,depthWrite:false,side:T.DoubleSide,blending:T.AdditiveBlending}));beacon.visible=false;scene.add(beacon);
 // motes
 const moteG=new T.BufferGeometry();{const p=[];for(let i=0;i<160;i++)p.push(rr(-25,25),rr(0,12),rr(-25,25));moteG.setAttribute('position',new T.Float32BufferAttribute(p,3));}
 const motes=new T.Points(moteG,new T.PointsMaterial({color:0xfff6c8,size:.16,transparent:true,opacity:.75,depthWrite:false}));scene.add(motes);
@@ -314,13 +322,13 @@ const motes=new T.Points(moteG,new T.PointsMaterial({color:0xfff6c8,size:.16,tra
 const TASKS=['点亮三盏<br>心灯','让风车<br>转起来','给稻草人<br>戴上草帽','叫醒<br>苔爷爷','摸摸<br>Bingo','在茶屋<br>喝杯茶','吹散<br>蒲公英','找到五只<br>小萤灵','在池塘<br>放莲灯'];
 const MEM=['想起来了：小时候怕黑，是因为还不知道自己也能点灯。','想起来了：风一直都在，只是我忘了张开手。','想起来了：把帽子让给别人的那天，太阳其实没那么晒。','想起来了：慢慢来的人，也会到。','想起来了：有一只小狗等你回家，就是很了不起的事。','想起来了：一杯茶的时间，世界不会跑掉。','想起来了：放手不是失去，是让它去更远的地方。','想起来了：微小的光聚在一起，夜晚就不可怕。','想起来了：愿望要轻轻放下，水才会带它走。'];
 const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-const S={done:Array(9).fill(false),hasHat:false,hasLotus:false,lampN:0,flyN:0,lines:0,ended:false,started:false,ride:0,mossT:0,guide:null,camYaw:0,camDist:11,t:0,moveTo:null,moveT:0};
+const S={done:Array(9).fill(false),hasHat:false,hasLotus:false,lampN:0,flyN:0,lines:0,ended:false,started:false,ride:0,mossT:0,guide:null,camYaw:0,camDist:11,t:0,moveTo:null,moveT:0,goalKey:null,goalPs:null,goalT:0};
 const nDone=()=>S.done.filter(Boolean).length;
 player.position.set(0,H(0,30),30);dog.position.set(2,H(2,31),31);
 
 /* ---------- UI ---------- */
 const grid=$('grid');
-function drawCard(){grid.innerHTML=TASKS.map((t,i)=>'<div class="cell'+(S.done[i]?' done':'')+'">'+t+'</div>').join('');$('prog').textContent='🐾 心愿 '+nDone()+'/9';}
+function drawCard(){grid.innerHTML=TASKS.map((t,i)=>'<div class="cell'+(S.done[i]?' done':'')+'" data-i="'+i+'">'+t+'</div>').join('');$('prog').textContent='🐾 心愿 '+nDone()+'/9';}
 drawCard();
 let toastT;function toast(s){const e=$('toast');e.textContent=s;e.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>e.style.opacity=0,2600);}
 const dq=[];let dOn=false;
@@ -331,6 +339,7 @@ function nextLine(){while(dq.length&&typeof dq[0]==='function'){dq.shift()();}
 $('dlg').addEventListener('click',nextLine);
 $('bCard').onclick=()=>{drawCard();$('card').style.display='flex';};
 $('cClose').onclick=()=>$('card').style.display='none';
+grid.onclick=e=>{const c=e.target.closest('.cell');if(!c||!S.started)return;const i=+c.dataset.i;if(S.done[i]){toast('这一格已经盖上爪印了');return;}S.goalKey='t'+i;S.goalPs=null;$('card').style.display='none';const g=curGoal();toast(g.k==='t'+i?'好，下一件：'+g.n:'先'+g.n);};
 $('card').onclick=e=>{if(e.target.id==='card')$('card').style.display='none';};
 
 function complete(i){if(S.done[i])return;S.done[i]=true;chime();drawCard();autosave(TASKS[i].replace('<br>',''));
@@ -339,12 +348,13 @@ function complete(i){if(S.done[i])return;S.done[i]=true;chime();drawCard();autos
   L.push(['Bingo','汪！汪汪！（卡片上连成了一条线——山顶的老树亮起来了，云鲸也游近了。）']);}
  S.lines=ln;
  if(nDone()===9)L.push(['','九个格子都盖满了爪印。去山顶的老树那儿看看吧。']);
+ L.push(()=>setTimeout(()=>{if(!dOn&&!S.ride&&$('end').style.display!=='flex')toast('下一件：'+curGoal().n);},60));
  say(L);}
 
 /* ---------- interactions ---------- */
 const V=(a)=>({x:a[0],z:a[1]});
 const INTS=[
- {p:()=>dog.position,r:2.4,label:'摸摸 Bingo',act(){S.wag=3;say([['Bingo','汪～（它把毛茸茸的脑袋拱进你手心，笑得眼睛眯成一条缝。）']],()=>{if(!S.done[4])complete(4);});}},
+ {p:()=>dog.position,r:2.4,label:'摸摸 Bingo',show:()=>!S.done[4],act(){S.wag=3;say([['Bingo','汪～（它把毛茸茸的脑袋拱进你手心，笑得眼睛眯成一条缝。）']],()=>{if(!S.done[4])complete(4);});}},
  {p:V(P.wind),r:6,label:'推一推风车',show:()=>!S.done[1],act(){say([['','风车锈住了。你踮起脚，用力推了一把叶片——'],['','吱呀……呼——它转起来了，整片草坡都跟着起了风。']],()=>{bladeSpd=1.4;complete(1);});}},
  {p:V(P.scare),r:4.5,label:'和稻草人说话',show:()=>!S.done[2],act(){if(!S.hasHat)say([['稻草人','唉……我的草帽被风吹跑了，好像落在东边那块大石头旁。没有帽子，麻雀都不怕我啦。']]);
    else say([['稻草人','啊，是我的草帽！谢谢你。你看，我又像个样子了。'],['稻草人','其实我也不记得自己是谁扎的。但站在这儿守着麦子，我就知道我是谁。']],()=>{scHat.visible=true;complete(2);});}},
@@ -369,13 +379,40 @@ function blow(){const n=420,p=new Float32Array(n*3),v=[];for(let i=0;i<n;i++){co
 let curInt=null;
 function doAct(){if(dOn)return nextLine();if(curInt&&!S.ride)curInt.act();}
 $('act').addEventListener('click',doAct);
-function guideTarget(){const c=[];const px=player.position.x,pz=player.position.z;
- if(!S.done[0])lamps.filter(l=>!l.on).forEach(l=>c.push([l.x,l.z]));
- if(!S.done[1])c.push(P.wind);if(!S.done[2])c.push(S.hasHat?P.scare:P.hat);if(!S.done[3])c.push(P.moss);
- if(!S.done[5])c.push(P.tea);if(!S.done[6])c.push(P.dand);if(!S.done[7])flies.filter(f=>!f.got).forEach(f=>c.push([f.x,f.z]));
- if(!S.done[8])c.push(S.hasLotus?P.pond:P.tea);if(!c.length||(S.lines>0&&!S.ended))c.push(P.tree);
- c.sort((a,b)=>Math.hypot(a[0]-px,a[1]-pz)-Math.hypot(b[0]-px,b[1]-pz));return c[0];}
-$('bGuide').onclick=()=>{if(S.ride)return;if(!S.done[4]&&nDone()>=8){toast('Bingo 歪着头看你：是不是忘了摸摸我？');return;}S.guide=guideTarget();bark();toast('Bingo：汪！跟我来～');};
+function goals(){const c=[],px=player.position.x,pz=player.position.z,near=a=>a.slice().sort((u,v)=>Math.hypot(u[0]-px,u[1]-pz)-Math.hypot(v[0]-px,v[1]-pz))[0];
+ if(S.lines>0&&!S.ended)return[{k:'tree',p:P.tree,n:'去山顶找老树，听它把话说完'}];
+ if(!S.done[4])c.push({k:'t4',p:[dog.position.x,dog.position.z],n:'摸摸身边的 Bingo（点右下角的按钮）',pet:1});
+ if(!S.done[0]){const u=lamps.filter(l=>!l.on);c.push({k:'t0',p:near(u.map(l=>[l.x,l.z])),n:'点亮石灯（还差 '+u.length+' 盏）'});}
+ if(!S.done[1])c.push({k:'t1',p:P.wind,n:'去推一推风车'});
+ if(!S.done[2])c.push({k:'t2',p:S.hasHat?P.scare:P.hat,n:S.hasHat?'把草帽还给稻草人':'去大石头旁捡稻草人的草帽'});
+ if(!S.done[3])c.push({k:'t3',p:P.moss,n:'去叫醒苔爷爷'});
+ if(!S.done[5])c.push({k:'t5',p:P.tea,n:'去茶屋喝杯茶'});
+ if(!S.done[6])c.push({k:'t6',p:P.dand,n:'去蒲公英地吹一口气'});
+ if(!S.done[7]){const u=flies.filter(f=>!f.got);c.push({k:'t7',p:near(u.map(f=>[f.x,f.z])),n:'找发光的小萤灵（还差 '+u.length+' 只）'});}
+ if(!S.done[8])c.push({k:'t8',p:S.hasLotus?P.pond:P.tea,n:S.hasLotus?'去池塘放下莲灯':'先去茶屋拿一盏莲灯'});
+ if(!c.length)c.push({k:'tree',p:P.tree,n:S.ended?'去山顶找老树，乘上云鲸':'去山顶找老树'});
+ return c;}
+function curGoal(){const c=goals(),px=player.position.x,pz=player.position.z;let g=c.find(x=>x.k===S.goalKey);
+ if(!g){g=c.find(x=>x.pet)||c.slice().sort((u,v)=>Math.hypot(u.p[0]-px,u.p[1]-pz)-Math.hypot(v.p[0]-px,v.p[1]-pz))[0];S.goalKey=g.k;S.goalPs=null;}
+ const ps=g.pet?'pet':g.p[0]+','+g.p[1];if(ps!==S.goalPs){S.goalPs=ps;S.guide=g.pet?null:[g.p[0],g.p[1]];}
+ return g;}
+function lead(){if(S.ride||!S.started)return;const g=curGoal();if(g.pet){toast('Bingo 就在你身边，点右下角「摸摸 Bingo」');return;}S.guide=[g.p[0],g.p[1]];bark();toast('Bingo：汪！跟我来～ '+g.n);}
+$('bGuide').onclick=lead;$('goal').onclick=lead;
+const mapEl=$('map'),mc=mapEl.getContext('2d');let mapBig=false,mapT=0;
+mapEl.onclick=()=>{mapBig=!mapBig;mapEl.classList.toggle('big',mapBig);drawMap();};
+function mapPoints(){return[[P.wind,'风车',S.done[1]],[S.hasHat||S.done[2]?null:P.hat,'草帽',false],[P.scare,'稻草人',S.done[2]],[P.moss,'苔爷爷',S.done[3]],[P.tea,'茶屋',S.done[5]&&(S.hasLotus||S.done[8])],[P.pond,'池塘',S.done[8]],[P.dand,'蒲公英',S.done[6]],[P.tree,'老树',false],...lamps.map(l=>[[l.x,l.z],'石灯',l.on]),...flies.map(f=>[[f.x,f.z],'萤灵',f.got])].filter(q=>q[0]);}
+function drawMap(){const W=480,c=W/2,k=c/84,X=x=>c+x*k,Y=z=>c+z*k,big=mapBig,g=S.started?curGoal():null;
+ mc.fillStyle='#bfe0f2';mc.fillRect(0,0,W,W);mc.fillStyle='#8fc873';mc.beginPath();mc.arc(c,c,78*k,0,6.3);mc.fill();
+ mc.strokeStyle='#dcc894';mc.lineWidth=6;mc.lineCap='round';mc.beginPath();for(const q of PATHS){mc.moveTo(X(q[0]),Y(q[1]));mc.lineTo(X(q[2]),Y(q[3]));}mc.stroke();
+ mc.fillStyle='#7fc4dc';mc.beginPath();mc.arc(X(P.pond[0]),Y(P.pond[1]),7*k,0,6.3);mc.fill();
+ mc.textAlign='center';
+ for(const[q,n,done]of mapPoints()){const x=X(q[0]),y=Y(q[1]);mc.beginPath();mc.arc(x,y,big?10:13,0,6.3);mc.fillStyle=done?'#b9b3a4':n==='萤灵'?'#f1f76a':n==='石灯'?'#ffb040':n==='老树'?'#3f7d4a':'#e9764a';mc.fill();mc.lineWidth=3;mc.strokeStyle='#fff';mc.stroke();
+  if(done){mc.fillStyle='#fff';mc.font='bold 15px sans-serif';mc.fillText('✓',x,y+5);}
+  if(big){mc.font='bold 20px sans-serif';mc.lineWidth=4;mc.strokeStyle='rgba(255,255,255,.85)';mc.strokeText(n,x,y-16);mc.fillStyle=done?'#8a8478':'#4a3b2a';mc.fillText(n,x,y-16);}}
+ if(g&&!g.pet){const r=20+5*Math.sin(S.t*5);mc.lineWidth=7;mc.strokeStyle='#fff';mc.beginPath();mc.arc(X(g.p[0]),Y(g.p[1]),r,0,6.3);mc.stroke();mc.lineWidth=3;mc.strokeStyle='#e2553f';mc.stroke();}
+ mc.fillStyle='#fff';mc.strokeStyle='#8a7a5e';mc.lineWidth=3;mc.beginPath();mc.arc(X(dog.position.x),Y(dog.position.z),8,0,6.3);mc.fill();mc.stroke();
+ const a=player.rotation.y;mc.save();mc.translate(X(player.position.x),Y(player.position.z));mc.rotate(Math.atan2(Math.sin(a),-Math.cos(a)));mc.beginPath();mc.moveTo(0,-17);mc.lineTo(11,12);mc.lineTo(0,6);mc.lineTo(-11,12);mc.closePath();mc.fillStyle='#e2553f';mc.fill();mc.lineWidth=3;mc.strokeStyle='#fff';mc.stroke();mc.restore();
+ if(big){mc.font='18px sans-serif';mc.fillStyle='#4a3b2a';mc.fillText('红箭头是你，白点是 Bingo，红圈是下一件 · 点一下收起',c,W-14);}}
 
 /* ---------- audio ---------- */
 let AC=null,master=null,mute=false,nextNote=0,noteI=4;
@@ -423,7 +460,7 @@ function applyState(st){if(!st||!Array.isArray(st.done))return false;dq.length=0
  flies.forEach((f,i)=>{f.got=!!(st.flies&&st.flies[i])||S.done[7];if(!f.got)f.g.position.set(f.x,H(f.x,f.z)+1.6,f.z);});S.flyN=flies.filter(f=>f.got).length;
  scHat.visible=S.done[2];if(S.done[2])S.hasHat=true;bladeSpd=S.done[1]?1.4:0;lotus.visible=S.done[8];lotusLight.intensity=S.done[8]?1.1:0;
  dandIM.visible=!S.done[6];if(seeds){scene.remove(seeds.pts);seeds=null;}S.mossT=S.done[3]?1:0;
- S.lines=LINES.filter(l=>l.every(j=>S.done[j])).length;S.ride=0;S.guide=null;S.moveTo=null;S.camDist=11;
+ S.lines=LINES.filter(l=>l.every(j=>S.done[j])).length;S.ride=0;S.guide=null;S.moveTo=null;S.camDist=11;S.goalKey=null;S.goalPs=null;
  let x=+st.x||0,z=st.z==null?30:+st.z;const r=Math.hypot(x,z);if(!(r<75)){x=0;z=30;}
  player.position.set(x,H(x,z),z);dog.position.set(x+2,H(x+2,z+1),z+1);S.camYaw=+st.yaw||0;drawCard();return true;}
 function saveLocal(){try{localStorage.setItem(LS_SAVE,JSON.stringify(getState()));}catch(e){}}
@@ -459,8 +496,8 @@ $('panel').addEventListener('click',e=>{if(e.target.id==='panel')closePanel();})
 function refreshStart(){const has=!!loadLocal()||!!session;$('sUser').textContent=session?'已登录：'+session.username+'（进度会存到云端）':'未登录：进度只存在这台设备上';$('bAcct').textContent=session?'账号 / 存档':'登录 / 注册';
  if(!S.started){$('bStart').textContent=has?'继续旅程':'开始旅程';$('bNew').style.display=has?'inline-block':'none';}}
 function enterGame(){$('start').style.display='none';S.started=true;initAudio();if(matchMedia('(pointer:coarse)').matches||LITE)joyEl.style.display='block';}
-const INTRO=[['','你在一座漂浮在云海上的小岛醒来。风很轻，可你忘了自己是谁，也忘了为什么出发。'],['','身边只有一只雪白的萨摩耶，冲你笑着摇尾巴。红领巾上绣着两个字：Bingo。'],['Bingo','汪！（它叼来一张被云打湿的卡片——「心愿 Bingo 卡」，九个格子，九件小事。）'],['','连成一条线，山顶的老树就会告诉你：你是谁。　迷路的时候，点 🐕 让 Bingo 带路。']];
-function newGame(){applyState({done:[],x:0,z:30});enterGame();saveLocal();say(INTRO,()=>toast('拖左下角摇杆，或直接点地面走路'));}
+const INTRO=[['','你在一座漂浮在云海上的小岛醒来。风很轻，可你忘了自己是谁，也忘了为什么出发。'],['','身边只有一只雪白的萨摩耶，冲你笑着摇尾巴。红领巾上绣着两个字：Bingo。'],['Bingo','汪！（它叼来一张被云打湿的卡片——「心愿 Bingo 卡」，九个格子，九件小事。）'],['','连成一条线，山顶的老树就会告诉你：你是谁。　左上角一直写着下一件事，跟着箭头和金色光柱走，Bingo 会跑在前面带路。']];
+function newGame(){applyState({done:[],x:0,z:30});enterGame();saveLocal();say(INTRO,()=>toast('先试试：点右下角「摸摸 Bingo」'));}
 $('bNew').onclick=newGame;
 $('bStart').onclick=async()=>{let st=null;$('bStart').textContent='读取中…';
  if(session){try{const list=await rpc('game_list_saves',{p_token:session.token});if(list.length)st=await rpc('game_load_save',{p_token:session.token,p_id:list[0].id});}catch(e){}}
@@ -529,6 +566,16 @@ function frame(){requestAnimationFrame(frame);const dt=Math.min(.05,clock.getDel
  // camera
  const cx=pp.x+Math.sin(S.camYaw)*S.camDist,cz=pp.z+Math.cos(S.camYaw)*S.camDist;let cy=pp.y+S.camDist*.45;if(!S.ride){cy=Math.max(cy,H(cx,cz)+1.8);for(const c of COL)if(c[3]&&c[3]<12&&Math.hypot(cx-c[0],cz-c[1])<c[2]+1.5)cy=Math.max(cy,H(c[0],c[1])+c[3]+1);}
  tmp.set(cx,cy,cz);camera.position.lerp(tmp,Math.min(1,dt*6));camera.lookAt(pp.x,pp.y+1.8,pp.z);sky.position.copy(camera.position);
+ // goal hint
+ const gEl=$('goal');if(S.started&&!S.ride){const g=curGoal(),gx=g.p[0]-pp.x,gz=g.p[1]-pp.z,gd=Math.hypot(gx,gz);
+  beacon.visible=!g.pet&&gd>5;if(beacon.visible){beacon.position.set(g.p[0],H(g.p[0],g.p[1])+35,g.p[1]);beacon.material.opacity=.22+.1*Math.sin(t*3);}
+  const fx=-Math.sin(S.camYaw),fz=-Math.cos(S.camYaw),rx=Math.cos(S.camYaw),rz=-Math.sin(S.camYaw),ang=Math.atan2(gx*rx+gz*rz,gx*fx+gz*fz)*57.3-90;
+  $('gArrow').style.transform='rotate('+ang.toFixed(0)+'deg)';$('gArrow').style.visibility=g.pet?'hidden':'visible';
+  S.goalT-=dt;if(S.goalT<=0){S.goalT=.3;$('gTxt').textContent=g.n+(g.pet?'':' · '+Math.round(gd)+' 米');}
+  gEl.style.display=dOn?'none':'block';}else{gEl.style.display='none';beacon.visible=false;}
+ mapEl.style.display=S.started&&!S.ride?'block':'none';mapT-=dt;if(mapT<=0&&S.started){mapT=.25;drawMap();}
+ // trees between the camera and the player step aside
+ {const ax=camera.position.x,az=camera.position.z,bx=pp.x-ax,bz=pp.z-az,l2=bx*bx+bz*bz||1;for(const tr of TREES){let k=((tr.x-ax)*bx+(tr.z-az)*bz)/l2;k=Math.max(0,Math.min(.96,k));tr.g.visible=S.ride>0||Math.hypot(tr.x-ax-bx*k,tr.z-az-bz*k)>tr.r;}}
  // interaction prompt
  curInt=null;if(S.started&&!dOn&&!S.ride){let best=1e9;for(const it of INTS){if(it.show&&!it.show())continue;const q=typeof it.p==='function'?it.p():it.p;const d=Math.hypot(q.x-pp.x,q.z-pp.z),w=(it===INTS[0]?2:0)+d/it.r;if(d<it.r&&w<best){best=w;curInt=it;}}}
  const ab=$('act');if(curInt){ab.textContent='✦ '+(typeof curInt.label==='function'?curInt.label():curInt.label);ab.style.display='block';}else ab.style.display='none';
@@ -541,7 +588,7 @@ try{if(!LITE&&T.EffectComposer&&T.UnrealBloomPass){composer=new T.EffectComposer
  fragmentShader:'uniform sampler2D tDiffuse;varying vec2 vUv;void main(){vec4 c=texture2D(tDiffuse,vUv);float l=dot(c.rgb,vec3(.299,.587,.114));c.rgb=mix(vec3(l),c.rgb,1.16);c.rgb=(c.rgb-.5)*1.07+.5;c.rgb*=vec3(1.03,1.,.95);float d=distance(vUv,vec2(.5));c.rgb*=1.-smoothstep(.42,.95,d)*.4;gl_FragColor=c;}'}));
  composer.setPixelRatio(Math.min(window.devicePixelRatio||1,2));composer.setSize(innerWidth,innerHeight);}}catch(e){composer=null;}
 applySky(0);camera.position.set(0,12,44);frame();
-window.__game={S,player,dog,complete,getState,applyState,P,lamps,flies,camera,H};
+window.__game={S,player,dog,complete,getState,applyState,P,lamps,flies,camera,H,curGoal,mapPoints};
 })();
 </script>
 </body>
