@@ -14,7 +14,7 @@ ai_learnings/
 │   ├── quiet-hall/                 # 静堂: shared meditation hall app (Expo + Node), sample app under test
 │   └── yundeng-island/             # 云灯岛: 3D browser game with accounts and cloud saves, sample app under test
 ├── experiments/                    # Future prototypes and notebooks
-├── notes/                          # Future learning notes and decision records
+├── notes/                          # Learning notes and decision records
 ├── templates/                      # Future reusable prompts/templates
 ├── docs/                           # GitHub Pages site and published reports
 └── .github/workflows/              # Pages deployment
@@ -28,6 +28,8 @@ ai_learnings/
 - [`projects/yundeng-island`](projects/yundeng-island/README.md) is a 3D browser game (three.js) with accounts and cloud saves on Supabase; it is the second sample app, covered by the `island-*` BDD cases in ClientX Autopilot.
 - `skills/regression-gap-analyzer` analyzes local source and UI-automation repositories, producing code graphs, a knowledge base, CSV backlog, and an accessible HTML report. Read that module's `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for installation and use.
 - `skills/local-web-test-recorder` provides a Codex, Claude Code, and Devin-compatible Agent Skill plus a self-hosted Playwright recorder and replay application with test-plan management, assertions, waits, retries, proxy/browser configuration, artifacts, and bilingual beginner documentation. Start with its `SKILL.md`, `guideline.zh-CN.md`, or `guideline.en.md`.
+
+- [`notes/ivf-research`](notes/ivf-research/README.md) is a Chinese research note on IVF and surrogacy for single women around 40: illustrated principles and process, country-by-country rules and costs, and a US route plan. Published at `docs/reports/ivf-research/`.
 
 ## Add a new AI module
 
