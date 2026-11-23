@@ -1,8 +1,8 @@
 # 法式公寓软装优化方案：勃艮第与橄榄
 
-状态：初稿（2026-11-23）。发布页以第二人称写给屋主本人（“您家”），本说明是仓库内的工作摘要。完整方案、色彩板和 3 张原图标注发布在 [`docs/reports/french-soft-styling/`](../../docs/reports/french-soft-styling/index.html)。
+状态：初稿（2026-11-23）。发布页以第二人称写给屋主本人（“您家”），本说明是仓库内的工作摘要。完整方案、色彩板和 9 张原图标注发布在 [`docs/reports/french-soft-styling/`](../../docs/reports/french-soft-styling/index.html)。
 
-依据是 9 张现场照片（客餐厅、壁炉墙、主卧）。按用户要求，发布页用了其中 3 张的标注版。
+依据是 9 张现场照片（客餐厅、壁炉墙、主卧）。按用户要求，发布页用了这 9 张的标注版。
 
 ## 结论
 
@@ -14,7 +14,7 @@
 ## 文件
 
 - `docs/reports/french-soft-styling/index.html`：方案正文、数据依据和来源链接
-- `docs/reports/french-soft-styling/figs/`：色彩板 SVG，以及客厅、壁炉墙、餐厅三张原图标注
+- `docs/reports/french-soft-styling/figs/`：色彩板 SVG，以及客厅、壁炉墙、餐厅、窗边、主卧共九张原图标注
 
 ## 待确认
 
