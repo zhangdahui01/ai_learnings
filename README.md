@@ -31,6 +31,8 @@ ai_learnings/
 
 - [`notes/ivf-research`](notes/ivf-research/README.md) is a Chinese research note on IVF and surrogacy for single women around 40: illustrated principles and process, country-by-country rules and costs, and a US route plan. Published at `docs/reports/ivf-research/`.
 
+- [`notes/french-soft-styling`](notes/french-soft-styling/README.md) is a Chinese soft-furnishing plan for a French-style apartment: diagnosis, palette, lighting and styling rules with sources, a phased shopping list, and four illustrated mock-ups. Published at `docs/reports/french-soft-styling/`.
+
 ## Add a new AI module
 
 Create a focused directory under `skills/`, `projects/`, `experiments/`, `notes/`, or `templates/`. Keep module-specific agent instructions, dependencies, and guides inside that module; update this README and `docs/index.html` with a short link.
