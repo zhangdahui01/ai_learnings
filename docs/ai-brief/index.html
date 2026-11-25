@@ -123,6 +123,18 @@ main{min-width:0}
 .frames figcaption{padding:6px 8px;display:flex;gap:6px}
 .frames figcaption a{font-family:var(--f-mono);font-size:11.5px;text-decoration:none;flex:none}
 .act svg{width:14px;height:14px;flex:none}
+.arts{border-top:3px solid var(--later)}
+.arts .yt-head h3{display:flex;align-items:center;gap:8px}
+.arts .yt-head h3 svg{width:18px;height:18px;color:var(--later)}
+.vrow.art .n{color:var(--later)}
+.vrow.art h4 a svg{color:var(--later)}
+.tzh{font-family:var(--f-display);font-size:15.5px;font-weight:600;margin:0 0 6px;line-height:1.45}
+.srcchip{font-size:11px;font-weight:600;padding:1px 8px;border-radius:4px;background:var(--later-soft);color:var(--later);font-family:var(--f-body)}
+.ahl{margin:10px 0 0;padding-left:18px;display:grid;gap:4px;font-size:13.5px}
+.ahl li::marker{color:var(--later)}
+.secs h6{margin:12px 0 4px;font-size:13.5px;font-weight:600;color:var(--fg)}
+.secs h6:first-child{margin-top:0}
+.secs ul{margin:0 0 4px}
 .src{font-size:12.5px;font-family:var(--f-mono);margin-left:auto}
 .notes{margin-top:10px;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
 .notes ul{list-style:none;margin:0 0 8px;padding:0;display:grid;gap:6px}
@@ -172,7 +184,7 @@ textarea{resize:vertical;min-height:38px}
   <header class="top">
     <div>
       <h1>AI 大牛早报</h1>
-      <p class="sub">我的 AI 武器库 · 每日 YouTube Top 10（附中文笔记）· Anthropic / OpenAI / 大牛文章 20 条</p>
+      <p class="sub">我的 AI 武器库 · 官方技术博客精读（附中文笔记）· 每日 YouTube Top 10 · Anthropic / OpenAI / 大牛文章 20 条</p>
     </div>
     <span class="stamp" id="stamp">正在载入…</span>
   </header>
@@ -198,7 +210,8 @@ const ICON = {
   note:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M2.5 3h11v7.5H7l-3 2.5v-2.5H2.5z"/></svg>',
   lib:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 2.5h10v11L8 10.8 3 13.5z"/></svg>',
   libOn:'<svg viewBox="0 0 16 16" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3 2.5h10v11L8 10.8 3 13.5z"/></svg>',
-  play:'<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5v9l7.5-4.5z"/></svg>'
+  play:'<svg viewBox="0 0 16 16" fill="currentColor"><path d="M5 3.5v9l7.5-4.5z"/></svg>',
+  doc:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3.5 1.8h6l3 3v9.4h-9z"/><path d="M9.5 1.8v3h3M5.5 8h5M5.5 10.5h5"/></svg>'
 };
 const FOCUS = new Set(["Anthropic","OpenAI","大牛观点","Agent 工程","第二大脑"]);
 const LIBTYPES = ["Skill","MCP","Workflow","视频","文章","工具","提示词"];
@@ -266,6 +279,8 @@ function viewToday(){
   const items = (d.items||[]).slice().sort((a,b)=>(a.rank||0)-(b.rank||0));
   items.forEach(i=>reg(i.id,{kind:"item",date:d.date,title:i.title,url:i.url,category:i.category,author:i.author}));
   (d.videos||[]).forEach(v=>reg(v.id,{kind:"video",date:d.date,title:v.title,url:v.url,category:"YouTube",author:v.channel}));
+  const arts = (d.articles||[]).slice().sort((a,b)=>(a.rank||99)-(b.rank||99));
+  arts.forEach(a=>reg(a.id,{kind:"article",date:d.date,title:a.title_zh||a.title,url:a.url,category:"技术博客",author:[a.source,a.author].filter(Boolean).join(" · ")}));
   const cats = ["全部","重点", ...new Set(items.map(i=>i.category))];
   const pass = i => S.cat==="全部" || (S.cat==="重点" ? FOCUS.has(i.category) : i.category===S.cat);
   const card = i => `<li class="item ${i.rank<=3?"top3":""}">
@@ -281,7 +296,9 @@ function viewToday(){
   const vids = (d.videos||[]).slice().sort((a,b)=>(a.rank||99)-(b.rank||99));
   const nNotes = vids.filter(v=>v.notes&&v.notes.summary).length;
   return `<div class="layout">${rail}<main>
-    <div class="dayhead"><h2>${esc(d.date)} ${wd(d.date)}</h2><span class="stamp">${vids.length} 个视频 · ${items.length} 条资讯${d.mode?` · ${esc(d.mode)}`:""}</span></div>
+    <div class="dayhead"><h2>${esc(d.date)} ${wd(d.date)}</h2><span class="stamp">${arts.length?`${arts.length} 篇精读 · `:""}${vids.length} 个视频 · ${items.length} 条资讯${d.mode?` · ${esc(d.mode)}`:""}</span></div>
+    ${arts.length?`<section class="yt arts" aria-label="技术博客精读"><div class="yt-head"><h3>${ICON.doc}技术博客精读</h3><span>Anthropic · Claude Code · OpenAI 官方工程文章 · 附中文笔记</span></div>
+      <ol class="list">${arts.map((a,i)=>artRow(a,i+1)).join("")}</ol></section>`:""}
     ${vids.length?`<section class="yt" aria-label="YouTube Top 10"><div class="yt-head"><h3>YouTube Top ${vids.length}</h3><span>按热度和价值排序${nNotes?` · 前 ${nNotes} 个附中文笔记`:""}</span></div>
       <ol class="list">${vids.map((v,i)=>videoRow(v,i+1)).join("")}</ol></section>`:""}
     ${(d.highlights||[]).length?`<div class="brief"><h3 class="lab">今日要点 · Highlights</h3><ol>${d.highlights.map(h=>`<li>${esc(h.zh)}<span class="en">${esc(h.en)}</span></li>`).join("")}</ol></div>`:""}
@@ -293,6 +310,27 @@ function viewToday(){
   </main></div>`;
 }
 
+function artRow(a, n){
+  const nt = a.notes || {};
+  const key = "an:"+a.id, open = S.open.has(key);
+  const meta = [a.author, a.published, a.readtime].filter(Boolean).map(esc).join("</span><span>");
+  const hasFull = (nt.sections||[]).length || (nt.takeaways||[]).length;
+  return `<li class="vrow art">
+    <div class="n">${String(n).padStart(2,"0")}</div>
+    <div>
+      <h4>${safeUrl(a.url)?`<a href="${esc(a.url)}" target="_blank" rel="noopener">${ICON.doc}<span>${esc(a.title)}</span></a>`:esc(a.title)}</h4>
+      ${a.title_zh?`<p class="tzh">${esc(a.title_zh)}</p>`:""}
+      <div class="vmeta">${a.source?`<span class="srcchip">${esc(a.source)}</span>`:""}<span>${meta}</span></div>
+      ${a.zh?`<div class="summary"><b>一句话</b>${esc(a.zh)}</div>`:""}
+      ${(nt.highlights||[]).length?`<ul class="ahl">${nt.highlights.map(h=>`<li>${esc(h)}</li>`).join("")}</ul>`:""}
+      ${a.take?`<p class="take"><b>点评</b>　${esc(a.take)}</p>`:""}
+      ${hasFull&&open?`<div class="vnotes secs">
+        ${(nt.sections||[]).length?`<h5>中文笔记 · 按原文小节</h5>${nt.sections.map(s=>`<h6>${esc(s.h)}</h6><ul>${(s.points||[]).map(p=>`<li>${esc(p)}</li>`).join("")}</ul>`).join("")}<div style="height:10px"></div>`:""}
+        ${(nt.takeaways||[]).length?`<h5>对你的启发</h5><ul>${nt.takeaways.map(t=>`<li>${esc(t)}</li>`).join("")}</ul>`:""}
+      </div>`:""}
+      ${actions(a.id,{toLib:true,src:false, extra: (hasFull?`<button class="act ${open?"on-open":""}" data-act="vnotes" data-id="${esc(key)}" aria-expanded="${open}">${open?"收起笔记":"看完整中文笔记"}</button>`:"") + (safeUrl(a.url)?`<a class="src" href="${esc(a.url)}" target="_blank" rel="noopener">读英文原文 ↗</a>`:"")})}
+    </div></li>`;
+}
 function tsec(t){ const p=String(t||"").split(":").map(Number); if(p.some(isNaN)) return 0; return p.reduce((a,b)=>a*60+b,0); }
 function tlink(url, t){ const u=safeUrl(url); if(!u) return ""; return u + (u.includes("?")?"&":"?") + "t=" + tsec(t) + "s"; }
 function videoRow(v, n){
