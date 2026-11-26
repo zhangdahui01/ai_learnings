@@ -18,7 +18,7 @@ clientx-autopilot/
 ├── code_graph/         Code knowledge graph: Graphify backend + zero-install fallback, queries
 ├── device_farm/        Collector, monitor rules, Farm Doctor, healer policy gate, typed action queue, Mac-side runner, dashboard
 ├── farm-scripts/       Recovery scripts the runner executes on a Mac (emulator, Appium, WDA, mitmproxy, reinstall, quarantine)
-├── scripts/            setup_mac.sh (install SDKs and tools), start_local_farm.sh (boot devices, open the dashboard), quiet_hall_local.sh (build, install and test the sample app)
+├── scripts/            setup_mac.sh (install SDKs and tools), setup_mac_external.sh (one-file installer for a farm Mac that reaches only the public internet), start_local_farm.sh (boot devices, open the dashboard), quiet_hall_local.sh (build, install and test the sample app)
 ├── automation/web/     BDD web automation: Markdown Given/When/Then specs → Playwright
 ├── automation/app/     App automation: Appium for Android emulators, iOS Simulators and real iPhones; mitmproxy
 ├── policies/           Routing, gates (CI + CD), case lifecycle, healing policy, farm policy and commands
