@@ -212,10 +212,16 @@ _local_ip() {   # IPv4 address of the interface of the default route, else of th
 _alive() { local f="${RUN_DIR}/$1.pid" pid=""; [[ -f "$f" ]] || return 1; pid="$(cat "$f" 2>/dev/null || true)"; [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; }
 _spawn() {   # _spawn <name> <command...>: start in the background, PID in ${RUN_DIR}/<name>.pid, output in ${FARM_LOG_DIR}/<name>.log
     local name="$1"; shift
-    if _alive "${name}"; then _ok "${name} already running (pid $(cat "${RUN_DIR}/${name}.pid"))"; return 0; fi
+    # reuse a running process only when it was started with the same command: with another device count the same port belongs
+    # to another device (e.g. Appium 4724 was the iOS simulator's with 1 emulator, the 2nd emulator's with 2) and the old
+    # server kept its old default capabilities (the 2nd emulator's sessions went to the simulator's WDA port)
+    if _alive "${name}"; then
+        if [[ "$(cat "${RUN_DIR}/${name}.cmd" 2>/dev/null || true)" == "$*" ]]; then _ok "${name} already running (pid $(cat "${RUN_DIR}/${name}.pid"))"; return 0; fi
+        _log "${name} runs with other settings: restart"; _kill "${name}"; sleep 2
+    fi
     if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: $*"; return 0; fi
     nohup "$@" >> "${FARM_LOG_DIR}/${name}.log" 2>&1 </dev/null 3<&- &
-    echo $! > "${RUN_DIR}/${name}.pid"
+    echo $! > "${RUN_DIR}/${name}.pid"; echo "$*" > "${RUN_DIR}/${name}.cmd"
     _log "started ${name} (pid $!, log ${FARM_LOG_DIR}/${name}.log)"
 }
 _kill() {   # _kill <name>
@@ -224,6 +230,7 @@ _kill() {   # _kill <name>
     pid="$(cat "$f" 2>/dev/null || true)"
     if [[ -n "${pid}" ]] && kill -0 "${pid}" 2>/dev/null; then kill "${pid}" 2>/dev/null || true; _log "stopped $1 (pid ${pid})"; fi
     rm -f "$f" 2>/dev/null || mv -f "$f" "$f.old" 2>/dev/null || true
+    rm -f "${RUN_DIR}/$1.cmd" 2>/dev/null || true
 }
 _port_open() { nc -z 127.0.0.1 "$1" &>/dev/null || (exec 3<>"/dev/tcp/127.0.0.1/$1") 2>/dev/null; }
 _wait_port() { local n=0; while ! _port_open "$1"; do n=$((n+1)); [[ $n -ge "$2" ]] && return 1; sleep 1; done; return 0; }
@@ -304,8 +311,10 @@ _android_prepare() {   # _android_prepare <serial> <mitm port> <ca hash>: wait f
         _err "$s: adb push of the CA failed"
     fi
     # Chrome: no first-run / welcome screens, or a test that opens a URL stays on FirstRunActivity and never loads it
-    adb -s "$s" shell 'echo "_ --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line; chmod 644 /data/local/tmp/chrome-command-line' &>/dev/null || true
+    adb -s "$s" shell 'echo "_ --disable-fre --no-default-browser-check --no-first-run --disable-features=TranslateUI" > /data/local/tmp/chrome-command-line; chmod 644 /data/local/tmp/chrome-command-line' &>/dev/null || true
     adb -s "$s" shell am set-debug-app --persistent com.android.chrome &>/dev/null || true
+    # with the permission already granted, Chrome does not show its "Chrome notifications make things easier" dialog over the page
+    adb -s "$s" shell pm grant com.android.chrome android.permission.POST_NOTIFICATIONS &>/dev/null || true
     adb -s "$s" shell am force-stop com.android.chrome &>/dev/null || true
     adb -s "$s" shell settings put global http_proxy "${EMULATOR_PROXY_HOST}:${port}" &>/dev/null || true
     if [[ "$(_adb_out "$s" shell settings get global http_proxy)" == "${EMULATOR_PROXY_HOST}:${port}" ]]; then _ok "$s proxy ${EMULATOR_PROXY_HOST}:${port}"; else _err "$s proxy not set"; fi
