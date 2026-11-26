@@ -322,6 +322,19 @@ for runtime, devs in sorted(json.load(sys.stdin).get('devices', {}).items()):
 print(sorted(found)[-1][2] if found else '')" "${IOS_SIM_DEVICE}" 2>/dev/null || true
 }
 
+_open_simulator_window() {   # show the booted simulator. `open -a Simulator` failed silently: on a fresh Xcode the app is not
+    # registered by name, and Xcode 27 has no Simulator.app at all (DeviceHub.app in Contents/Applications replaces it)
+    local dev="" app=""
+    dev="$(xcode-select -p 2>/dev/null || true)"
+    for app in "${dev}/Applications/Simulator.app" "${dev%/Developer}/Applications/DeviceHub.app" "${dev%/Developer}/Applications/Simulator.app"; do
+        if [[ -d "${app}" ]]; then
+            if open -a "${app}" --args -CurrentDeviceUDID "$1" &>/dev/null; then _ok "window: ${app##*/}"; else _log "WARNING: could not open ${app}"; fi
+            return 0
+        fi
+    done
+    _log "WARNING: no Simulator.app / DeviceHub.app in ${dev%/Developer}: the simulator runs without a window (automation still works)"
+}
+
 _net_service() {   # macOS network service (e.g. "Ethernet", "Wi-Fi") of the default route's interface
     local ifc=""; ifc="$(route -n get default 2>/dev/null | awk '/interface:/ {print $2; exit}' || true)"
     [[ -n "${ifc}" ]] || return 0
@@ -408,7 +421,7 @@ farm_start() {
                 xcrun simctl boot "${udid}" &>/dev/null || true
                 if xcrun simctl bootstatus "${udid}" -b &>/dev/null </dev/null; then _ok "simulator ${name} booted (${udid})"; else _err "simulator ${name} did not boot"; fi
                 if xcrun simctl keychain "${udid}" add-root-cert "${CA_PEM}" &>/dev/null </dev/null; then _ok "simulator ${name}: mitmproxy CA trusted"; else _err "simulator ${name}: CA not installed"; fi
-                [[ "${HEADLESS}" == "true" ]] || open -g -a Simulator &>/dev/null || true
+                if [[ "${HEADLESS}" != "true" ]]; then _open_simulator_window "${udid}"; fi
                 echo "${udid}" > "${RUN_DIR}/ios_udid"
             fi
             if [[ "${IOS_SYSTEM_PROXY}" == "true" ]]; then _system_proxy on "${mport}"
