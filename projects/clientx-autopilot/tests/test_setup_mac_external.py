@@ -65,7 +65,8 @@ def test_no_internal_names():
 
 
 def _plan(tmp_path, *args):
-    r = run(tmp_path, "--start", "--dry-run", *args)
+    # --skip-real-ios: the counts must not depend on the iPhones that happen to be plugged into the machine running the tests
+    r = run(tmp_path, "--start", "--dry-run", "--skip-real-ios", *args)
     assert r.returncode == 0, r.stderr
     lines = [line.split("dry-run: ", 1)[1] for line in r.stdout.splitlines() if "dry-run: " in line]
     return r, lines
@@ -110,3 +111,20 @@ def test_stop_and_status_work_with_nothing_running(tmp_path):
     assert run(tmp_path, "--stop").returncode == 0
     r = run(tmp_path, "--status")
     assert r.returncode == 0 and r.stdout.count("down") >= 9
+
+
+def test_real_iphones_get_fixed_ports_their_own_proxy_and_appium(tmp_path):
+    import json, re
+    udids = ["00008110-0000000000000001", "00008110-0000000000000002"]
+    r = run(tmp_path, "--start", "--dry-run", "--skip-android", "--skip-simulator", "--iphones", ",".join(udids))
+    assert r.returncode == 0, r.stdout + r.stderr
+    lines = [line.split("dry-run: ", 1)[1] for line in r.stdout.splitlines() if "dry-run: " in line]
+    proxies = sorted(int(re.search(r"--listen-port (\d+)", l).group(1)) for l in lines if l.startswith("mitmdump"))
+    appiums = [l for l in lines if l.startswith("appium server")]
+    assert proxies == [8300, 8301]                                     # 8300 + slot: the phone's Wi-Fi proxy port
+    assert sorted(int(re.search(r"--port (\d+)", l).group(1)) for l in appiums) == [4800, 4801]
+    caps = [json.loads(l[l.index("{"):l.rindex("}") + 1]) for l in appiums]
+    assert {c["appium:udid"] for c in caps} == set(udids)
+    assert all(c["appium:usePreinstalledWDA"] and c["platformName"] == "iOS" for c in caps)
+    assert sorted(c["appium:wdaLocalPort"] for c in caps) == [8400, 8401]
+    assert sorted(os.listdir(tmp_path)) == ["logs"]                  # --dry-run does not write the slot file
