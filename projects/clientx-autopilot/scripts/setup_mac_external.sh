@@ -447,8 +447,16 @@ _tunnel_start() {
     if ! sudo -n "${NODE_ABS}" "${TUNNEL_SCRIPT}" --help &>/dev/null </dev/null; then
         _err "the iOS device tunnel needs root: run 'bash $0 --admin' once (sudoers line), or in a Terminal: sudo ${NODE_ABS} ${TUNNEL_SCRIPT}"; return 0
     fi
-    _spawn "ios-tunnel" sudo -n "${NODE_ABS}" "${TUNNEL_SCRIPT}" --tunnel-registry-port "${TUNNEL_REGISTRY_PORT}" --disconnect-retry-max-attempts 0
-    if _wait_port "${TUNNEL_REGISTRY_PORT}" 90; then _ok "iOS device tunnel up (registry :${TUNNEL_REGISTRY_PORT}, log ${FARM_LOG_DIR}/ios-tunnel.log)"
+    # The tunnel (root) writes its registry port to ~/Library/Application Support/appium-xcuitest-driver-nodejs/strongbox. Created by
+    # root (and with a restrictive umask) that folder was unreadable for Appium ("EACCES ... tunnelRegistryPort"), which then fell back
+    # to launching WDA as a plain app and every real-iPhone session failed. Create it as the user first; root only writes the file.
+    local box="${HOME}/Library/Application Support/appium-xcuitest-driver-nodejs/strongbox"
+    mkdir -p "${box}"; [[ -f "${box}/tunnelRegistryPort" ]] || printf '%s' "${TUNNEL_REGISTRY_PORT}" > "${box}/tunnelRegistryPort"
+    if [[ ! -r "${box}/tunnelRegistryPort" || ! -O "${box}" ]]; then
+        _err "${box} is not owned by $(id -un) (left by an earlier root tunnel): sudo chown -R $(id -un) \"${box%/strongbox}\""; return 0
+    fi
+    ( umask 022; _spawn "ios-tunnel" sudo -n "${NODE_ABS}" "${TUNNEL_SCRIPT}" --tunnel-registry-port "${TUNNEL_REGISTRY_PORT}" --disconnect-retry-max-attempts 0 )
+    if _wait_port "${TUNNEL_REGISTRY_PORT}" 90 && [[ -r "${box}/tunnelRegistryPort" ]]; then _ok "iOS device tunnel up (registry :${TUNNEL_REGISTRY_PORT}, log ${FARM_LOG_DIR}/ios-tunnel.log)"
     else _err "iOS device tunnel did not come up (${FARM_LOG_DIR}/ios-tunnel.log)"; fi
 }
 _tunnel_stop() {
