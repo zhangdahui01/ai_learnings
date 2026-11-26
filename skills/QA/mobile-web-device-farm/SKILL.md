@@ -100,6 +100,9 @@ changes when phones come and go, so the proxy typed into a phone stays right. `-
 | Appium log: "EACCES ... strongbox/tunnelRegistryPort" | A root tunnel created `~/Library/Application Support/appium-xcuitest-driver-nodejs` as root: `sudo chown -R $USER "~/Library/Application Support/appium-xcuitest-driver-nodejs"`. `--start` now creates it as the user first. |
 | iPhone: `--install-wda` "no Apple ID in Xcode" / signing errors | Sign in (step 4 above); the Apple ID must be in the team that owns the bundle id; several teams: `WDA_TEAM_ID=<id>`. |
 | iPhone "Pairing dialog response pending" / unpaired | Unlock the phone, tap **Trust**, enter the passcode. |
+| Phone has no internet with the proxy on | Check the Server field character by character (a typo such as `172.18.73.159` for `172.18.63.159` sends all traffic nowhere), then that the certificate is trusted (step 5): without it every HTTPS request and iOS's own connectivity check fail. |
+| Safari opens `https://mitm.it` and the download fails | Open `http://<Mac IP>:8399/mitmproxy-ca-cert.pem` instead (served by `--start` when iPhones are connected). |
+| iPhone: "Unable to launch … because the device is locked" | Unlock the phone; set *Display & Brightness → Auto-Lock → Never* on farm phones. |
 | Phone: `http://mitm.it` says traffic not through mitmproxy | Wrong proxy server / port, or phone not on a network that reaches the Mac. |
 | No iOS simulator window | Xcode 27 has no Simulator.app: the farm opens `DeviceHub.app`; automation works without a window. |
 | `simctl create` fails | `xcodebuild -downloadPlatform iOS`; the newest runtime supporting the device type is used. |
