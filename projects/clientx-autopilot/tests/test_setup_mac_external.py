@@ -54,3 +54,51 @@ def test_no_internal_names():
     text = SCRIPT.read_text().lower()
     for word in ("coupa", "cpay", "fintech"):
         assert word not in text
+
+
+def _plan(tmp_path, *args):
+    r = run(tmp_path, "--start", "--dry-run", *args)
+    assert r.returncode == 0, r.stderr
+    lines = [line.split("dry-run: ", 1)[1] for line in r.stdout.splitlines() if "dry-run: " in line]
+    return r, lines
+
+
+def test_start_plans_8_emulators_and_1_simulator_each_with_its_own_proxy_and_appium(tmp_path):
+    import json, re
+    r, lines = _plan(tmp_path)
+    emulators = [l for l in lines if l.startswith("emulator -avd")]
+    proxies = [l for l in lines if l.startswith("mitmdump")]
+    appiums = [l for l in lines if l.startswith("appium server")]
+    assert len(emulators) == 8 and len(proxies) == 9 and len(appiums) == 9
+    assert len({re.search(r"-port (\d+)", l).group(1) for l in emulators}) == 8
+    assert sorted(int(re.search(r"--listen-port (\d+)", l).group(1)) for l in proxies) == list(range(8081, 8090))
+    assert sorted(int(re.search(r"--port (\d+)", l).group(1)) for l in appiums) == list(range(4723, 4732))
+    caps = [json.loads(l[l.index("{"):l.rindex("}") + 1]) for l in appiums]
+    assert [c["platformName"] for c in caps] == ["Android"] * 8 + ["iOS"]
+    assert len({c["appium:udid"] for c in caps}) == 9
+    assert len({c.get("appium:systemPort", c.get("appium:wdaLocalPort")) for c in caps}) == 9
+    # every emulator is told to use its own proxy port
+    for i in range(8):
+        assert f"emulator-{5554 + 2 * i}: wait for boot, adb root, CA into the system store, http_proxy 10.0.2.2:{8081 + i}" in r.stdout
+    assert sorted(os.listdir(tmp_path)) == ["logs"]
+
+
+def test_start_counts_follow_the_options(tmp_path):
+    _, lines = _plan(tmp_path, "--android-count", "2", "--skip-ios")
+    assert sum(l.startswith("emulator -avd") for l in lines) == 2 and sum(l.startswith("appium server") for l in lines) == 2
+    _, lines = _plan(tmp_path, "--avd-names", "a,b,c", "--headless")
+    assert sum(l.startswith("emulator -avd") and "-no-window" in l for l in lines) == 3
+    _, lines = _plan(tmp_path, "--skip-android")
+    assert sum(l.startswith("mitmdump") for l in lines) == 1 and not any(l.startswith("emulator") for l in lines)
+
+
+def test_the_macos_proxy_is_only_touched_on_request(tmp_path):
+    r, _ = _plan(tmp_path)
+    assert "networksetup" not in r.stdout.replace("--ios-system-proxy", "")
+    assert "simulator proxy NOT set" in r.stdout
+
+
+def test_stop_and_status_work_with_nothing_running(tmp_path):
+    assert run(tmp_path, "--stop").returncode == 0
+    r = run(tmp_path, "--status")
+    assert r.returncode == 0 and r.stdout.count("down") >= 9
