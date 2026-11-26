@@ -95,6 +95,49 @@ try:
 except Exception:
     pass
 
+# iOS simulator of the farm: Xcode, license, runtimes, the device, mitmproxy CA in its trust store, WDA built for simulators
+def sim_status():
+    import glob, hashlib, sqlite3, ssl
+    st = {"xcode": first(run("xcodebuild", "-version")), "xcode_select": run("xcode-select", "-p"),
+          "first_launch_done": subprocess.run(["xcodebuild", "-checkFirstLaunchStatus"], capture_output=True).returncode == 0,
+          "runtimes": [], "device": os.environ.get("IOS_SIM_DEVICE", "iPhone 17 Pro"), "exists": False, "udid": "", "state": "",
+          "runtime": "", "ca_trusted": False, "wda_built": False, "window_app": ""}
+    try:
+        for r in json.loads(run("xcrun", "simctl", "list", "runtimes", "-j"))["runtimes"]:
+            if "iOS" in r.get("identifier", ""):
+                st["runtimes"].append(f"{r.get('name')} ({r.get('buildversion', '')}){'' if r.get('isAvailable') else ' unavailable'}")
+        found = []
+        for rt, devs in json.loads(run("xcrun", "simctl", "list", "devices", "-j"))["devices"].items():
+            for d in devs:
+                if d["name"] == st["device"] and "iOS" in rt:
+                    found.append((d["state"] == "Booted", rt, d))
+        if found:
+            booted, rt, d = sorted(found, key=lambda x: (x[0], x[1]))[-1]
+            st.update(exists=True, udid=d["udid"], state=d["state"], runtime=rt.split(".")[-1])
+    except Exception:
+        pass
+    ca = f"{HOME}/.mitmproxy/mitmproxy-ca-cert.pem"
+    if st["udid"] and os.path.exists(ca):
+        der = ssl.PEM_cert_to_DER_cert(open(ca).read())   # iOS 17+ trust store: sha256 column (older: sha1)
+        db = f"{HOME}/Library/Developer/CoreSimulator/Devices/{st['udid']}/data/private/var/protected/trustd/private/TrustStore.sqlite3"
+        try:
+            con = sqlite3.connect(f"file:{db}?mode=ro", uri=True)
+            cols = [c[1] for c in con.execute("pragma table_info(tsettings)")]
+            col, digest = ("sha256", hashlib.sha256(der).digest()) if "sha256" in cols else ("sha1", hashlib.sha1(der).digest())
+            st["ca_trusted"] = any(bytes(r[0]) == digest for r in con.execute(f"select {col} from tsettings"))
+            con.close()
+        except Exception:
+            pass
+    st["wda_built"] = bool(glob.glob(f"{HOME}/Library/Developer/Xcode/DerivedData/WebDriverAgent-*/Build/Products/Debug-iphonesimulator/WebDriverAgentRunner-Runner.app"))
+    dev = st["xcode_select"]
+    for app in (f"{dev}/Applications/Simulator.app", f"{dev.rsplit('/Developer', 1)[0]}/Applications/DeviceHub.app"):
+        if os.path.isdir(app):
+            st["window_app"] = os.path.basename(app); break
+    return st
+
+
+inv["ios_simulator"] = sim_status()
+
 # real iPhones: slot, ports, WDA (from the setup script's guide)
 guide = run("bash", setup, "--iphone-guide", timeout=300)
 m = re.search(r"mitmproxy on this Mac \(([^)]*)\)", guide)
@@ -103,6 +146,21 @@ for line in guide.splitlines():
     m = re.match(r"\s{2}(.+?)\s+([0-9A-F]{8}-[0-9A-F]{16}|[0-9a-f]{40})\s+(\S+:\d+)\s+(installed|MISSING)\s*$", line)
     if m:
         inv["iphones"].append({"name": m.group(1).strip(), "udid": m.group(2), "proxy": m.group(3), "wda": m.group(4)})
+# did the phone really go through its mitmproxy? clients other than this Mac in the proxy's log
+for ph in inv["iphones"]:
+    port = ph["proxy"].rsplit(":", 1)[-1]
+    clients, reqs, rejects = set(), 0, 0
+    try:
+        for line in open(f"{HOME}/logs/farm/mitmproxy-{port}.log", errors="replace"):
+            m = re.search(r"\]\[(\d+\.\d+\.\d+\.\d+):\d+\] ", line)
+            if not m or m.group(1) in ("127.0.0.1", inv["mac_ip"]):
+                continue
+            clients.add(m.group(1))
+            reqs += bool(re.search(r" (GET|POST|PUT|HEAD) https?://", line))
+            rejects += "does not trust the proxy" in line and "disconnected during" not in line
+    except FileNotFoundError:
+        pass
+    ph.update(phone_ips=sorted(clients), phone_requests=reqs, phone_cert_rejections=rejects)
 inv["wda_bundle_id"] = os.environ.get("WDA_BUNDLE_ID", "com.facebook.WebDriverAgentRunner")
 inv["ca"] = f"{HOME}/.mitmproxy/mitmproxy-ca-cert.pem"
 inv["zshrc_block"] = "device-farm (managed by setup_mac_external.sh)" in open(f"{HOME}/.zshrc").read() if os.path.exists(f"{HOME}/.zshrc") else False
