@@ -3,7 +3,13 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts" / "setup_mac_external.sh"
+# the script always loads Homebrew from /opt/homebrew or /usr/local, whatever PATH says: on a Mac that has it, the tools are
+# found (and write their caches into HOME), so the "nothing installed" tests only mean something on a Mac without Homebrew
+HAS_BREW = any(os.access(f"{p}/bin/brew", os.X_OK) for p in ("/opt/homebrew", "/usr/local"))
+needs_no_brew = pytest.mark.skipif(HAS_BREW, reason="Homebrew is installed on this machine: the script finds the real tools")
 
 
 def run(tmp_path, *args):
@@ -27,6 +33,7 @@ def test_help_prints_only_the_header(tmp_path):
     assert "--dry-run" in r.stdout and "set -euo" not in r.stdout and not r.stdout.startswith("#")
 
 
+@needs_no_brew
 def test_check_succeeds_when_nothing_is_installed(tmp_path):
     # it used to exit 1 on a Mac without ~/.appium, which also cut the summary of an install run short
     r = run(tmp_path, "--check")
@@ -44,6 +51,7 @@ def test_unknown_option(tmp_path):
     assert run(tmp_path, "--nope").returncode == 2
 
 
+@needs_no_brew
 def test_dry_run_changes_nothing_and_reaches_the_end(tmp_path):
     r = run(tmp_path, "--dry-run")
     assert "Summary:" in r.stdout and "Still needed from the INTERNAL network" in r.stdout
