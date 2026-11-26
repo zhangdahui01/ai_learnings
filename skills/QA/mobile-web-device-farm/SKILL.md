@@ -111,6 +111,11 @@ changes when phones come and go, so the proxy typed into a phone stays right. `-
 
 ## Tested
 
+Real iPhones, `run_farm_test.sh --skip-android --skip-simulator --test-iphones --url https://www.coupang.com/` (native Safari: no
+Web Inspector needed; "open in app" pop-ups closed; price links tapped): Appium session on 10 of 11 (the 11th was off USB), every one
+with Coupang HTTPS decrypted by its own mitmproxy; home PASS on 10, product page PASS on 7, the rest BLOCKED / FAIL by the site.
+
+
 Mac mini (Apple silicon, 24 GB, macOS 27, Xcode 27.2, iOS 27.2 runtime, Android 16 / API 36 emulators, Appium 3.8, mitmproxy 12) with 11
 real iPhones on USB (iPhone 14 – 18 Pro Max, iPhone Air):
 - `run_farm_test.sh --install --stop-after`: 1 Android + 1 simulator **farm PASS** (site BLOCKED by Akamai for this Mac's IP); 11 iPhones

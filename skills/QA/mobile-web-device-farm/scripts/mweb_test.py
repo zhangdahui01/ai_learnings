@@ -42,7 +42,7 @@ site_host = urllib.parse.urlparse(a.url).hostname or ""
 site_domain = ".".join(site_host.split(".")[-2:])          # e.g. coupang.com: counts www., m., cdn hosts of the site
 search_url = a.search_url.replace("{q}", urllib.parse.quote(a.query))
 # android: emulator-5554 -> android-5554; ios: first 8 characters of the UDID (unique per device)
-tag = (f"android-{a.udid.replace('emulator-', '')}" if a.platform == "android" else f"{a.platform}-{a.udid[:8]}") if a.udid else f"{a.platform}-{a.name}"
+tag = {"android": f"android-{a.udid.replace('emulator-', '')}", "ios": f"ios-{a.udid[:8]}", "iphone": f"iphone-{a.udid}"}[a.platform] if a.udid else f"{a.platform}-{a.name}"
 tag = tag.replace(" ", "_")
 res = {"platform": a.platform, "name": a.name, "udid": a.udid, "appium": a.appium, "mitm_port": a.mitm_port,
        "url": a.url, "search_url": search_url, "query": a.query, "session": False, "steps": [], "error": ""}
@@ -73,7 +73,7 @@ d = None
 try:
     opts = AppiumOptions()
     opts.set_capability("appium:newCommandTimeout", 180)      # platform, udid and ports come from the server's defaults
-    if a.platform in ("ios", "iphone"):
+    if a.platform == "ios":   # simulator: Safari web context; real iPhones: native Safari (no Web Inspector needed)
         opts.set_capability("browserName", "Safari")
         opts.set_capability("appium:wdaLaunchTimeout", 600000)   # the first session builds WebDriverAgent (minutes)
         opts.set_capability("appium:wdaConnectionTimeout", 600000)
@@ -84,7 +84,7 @@ try:
     if a.platform == "android":
         def dismiss_chrome_prompts():
             # Chrome promos / dialogs over the page (notifications, sign-in, translate) hide the URL bar from UiAutomator
-            for _ in range(3):
+            for _ in range(2):
                 hit = False
                 for txt in ("No thanks", "No, thanks", "Not now", "Skip", "Dismiss", "Got it"):
                     for el in d.find_elements(AppiumBy.XPATH, f"//*[@text='{txt}' and @clickable='true']"):
@@ -126,6 +126,99 @@ try:
                     record(d, "product", "BLOCKED", "access denied by the site", u)
                 else:
                     record(d, "product", "PASS" if "product" in u or a.product_pattern in u else "FAIL", "product page", u)
+    elif a.platform == "iphone":
+        # Native Safari: the web context of a real iPhone needs Settings > Safari > Advanced > Web Inspector ON on every phone
+        # ("The remote debugger did not return any connected web applications"). The page is read through the accessibility tree
+        # instead, and the product request is confirmed in the phone's own mitmproxy log.
+        SAFARI = "com.apple.mobilesafari"
+
+        def mitm_new(since):
+            try:
+                with open(a.mitm_log, errors="replace") as f:
+                    f.seek(since); return f.read()
+            except FileNotFoundError:
+                return ""
+
+        def open_url(u):
+            d.execute_script("mobile: deepLink", {"url": u, "bundleId": SAFARI})
+            time.sleep(8)
+
+        def page_text():
+            src = d.page_source
+            return src, " ".join(re.findall(r'(?:label|value)="([^"]{2,200})"', src))
+
+        def address():
+            for el in d.find_elements(AppiumBy.IOS_PREDICATE, "name IN {'URL', 'TabBarItemTitle', 'UnifiedTabBarItemView', 'Address'}"):
+                v = el.get_attribute("value") or el.get_attribute("label") or ""
+                if v:
+                    return v
+            return ""
+
+        win = d.get_window_size()
+
+        def dismiss_overlays():
+            # "open in the app" banners / coupon pop-ups cover the result list (e.g. 쿠팡앱으로 보기 with a close button)
+            for _ in range(3):
+                hit = False
+                for el in d.find_elements(AppiumBy.IOS_PREDICATE,
+                        "visible == 1 AND (type IN {'XCUIElementTypeButton', 'XCUIElementTypeLink', 'XCUIElementTypeImage'}) AND "
+                        "(label IN {'닫기', 'Close', 'close', '×', 'X', '✕', '오늘 하루 보지 않기', '다음에 할게요', 'Not now', 'No thanks'} "
+                        "OR name CONTAINS[c] 'close' OR label CONTAINS '닫기')"):
+                    try:
+                        el.click(); hit = True; time.sleep(1)
+                    except Exception:
+                        pass
+                if not hit:
+                    # unlabeled close icon ("✕") in the top-right corner of a web pop-up: it has no label (not even ''), and an
+                    # element click does not reach web content, so find it in the page source and tap its centre
+                    for m in re.finditer(r"<XCUIElementTypeButton ([^>]*)>", d.page_source):
+                        g = dict(re.findall(r'(\w+)="([^"]*)"', m.group(1)))
+                        x, y, w, h = (int(g.get(k, 0) or 0) for k in ("x", "y", "width", "height"))
+                        if g.get("visible") == "true" and not g.get("label") and 0 < w <= 48 and 0 < h <= 48 \
+                                and x > win["width"] * 0.7 and y < win["height"] * 0.3:
+                            d.execute_script("mobile: tap", {"x": x + w / 2, "y": y + h / 2}); hit = True; time.sleep(1.5); break
+                if not hit:
+                    return
+
+        def product_links():
+            # product tiles carry a price: a digit right before 원 ("1,575,200원") or ₩; "회원가입" (sign-up) also contains 원
+            return d.find_elements(AppiumBy.IOS_PREDICATE,
+                                   "type == 'XCUIElementTypeLink' AND visible == 1 AND (label MATCHES '.*[0-9]원.*' OR label CONTAINS '₩')")
+
+        try:
+            d.execute_script("mobile: unlock")
+        except Exception:
+            pass
+        off = os.path.getsize(a.mitm_log) if os.path.exists(a.mitm_log) else 0
+        open_url(a.url)
+        src, txt = page_text()
+        home_seen = site_domain in mitm_new(off) or site_domain in address()
+        record(d, "home", "BLOCKED" if blocked(txt) else ("PASS" if home_seen else "FAIL"),
+               "home page" if home_seen else "no request to the site (proxy / network?)", address())
+        off = os.path.getsize(a.mitm_log) if os.path.exists(a.mitm_log) else 0
+        open_url(search_url)
+        src, txt = page_text()
+        if blocked(txt):
+            record(d, "search", "BLOCKED", "access denied by the site", address())
+        else:
+            dismiss_overlays()
+            links = product_links()
+            for _ in range(3):
+                if links:
+                    break
+                d.execute_script("mobile: swipe", {"direction": "up"}); time.sleep(1.5); dismiss_overlays()
+                links = product_links()
+            record(d, "search", "PASS" if links else "FAIL", f"{len(links)} product links (with a price)" if links else "no product link visible", address())
+            if links:
+                off = os.path.getsize(a.mitm_log) if os.path.exists(a.mitm_log) else 0
+                r = links[0].rect   # tap the tile (an element click does not reach web content)
+                d.execute_script("mobile: tap", {"x": r["x"] + min(r["width"], 160) / 2, "y": r["y"] + min(r["height"], 40) / 2}); time.sleep(8)
+                dismiss_overlays()
+                src, txt = page_text()
+                hit = re.search(r"(?:GET|POST) (https?://\S*" + re.escape(a.product_pattern) + r"\S*)", mitm_new(off))
+                st = "BLOCKED" if blocked(txt) else ("PASS" if hit else "FAIL")
+                record(d, "product", st, "access denied by the site" if st == "BLOCKED" else ("product page" if hit else "no product request seen"),
+                       hit.group(1)[:150] if hit else address())
     else:
         d.set_page_load_timeout(90)
         d.get(a.url)

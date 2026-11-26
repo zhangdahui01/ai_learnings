@@ -123,7 +123,7 @@ if [[ "${REPORT_ONLY}" != "true" ]]; then
     while IFS='|' read -r platform name udid appium mport; do
         [[ -n "${platform}" ]] || continue
         if [[ "${platform}" == "iphone" && "${TEST_IPHONES}" != "true" ]]; then continue; fi
-        if [[ "${platform}" == "android" ]]; then tag="android-${udid#emulator-}"; else tag="${platform}-$(echo "${udid}" | cut -c1-8)"; fi
+        case "${platform}" in android) tag="android-${udid#emulator-}" ;; iphone) tag="iphone-${udid}" ;; *) tag="${platform}-$(echo "${udid}" | cut -c1-8)" ;; esac
         "${VENV}/bin/python" "${HERE}/mweb_test.py" --platform "${platform}" --name "${name}" --udid "${udid}" --appium "${appium}" \
             --mitm-log "${HOME}/logs/farm/mitmproxy-${mport}.log" --mitm-port "${mport}" --url "${URL}" --search-url "${SEARCH_URL}" \
             --query "${QUERY}" --product-pattern "${PRODUCT_PATTERN}" --shots "${OUT}/shots" --out "${OUT}/results/${tag}.json" \
