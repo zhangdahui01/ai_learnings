@@ -5,6 +5,9 @@ Android: UiAutomator2 drives Chrome like a user (deep links + taps, no chromedri
          chromedriver-controlled Chrome).
 iOS:     XCUITest drives Safari (web context).
 
+Real iPhone (--platform iphone): Safari through XCUITest and the preinstalled WDA; its Wi-Fi proxy is set by hand on the phone, so
+         no traffic in its mitmproxy means "proxy not set on the phone", not a farm failure.
+
 Steps: home page -> search -> first product page. Each step is PASS, BLOCKED (the site answered with an access-denied / bot
 protection page) or FAIL. Writes one JSON result file; screenshots go to --shots.
 """
@@ -20,7 +23,7 @@ REQ_RE = re.compile(r" (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS) https?://([^/:\s
 REJECT = "does not trust the proxy's certificate"
 
 p = argparse.ArgumentParser()
-p.add_argument("--platform", required=True, choices=["android", "ios"])
+p.add_argument("--platform", required=True, choices=["android", "ios", "iphone"], help="ios = simulator, iphone = real device (USB)")
 p.add_argument("--name", default="")
 p.add_argument("--udid", default="")
 p.add_argument("--appium", required=True, help="Appium server URL of the device, e.g. http://127.0.0.1:4723")
@@ -39,7 +42,7 @@ site_host = urllib.parse.urlparse(a.url).hostname or ""
 site_domain = ".".join(site_host.split(".")[-2:])          # e.g. coupang.com: counts www., m., cdn hosts of the site
 search_url = a.search_url.replace("{q}", urllib.parse.quote(a.query))
 # android: emulator-5554 -> android-5554; ios: first 8 characters of the UDID (unique per device)
-tag = (f"android-{a.udid.replace('emulator-', '')}" if a.platform == "android" else f"ios-{a.udid[:8]}") if a.udid else f"{a.platform}-{a.name}"
+tag = (f"android-{a.udid.replace('emulator-', '')}" if a.platform == "android" else f"{a.platform}-{a.udid[:8]}") if a.udid else f"{a.platform}-{a.name}"
 tag = tag.replace(" ", "_")
 res = {"platform": a.platform, "name": a.name, "udid": a.udid, "appium": a.appium, "mitm_port": a.mitm_port,
        "url": a.url, "search_url": search_url, "query": a.query, "session": False, "steps": [], "error": ""}
@@ -70,7 +73,7 @@ d = None
 try:
     opts = AppiumOptions()
     opts.set_capability("appium:newCommandTimeout", 180)      # platform, udid and ports come from the server's defaults
-    if a.platform == "ios":
+    if a.platform in ("ios", "iphone"):
         opts.set_capability("browserName", "Safari")
         opts.set_capability("appium:wdaLaunchTimeout", 600000)   # the first session builds WebDriverAgent (minutes)
         opts.set_capability("appium:wdaConnectionTimeout", 600000)
@@ -172,6 +175,11 @@ res["mitm"] = {"log": a.mitm_log, "requests": sum(hosts.values()), "site_request
                "site_cert_rejections": sum(site_rejected.values())}
 # farm verdict: automation + decrypted traffic work; site verdict: the site itself let the device through
 res["farm_pass"] = bool(res["session"] and res["steps"] and site_reqs > 0 and not site_rejected)
+res["mitm"]["note"] = ""
+if a.platform == "iphone" and site_reqs == 0:
+    # the proxy of a real phone is set by hand: Appium worked, but this phone's traffic does not go through its mitmproxy (yet)
+    res["mitm"]["note"] = "no traffic in this phone's mitmproxy: set its Wi-Fi proxy (see the iPhone proxy section)"
+    res["farm_pass"] = bool(res["session"] and res["steps"])
 res["site_pass"] = bool(res["steps"]) and all(s["status"] == "PASS" for s in res["steps"]) and len(res["steps"]) == 3
 res["seconds"] = round(time.time() - t0, 1)
 with open(a.out, "w") as f:

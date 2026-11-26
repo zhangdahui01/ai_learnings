@@ -1,88 +1,114 @@
 ---
 name: mobile-web-device-farm
-description: Set up a Mac as a mobile device farm and test a mobile website on it - installs Homebrew, Node, Appium (UiAutomator2 + XCUITest), Android SDK, mitmproxy and the shell environment, boots Android emulators and an iOS simulator, starts one mitmproxy and one Appium server per device with the mitmproxy CA trusted, runs an Appium mobile-web test (default m.coupang.com - home, search, product) on every device, and writes an HTML/Markdown report. Use to bring up or verify a farm Mac, or to smoke-test a mobile site through intercepted HTTPS on Android and iOS.
+description: Set up a Mac as a mobile device farm and test on it - installs Homebrew, git, Node, pnpm, Appium (UiAutomator2 + XCUITest), JDK, Android SDK (command line tools, platform-tools, platform, build-tools, system image, emulator), libimobiledevice / ideviceinstaller / ios-deploy / ffmpeg, mitmproxy and the shell environment; boots Android emulators and an iOS simulator and takes in real iPhones over USB (up to all connected, e.g. 11), with one mitmproxy and one Appium server per device; installs WebDriverAgent on iPhones that lack it; guides setting the proxy and mitmproxy certificate on real iPhones by hand; runs an Appium mobile-web test (default m.coupang.com - home, search, product) on every device; writes an HTML report of what is installed, the devices, the results and how to run / stop the farm. Use to bring up or verify a farm Mac, add iPhones to it, or smoke-test a mobile site through intercepted HTTPS on Android and iOS.
 ---
 
 # Mobile-web device farm
 
-One Mac becomes a farm: N Android emulators + 1 iOS simulator, each with its **own mitmproxy** (HTTPS decrypted) and its **own
-Appium server**. Then one Appium test runs on every device and a report says whether the farm works and whether the site let it in.
+One Mac becomes a farm: N Android emulators + 1 iOS simulator + the real iPhones on USB, each with its **own mitmproxy** (HTTPS
+decrypted) and its **own Appium server**. One command runs an Appium test on every device and writes an HTML report.
 
 ```bash
 cd skills/QA/mobile-web-device-farm/scripts
-bash run_farm_test.sh --install --admin      # new Mac: everything (asks the admin password once), farm, test, report
-bash run_farm_test.sh                        # installed Mac: farm, test, report (1 Android + 1 iOS)
-bash run_farm_test.sh --android-count 8      # bigger Mac: 8 Android emulators + 1 iOS simulator
+bash run_farm_test.sh --install --admin      # new Mac: all software + sudo steps (password asked once), farm, test, report
+bash run_farm_test.sh                        # installed Mac: farm (1 Android + 1 simulator + connected iPhones), test, report
+bash run_farm_test.sh --android-count 8      # 8 Android emulators + 1 iOS simulator
+bash run_farm_test.sh --install-wda          # build + install WebDriverAgent on the iPhones that lack it, then the run
+bash run_farm_test.sh --test-iphones         # also run the test on the real iPhones (Safari through WDA)
+bash run_farm_test.sh --report-only          # only the report: installed software, devices, iPhone proxy steps, how to run / stop
 bash run_farm_test.sh --stop-after           # stop everything (and the Mac's system proxy) after the report
-bash setup_mac_external.sh --stop            # stop the farm by hand
+bash setup_mac_external.sh --start --skip-android --skip-simulator   # proxies + Appium for the real iPhones only
+bash setup_mac_external.sh --iphone-guide    # per-iPhone proxy (Mac IP:port), WDA status, certificate steps
+bash setup_mac_external.sh --stop            # stop the farm (or farm-stop)
 ```
 
-The report is `~/device-farm-reports/<run id>/report.html` (self-contained, screenshots embedded) and `report.md`.
+The report: `~/device-farm-reports/<run id>/report.html` (self-contained, screenshots embedded) + `report.md`. Sections: verdict,
+**what is installed** (tools + versions, Android SDK packages, AVDs, Appium drivers, simulators, Homebrew packages), **devices** (Appium
+URL, mitmproxy port, the proxy the device uses, WDA), **test results**, **how to run the farm** (start / test / own Appium tests / watch
+traffic / **stop**), **real iPhones: proxy + certificate** steps with each phone's port, **WebDriverAgent** install steps.
 
-## Before the first run (a person does these)
+## A person does these (Apple ID, passwords, taps on phones)
 
-1. **Xcode** from the App Store (needs an Apple ID): install it and open it once. Without Xcode the Android part still works
-   (`--skip-ios`).
-2. Run as an **admin user in Terminal**: Homebrew and `--admin` ask for the password once. For an unattended run, set `SUDO_ASKPASS`
-   to a helper that prints the password, and delete the helper afterwards.
-3. Copying this folder is enough; `setup_mac_external.sh` reaches only the public internet (`bash setup_mac_external.sh --preflight`
-   lists the hosts).
+1. **Xcode** from the App Store (Apple ID), opened once. Android-only: `--skip-ios`.
+2. **Admin password**: `run_farm_test.sh --install --admin` (or `setup_mac_external.sh --admin`) in Terminal as an admin user, once per
+   Mac. It also writes a sudoers line so the farm can start / stop the **iOS device tunnel** (root) and the Mac's proxy unattended.
+3. **Real iPhones**: unlocked, *Trust This Computer* accepted (with the passcode), *Settings → Privacy & Security → Developer Mode* ON.
+4. **WDA signing** (only for iPhones without WDA): Xcode → *Settings → Accounts* → **+** → Apple ID of the team that owns the WDA bundle
+   id (default `com.coupang.coupay.WebDriverAgentRunner`, change with `WDA_BUNDLE_ID`) → *Manage Certificates* → **+ Apple Development**.
+   Then `run_farm_test.sh --install-wda`. If the phone shows "Untrusted Developer": *Settings → General → VPN & Device Management* → trust.
+5. **Proxy + certificate on each real iPhone** (by hand, below).
+
+## Real iPhones: proxy and mitmproxy certificate (by hand)
+
+Every phone gets a fixed slot in `~/.device-farm/iphones.txt` → mitmproxy `8300+slot`, Appium `4800+slot`, WDA `8400+slot`. The slot never
+changes when phones come and go, so the proxy typed into a phone stays right. `--iphone-guide` prints the table.
+
+1. Start the proxies: `farm-start --skip-android --skip-simulator` (or a full `farm-start`). The phone must reach the Mac's IP (same Wi-Fi /
+   VLAN; the macOS firewall off or allowing `mitmdump`).
+2. iPhone *Settings → Wi-Fi* → **ⓘ** of the connected network → *Configure Proxy* → **Manual** → Server = Mac IP, Port = the phone's port →
+   Save.
+3. **Safari** → `http://mitm.it` → under iOS **Get mitmproxy-ca-cert.pem** → Allow. ("traffic is not passing through mitmproxy" = step 2 wrong.)
+4. *Settings → General → VPN & Device Management* → **mitmproxy** → Install (passcode) → Install → Done.
+5. *Settings → General → About → Certificate Trust Settings* → **mitmproxy ON** → Continue. Without it HTTPS fails.
+6. Check: Safari `https://example.com`; on the Mac `tail -f ~/logs/farm/mitmproxy-<port>.log` shows the request.
+   Undo: proxy **Off**, remove the profile. A phone whose proxy points at a stopped farm has no internet.
 
 ## What each piece does
 
 | Script | Job |
 |---|---|
-| `scripts/setup_mac_external.sh` | Installer and farm control. Install (idempotent): Homebrew, pyenv Python 3.11, Node 22, pnpm, Appium 3 + UiAutomator2 + XCUITest, JDK, Android SDK + system image + AVDs, chromedriver, ffmpeg / libimobiledevice / ios-deploy, mitmproxy + its CA, iPhone simulator; `--admin`: Xcode license / first launch / iOS runtime, sudoers for `networksetup`, no-sleep. Writes every setting and the `farm-start / farm-stop / farm-status / farm-check / farm-devices / farm-logs` commands into a managed block of `~/.zshrc`. `--start / --status / --stop` run the farm. |
-| `scripts/run_farm_test.sh` | One command: (install) → check → Python venv with the Appium client (`~/.device-farm/venv`) → `--start` → `mweb_test.py` on every device in parallel → `make_report.py`. |
-| `scripts/mweb_test.py` | Test of one device: home → search → first product. Android: UiAutomator2 drives Chrome by deep links and taps (not chromedriver: bot protection answers 403 to chromedriver-controlled Chrome). iOS: Safari through XCUITest. Each step is PASS / BLOCKED / FAIL, with a screenshot; counts what the device's mitmproxy decrypted. |
-| `scripts/make_report.py` | `report.html` + `report.md`: verdicts, per-device steps and screenshots, mitmproxy hosts, farm start log, software versions. |
+| `scripts/setup_mac_external.sh` | Installer and farm control. Install (idempotent): Homebrew, git, pyenv Python 3.11, Node 22, pnpm, Appium 3 + UiAutomator2 + XCUITest, JDK, Android command line tools / platform-tools / platform / build-tools / system image / emulator + AVDs, chromedriver, ffmpeg / libimobiledevice / ideviceinstaller / ios-deploy, mitmproxy + CA, iPhone simulator, `~/.zshrc` block (environment + `farm-start / farm-stop / farm-status / farm-check / farm-devices / farm-logs`). `--admin`: Xcode license / first launch / iOS runtime, sudoers (proxy, tunnel), no-sleep. `--start / --status / --stop`, `--install-wda`, `--iphone-guide`. |
+| `scripts/run_farm_test.sh` | One command: (install) → check → venv with the Appium client → (WDA) → `--start` → `mweb_test.py` per device in parallel → `inventory.py` → `make_report.py`. |
+| `scripts/mweb_test.py` | One device: home → search → first product, PASS / BLOCKED / FAIL per step with screenshots, plus what its mitmproxy decrypted. Android: UiAutomator2 drives Chrome by deep links and taps (chromedriver-driven Chrome gets 403 from bot protection) and closes Chrome's prompts. iOS simulator / iPhone: Safari through XCUITest. |
+| `scripts/inventory.py` | Installed tools and versions, SDK packages, AVDs, drivers, simulators, iPhones + WDA → `inventory.json`. |
+| `scripts/make_report.py` | `report.html` + `report.md`. |
 
-## Ports and files (`--start`)
+## Ports
 
-- Android emulator *i* (0-based): adb `emulator-<5554+2i>`, mitmproxy `8081+i` (emulator proxy `10.0.2.2:8081+i`), Appium `4723+i`.
-- iOS simulator after them: mitmproxy `8081+n`, Appium `4723+n`. Each Appium server is bound to its device by default
-  capabilities, so a test needs only the server URL. Device list: `~/.device-farm/devices.json`.
-- Logs: `~/logs/farm/` (`mitmproxy-<port>.log`, `appium-<port>.log`, `emulator-<port>.log`). Watch traffic:
-  `tail -f ~/logs/farm/mitmproxy-8081.log`.
+- Android emulator *i*: `emulator-<5554+2i>`, mitmproxy `8081+i` (emulator proxy `10.0.2.2:8081+i`), Appium `4723+i`.
+- iOS simulator: mitmproxy `8081+n`, Appium `4723+n` (n = emulator count).
+- Real iPhone in slot *s*: mitmproxy `8300+s` (phone proxy `<Mac IP>:8300+s`), Appium `4800+s`, WDA `8400+s`.
+- Appium servers are bound to their device by default capabilities: a test needs only the URL. List: `~/.device-farm/devices.json`.
+  Logs: `~/logs/farm/`.
 
-## How the HTTPS interception is made to work
+## How the HTTPS interception works
 
-- **Android**: `adb root`; the mitmproxy CA goes into the system store (Android 14+: tmpfs over the conscrypt APEX, bind-mounted into
-  zygote and the apps; redone at every start) **and** into the user store — Chrome trusts only its own roots plus user-added CAs, so
-  a system-store-only CA made Chrome reject mitmproxy. Chrome's first-run screens are switched off.
-- **iOS**: `simctl keychain add-root-cert`. The simulator has no proxy of its own: `--ios-system-proxy` (used by `run_farm_test.sh`
-  unless `--no-ios-proxy`) points **the whole Mac's** HTTP/HTTPS proxy at the simulator's mitmproxy until `--stop`. Meanwhile
-  browsers and Python on the Mac see mitmproxy's certificate and complain; `NO_PROXY='*'` helps for command-line tools.
-- Google services (`accounts.google.com`, `*.googleapis.com`) pin their certificates and always fail through mitmproxy: expected.
+- **Android**: `adb root`; CA into the system store (Android 14+: tmpfs over the conscrypt APEX, bind-mounted into zygote and apps; redone
+  at every start) **and** the user store (Chrome trusts only its roots + user CAs). Chrome's first-run, notification and translate prompts
+  are switched off.
+- **iOS simulator**: `simctl keychain add-root-cert`; no proxy of its own → `--ios-system-proxy` (used by `run_farm_test.sh` unless
+  `--no-ios-proxy`) points the **whole Mac's** proxy at it until `--stop`; meanwhile Mac browsers / Python see mitmproxy (`NO_PROXY='*'`).
+- **Real iPhones**: Wi-Fi proxy + certificate by hand (above). Appium starts the preinstalled WDA through the xcuitest driver's **device
+  tunnel** (iOS 17+, root, started by `--start` once `--admin` wrote its sudoers line).
+- Certificate-pinning services (Google, some payment SDKs) always refuse mitmproxy: expected.
 
 ## Reading the report
 
-- **Farm PASS**: every device ran an Appium session and its mitmproxy decrypted the site's HTTPS with no certificate rejection.
-  This is the exit code of `run_farm_test.sh`.
-- **Site PASS / BLOCKED / FAIL**: whether home, search and product pages loaded. **BLOCKED** = the site's bot protection (e.g.
-  Akamai "Access Denied", "사용권한이 없습니다") refused this Mac / IP — not a farm fault; it happens with the proxy off too. Ask the site
-  owners to allowlist the farm IPs, or test a staging environment. Do not try to evade the bot protection.
+- **Farm PASS**: each tested device ran an Appium session and its mitmproxy decrypted the site's HTTPS, no certificate rejection. Real
+  iPhones: no traffic means the phone's proxy is not set — reported as a note, not a failure. This is the exit code.
+- **Site BLOCKED**: the site's bot protection (e.g. Akamai "Access Denied", "사용권한이 없습니다") refused this Mac / IP — also with the
+  proxy off; ask for an allowlist of the farm IPs or use a test environment. Do not try to evade the bot protection.
 - Another site: `--url https://m.example.com/ --search-url 'https://m.example.com/search?q={q}' --query shoes --product-pattern /item/`.
 
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
-| `gh`, `adb`, `appium`: command not found | Open a new Terminal (the `~/.zshrc` block) or `source ~/.zshrc`. |
+| `adb` / `appium` / `gh`: command not found | New Terminal or `source ~/.zshrc`. |
+| iPhone: "Failed to start the preinstalled WebDriverAgent" | The device tunnel is not running: `bash setup_mac_external.sh --admin` once, then `farm-start`; or `sudo /opt/homebrew/bin/node ~/.appium/node_modules/appium-xcuitest-driver/scripts/tunnel-creation.mjs` in a Terminal. |
+| iPhone: `--install-wda` "no Apple ID in Xcode" / signing errors | Sign in (step 4 above); the Apple ID must be in the team that owns the bundle id; several teams: `WDA_TEAM_ID=<id>`. |
+| iPhone "Pairing dialog response pending" / unpaired | Unlock the phone, tap **Trust**, enter the passcode. |
+| Phone: `http://mitm.it` says traffic not through mitmproxy | Wrong proxy server / port, or phone not on a network that reaches the Mac. |
 | No iOS simulator window | Xcode 27 has no Simulator.app: the farm opens `DeviceHub.app`; automation works without a window. |
-| `simctl create` fails | The script picks the newest runtime that supports the device type; download one: `xcodebuild -downloadPlatform iOS`. |
-| Chrome stays on "Welcome to Chrome" | Re-run `--start` (switches the first-run screens off). |
-| "client does not trust the proxy's certificate" for the site | Re-run `--start` (CA injection lasts until the emulator reboots). |
-| pip / curl SSL errors on the Mac during a run | The iOS system proxy: `NO_PROXY='*' <command>`, or `setup_mac_external.sh --stop`. |
+| `simctl create` fails | `xcodebuild -downloadPlatform iOS`; the newest runtime supporting the device type is used. |
+| pip / curl SSL errors on the Mac during a run | The iOS system proxy: `NO_PROXY='*' <command>` or `farm-stop`. |
 | 8 emulators swap on a 24 GB Mac | `EMULATOR_ARGS="-memory 1536 -cores 2"` or fewer emulators. |
 
 ## Tested
 
-Mac mini (Apple silicon, 24 GB, macOS 27, Xcode 27.2, iOS 27.2 runtime, Android 16 / API 36 emulators, Appium 3.8, mitmproxy 12),
-`run_farm_test.sh --install` with 1 Android + 1 iOS and `--android-count 2 --stop-after` with 2 Android + 1 iOS:
-**farm PASS on every device** (Appium session, site HTTPS decrypted by the device's own mitmproxy, 0 certificate rejections).
-Site: home and search loaded on iOS and on a fresh emulator; search / product pages answered BLOCKED (Akamai) to this Mac's IP,
-the same with the proxy off — a site-side block, not a farm fault.
-
-Re-running with another device count is safe: a mitmproxy / Appium process started with other settings (the same port now
-belongs to another device) is restarted instead of reused.
+Mac mini (Apple silicon, 24 GB, macOS 27, Xcode 27.2, iOS 27.2 runtime, Android 16 / API 36 emulators, Appium 3.8, mitmproxy 12) with 11
+real iPhones on USB (iPhone 14 – 18 Pro Max, iPhone Air):
+- `run_farm_test.sh --install --stop-after`: 1 Android + 1 simulator **farm PASS** (site BLOCKED by Akamai for this Mac's IP); 11 iPhones
+  each got their own mitmproxy (8300–8310, reachable on the LAN, `http://mitm.it` serves the CA) and Appium server (4800–4810).
+- WDA present on 7 iPhones; the farm reports the 4 without it (3 × iPhone 18, 1 not yet trusted) and the missing device tunnel.
+- `--android-count 2` after a 1+1 start: stale Appium restarted, farm PASS on all 3 devices.

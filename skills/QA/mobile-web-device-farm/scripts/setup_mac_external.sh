@@ -14,6 +14,8 @@
 #                                                      # into each of them, set the emulators' proxy, start one Appium server per device
 #   bash setup_mac_external.sh --status                # device / mitmproxy / Appium table
 #   bash setup_mac_external.sh --stop                  # stop all of it
+#   bash setup_mac_external.sh --install-wda           # build + install WebDriverAgent on the connected iPhones that lack it
+#   bash setup_mac_external.sh --iphone-guide          # per-iPhone Wi-Fi proxy (Mac IP + port) and certificate steps
 #
 # New Mac, from zero: install Xcode.app (App Store) and open it once, then in a Terminal as an admin user:
 #   bash setup_mac_external.sh --admin                 # Homebrew + all software + Xcode license / iOS runtime (asks the password once)
@@ -33,13 +35,23 @@
 #   --headless              --start: emulators without a window (-no-window), Simulator.app not opened
 #   --ios-system-proxy      --start: point the Mac's own HTTP/HTTPS proxy at the simulator's mitmproxy (the iOS simulator has no proxy
 #                           setting of its own). Changes ALL traffic of this Mac until --stop; needs the sudoers line of --admin
+#   --skip-simulator        --start: no iOS simulator (real iPhones only)
+#   --skip-real-ios         --start: ignore the iPhones connected by USB
+#   --iphones a,b,c         --start / --install-wda / --iphone-guide: only these iPhone UDIDs (default: every connected iPhone)
+#   --force                 --install-wda: also re-install WDA on iPhones that have it
 #   --dry-run               print the commands only
 #
 # Ports (--start): emulator i = 0..n-1 has adb serial emulator-<5554+2i>, mitmproxy 8081+i, Appium 4723+i; the iOS simulator comes
-# after them (mitmproxy 8081+n, Appium 4723+n). Each Appium server is bound to its device through default capabilities (udid,
-# systemPort / wdaLocalPort ...), so a test only needs the server URL. The list is written to ~/.device-farm/devices.json.
+# after them (mitmproxy 8081+n, Appium 4723+n). Real iPhones (USB) get a fixed slot s in ~/.device-farm/iphones.txt (kept when
+# devices come and go, so the proxy typed into a phone stays right): mitmproxy 8300+s (the phone's Wi-Fi proxy: <Mac IP>:8300+s),
+# Appium 4800+s, WDA 8400+s. Each Appium server is bound to its device through default capabilities (udid, systemPort /
+# wdaLocalPort ...), so a test only needs the server URL. The list is written to ~/.device-farm/devices.json.
+# Real iPhones: WDA must be installed (--install-wda; needs an Apple ID of the signing team in Xcode > Settings > Accounts, team
+# WDA_TEAM_ID, bundle id WDA_BUNDLE_ID, installed as <WDA_BUNDLE_ID>.xctrunner); proxy and certificate are set on the phone by hand
+# (--iphone-guide).
 # Environment: MITM_BASE_PORT, APPIUM_BASE_PORT, APPIUM_ADDRESS (127.0.0.1), MITM_LISTEN_HOST (0.0.0.0), EMULATOR_PROXY_HOST
-# (10.0.2.2), EMULATOR_ARGS, MITM_ARGS (e.g. "-s addon.py"), APPIUM_ARGS, BOOT_TIMEOUT (900 s).
+# (10.0.2.2), EMULATOR_ARGS, MITM_ARGS (e.g. "-s addon.py"), APPIUM_ARGS, BOOT_TIMEOUT (900 s), WDA_BUNDLE_ID, WDA_TEAM_ID,
+# IPHONE_MITM_BASE_PORT (8300), IPHONE_APPIUM_BASE_PORT (4800), IPHONE_WDA_BASE_PORT (8400).
 #
 # NOT installed here (cannot come from the public internet, or needs an Apple ID):
 #   - Xcode.app (install it first; --admin then does the license, first launch, runtime and xcode-select)
@@ -59,16 +71,23 @@ ANDROID_API="${ANDROID_API:-36}"
 CHROMEDRIVER_VERSIONS="${CHROMEDRIVER_VERSIONS:-133.0.6943.141}"   # one per Chrome major on the emulator images, space separated
 IOS_SIM_DEVICE="${IOS_SIM_DEVICE:-iPhone 17 Pro}"
 IOS_SIM_DEVICE_TYPE="${IOS_SIM_DEVICE_TYPE:-com.apple.CoreSimulator.SimDeviceType.iPhone-17-Pro}"
-BREW_FORMULAE=(xz openssl@3 pyenv "node@${NODE_MAJOR}" mitmproxy)
-BREW_FORMULAE_IOS=(ffmpeg libimobiledevice libusbmuxd ios-deploy)
+BREW_FORMULAE=(git xz openssl@3 pyenv "node@${NODE_MAJOR}" mitmproxy)
+BREW_FORMULAE_IOS=(ffmpeg libimobiledevice libusbmuxd ideviceinstaller ios-deploy)
 BREW_CASKS_ANDROID=(temurin android-commandlinetools)
 SUDOERS_NAME="${SUDOERS_NAME:-device-farm-agent}"   # file name in /etc/sudoers.d (--admin)
+WDA_BUNDLE_ID="${WDA_BUNDLE_ID:-com.facebook.WebDriverAgentRunner}"   # real iPhones: bundle id of WDA (installed as <id>.xctrunner)
+WDA_TEAM_ID="${WDA_TEAM_ID:-}"                                       # Apple developer team that signs WDA (default: the one in Xcode)
 
 ADMIN=false; AGENT_USER="$(id -un)"; SKIP_ANDROID=false; SKIP_IOS=false; AVD_NAMES=""; ANDROID_COUNT="${ANDROID_COUNT:-8}"; HEADLESS=false; IOS_SYSTEM_PROXY=false; REPO_DIR=""; INSTALL_BREW=false; DRY_RUN=false; MODE="install"
+SKIP_SIM=false; SKIP_REAL_IOS=false; IPHONES="${IPHONES:-}"; FORCE=false
 _need_value() { [[ $# -ge 2 && -n "$2" && "$2" != --* ]] || { echo "option $1 needs a value" >&2; exit 2; }; }
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --list|--preflight|--check|--start|--stop|--status) MODE="${1#--}" ;;
+        --list|--preflight|--check|--start|--stop|--status|--install-wda|--iphone-guide) MODE="${1#--}" ;;
+        --skip-simulator) SKIP_SIM=true ;;
+        --skip-real-ios) SKIP_REAL_IOS=true ;;
+        --iphones) _need_value "$@"; IPHONES="$2"; shift ;;
+        --force) FORCE=true ;;
         --android-count) _need_value "$@"; ANDROID_COUNT="$2"; shift ;;
         --headless) HEADLESS=true ;;
         --ios-system-proxy) IOS_SYSTEM_PROXY=true ;;
@@ -152,12 +171,13 @@ _drivers() { appium driver list --installed 2>&1 || true; }
 _has_line() { local text="$1"; shift; grep "$@" <<<"${text}" >/dev/null; }
 
 cmd_check() {
-    for c in brew pyenv python3 node npm pnpm appium mitmdump; do
+    for c in brew git pyenv python3 node npm pnpm appium mitmdump; do
         if _have "$c"; then echo "present  $c  $(_ver "$c" --version)"; else echo "MISSING  $c"; fi
     done
+    if /usr/libexec/java_home &>/dev/null; then echo "present  java  $(/usr/libexec/java_home)"; else echo "MISSING  java"; fi
     if [[ "${SKIP_ANDROID}" != "true" ]]; then for c in adb sdkmanager emulator avdmanager; do
         if _have "$c"; then echo "present  $c"; else echo "MISSING  $c"; fi; done; fi
-    if [[ "${SKIP_IOS}" != "true" ]]; then for c in idevice_id ios-deploy ffmpeg iproxy xcodebuild; do
+    if [[ "${SKIP_IOS}" != "true" ]]; then for c in idevice_id ideviceinstaller ios-deploy ffmpeg iproxy xcodebuild; do
         if _have "$c"; then echo "present  $c"; else echo "MISSING  $c"; fi; done; fi
     # was `[[ -d ... ]] && appium ...`: on a Mac without Appium that made the function return 1, so `--check` exited 1 and, with
     # `set -e -o pipefail`, the install run stopped at the summary before its last lines
@@ -369,18 +389,152 @@ _system_proxy() {   # _system_proxy on <port> | off     (the iOS simulator has n
     fi
 }
 
+
+# ---------------- real iPhones (USB) ----------------
+IPHONE_MITM_BASE_PORT="${IPHONE_MITM_BASE_PORT:-8300}"; IPHONE_APPIUM_BASE_PORT="${IPHONE_APPIUM_BASE_PORT:-4800}"; IPHONE_WDA_BASE_PORT="${IPHONE_WDA_BASE_PORT:-8400}"
+IPHONES_FILE="${FARM_DIR}/iphones.txt"   # udid|slot|name: a fixed slot per phone, so its ports never change
+_iphone_name() {   # device name: lockdown when paired, else Xcode's device list (works before "Trust This Computer")
+    local n; n="$(ideviceinfo -u "$1" -k DeviceName 2>/dev/null || true)"
+    if [[ -z "${n}" ]]; then
+        local j; j="$(mktemp)"; xcrun devicectl list devices --json-output "${j}" &>/dev/null </dev/null || true
+        n="$(python3 -c "import json,sys; print(next((d['deviceProperties']['name'] for d in json.load(open(sys.argv[1]))['result']['devices'] if d.get('hardwareProperties',{}).get('udid')==sys.argv[2]),''))" "${j}" "$1" 2>/dev/null || true)"
+        rm -f "${j}"
+    fi
+    echo "${n}"
+}
+_iphones() {   # udid|slot|name of the connected (or --iphones) iPhones; new phones get the next free slot
+    [[ "${SKIP_IOS}" == "true" || "${SKIP_REAL_IOS}" == "true" ]] && return 0
+    _have idevice_id || return 0
+    local u ids slot name max file="${IPHONES_FILE}" extra=0
+    if [[ -n "${IPHONES}" ]]; then ids="${IPHONES//,/ }"; else ids="$(idevice_id -l 2>/dev/null | awk 'NF && !seen[$1]++ {print $1}' || true)"; fi
+    if [[ "${DRY_RUN}" == "true" ]]; then [[ -f "${file}" ]] || file=/dev/null   # --dry-run writes nothing
+    else mkdir -p "${FARM_DIR}"; touch "${file}"; fi
+    for u in ${ids}; do
+        slot="$(awk -F'|' -v u="$u" '$1==u {print $2; exit}' "${file}")"
+        if [[ -n "${slot}" ]]; then awk -F'|' -v u="$u" '$1==u {print; exit}' "${file}"; continue; fi
+        max="$(awk -F'|' 'BEGIN {m=-1} $2+0>m {m=$2+0} END {print m}' "${file}")"; slot=$((max + 1 + extra))
+        if [[ "${DRY_RUN}" == "true" ]]; then extra=$((extra + 1)); echo "${u}|${slot}|iPhone-${slot}"; continue; fi
+        name="$(_iphone_name "$u")"; name="${name//|/ }"
+        echo "${u}|${slot}|${name:-iPhone-${slot}}" >> "${file}"; echo "${u}|${slot}|${name:-iPhone-${slot}}"
+    done
+}
+_iphone_has_wda() {   # _iphone_has_wda <udid>: WDA (<WDA_BUNDLE_ID>.xctrunner) installed?
+    local out; out="$(mktemp)"
+    xcrun devicectl device info apps --device "$1" --bundle-id "${WDA_BUNDLE_ID}.xctrunner" --json-output "${out}" &>/dev/null </dev/null || true
+    python3 -c "import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))['result']['apps'] else 1)" "${out}" 2>/dev/null; local rc=$?
+    rm -f "${out}"; return ${rc}
+}
+_xcode_teams() {   # teamID|teamName|personal of the developer teams of the Apple IDs signed in to Xcode
+    defaults export com.apple.dt.Xcode - 2>/dev/null | python3 -c "
+import plistlib, sys
+d = plistlib.loads(sys.stdin.buffer.read()); seen = set()
+for teams in (d.get('IDEProvisioningTeamByIdentifier') or {}).values():
+    for t in teams:
+        k = t.get('teamID')
+        if k and k not in seen:
+            seen.add(k); print(f\"{k}|{t.get('teamName', '')}|{'personal' if t.get('isFreeProvisioningTeam') else 'paid'}\")" 2>/dev/null || true
+}
+# Real iPhones on iOS 17+: Appium starts the preinstalled WDA through RemoteXPC, which needs the device tunnel of the xcuitest
+# driver running as root (without it WDA is launched as a plain app and quits at once: "Failed to start the preinstalled WebDriverAgent").
+TUNNEL_SCRIPT_REL=".appium/node_modules/appium-xcuitest-driver/scripts/tunnel-creation.mjs"; TUNNEL_SCRIPT="${HOME}/${TUNNEL_SCRIPT_REL}"
+TUNNEL_REGISTRY_PORT="${TUNNEL_REGISTRY_PORT:-42314}"
+NODE_ABS="$(for p in /opt/homebrew /usr/local; do [[ -x "${p}/bin/node" ]] && { echo "${p}/bin/node"; break; }; done)"; NODE_ABS="${NODE_ABS:-/opt/homebrew/bin/node}"
+_tunnel_start() {
+    if _port_open "${TUNNEL_REGISTRY_PORT}"; then _ok "iOS device tunnel running (registry :${TUNNEL_REGISTRY_PORT})"; return 0; fi
+    if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: sudo -n ${NODE_ABS} ${TUNNEL_SCRIPT}"; return 0; fi
+    [[ -f "${TUNNEL_SCRIPT}" ]] || { _err "xcuitest tunnel script missing (${TUNNEL_SCRIPT}): run this script without --start"; return 0; }
+    # `sudo -n -l <cmd>` says "allowed" even when a password would be asked: try the command itself (--help exits at once)
+    if ! sudo -n "${NODE_ABS}" "${TUNNEL_SCRIPT}" --help &>/dev/null </dev/null; then
+        _err "the iOS device tunnel needs root: run 'bash $0 --admin' once (sudoers line), or in a Terminal: sudo ${NODE_ABS} ${TUNNEL_SCRIPT}"; return 0
+    fi
+    _spawn "ios-tunnel" sudo -n "${NODE_ABS}" "${TUNNEL_SCRIPT}" --tunnel-registry-port "${TUNNEL_REGISTRY_PORT}" --disconnect-retry-max-attempts 0
+    if _wait_port "${TUNNEL_REGISTRY_PORT}" 90; then _ok "iOS device tunnel up (registry :${TUNNEL_REGISTRY_PORT}, log ${FARM_LOG_DIR}/ios-tunnel.log)"
+    else _err "iOS device tunnel did not come up (${FARM_LOG_DIR}/ios-tunnel.log)"; fi
+}
+_tunnel_stop() {
+    _port_open "${TUNNEL_REGISTRY_PORT}" || { rm -f "${RUN_DIR}/ios-tunnel.pid" "${RUN_DIR}/ios-tunnel.cmd"; return 0; }
+    if sudo -n /usr/bin/pkill -f tunnel-creation.mjs &>/dev/null; then _log "stopped the iOS device tunnel"; else _log "WARNING: could not stop the iOS device tunnel (sudo pkill -f tunnel-creation.mjs)"; fi
+    rm -f "${RUN_DIR}/ios-tunnel.pid" "${RUN_DIR}/ios-tunnel.cmd"
+}
+_wda_project() { ls -d "${HOME}"/.appium/node_modules/appium-xcuitest-driver/node_modules/appium-webdriveragent/WebDriverAgent.xcodeproj 2>/dev/null | head -1; }
+
+install_wda() {   # build WebDriverAgent signed by the Xcode team and install it on the iPhones that lack it
+    local proj team teams line u slot name app log n=0
+    _log "=== WebDriverAgent ${WDA_BUNDLE_ID} on real iPhones ==="
+    proj="$(_wda_project)"; [[ -n "${proj}" ]] || { _err "WebDriverAgent project not found: install the xcuitest driver first (run this script)"; return 0; }
+    team="${WDA_TEAM_ID}"
+    if [[ -z "${team}" ]]; then
+        teams="$(_xcode_teams)"
+        if [[ -z "${teams}" ]]; then _err "no Apple ID in Xcode: open Xcode > Settings > Accounts > + > Apple ID, sign in with an account of the team that owns ${WDA_BUNDLE_ID}, then re-run"; return 0; fi
+        if [[ "$(echo "${teams}" | grep -c .)" -gt 1 ]]; then
+            team="$(echo "${teams}" | awk -F'|' '$3=="paid" {print $1; exit}')"
+            _log "several teams in Xcode (using ${team}; choose with WDA_TEAM_ID=<id>):"; echo "${teams}" | sed 's/^/    /'
+        else team="${teams%%|*}"; fi
+    fi
+    _ok "signing team ${team}"
+    mkdir -p "${FARM_LOG_DIR}"
+    while IFS='|' read -r u slot name <&3; do
+        n=$((n+1))
+        if [[ "${FORCE}" != "true" ]] && _iphone_has_wda "$u"; then _ok "${name}: WDA already installed"; continue; fi
+        log="${FARM_LOG_DIR}/wda-build-${u}.log"
+        _log "${name} (${u}): building WDA (first build takes a few minutes, log ${log})"
+        if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: xcodebuild build-for-testing -destination id=${u} DEVELOPMENT_TEAM=${team} PRODUCT_BUNDLE_IDENTIFIER=${WDA_BUNDLE_ID}; devicectl install"; continue; fi
+        if xcodebuild build-for-testing -project "${proj}" -scheme WebDriverAgentRunner -destination "id=${u}" \
+            -derivedDataPath "${FARM_DIR}/wda-build" -allowProvisioningUpdates -allowProvisioningDeviceRegistration \
+            DEVELOPMENT_TEAM="${team}" CODE_SIGN_STYLE=Automatic PRODUCT_BUNDLE_IDENTIFIER="${WDA_BUNDLE_ID}" > "${log}" 2>&1 </dev/null; then
+            app="$(ls -d "${FARM_DIR}"/wda-build/Build/Products/*-iphoneos/WebDriverAgentRunner-Runner.app 2>/dev/null | head -1)"
+            if xcrun devicectl device install app --device "$u" "${app}" >> "${log}" 2>&1 </dev/null && _iphone_has_wda "$u"; then _ok "${name}: WDA installed (${WDA_BUNDLE_ID}.xctrunner)"
+            else _err "${name}: WDA install failed (${log})"; fi
+        else
+            _err "${name}: WDA build failed: $(grep -E 'error:' "${log}" | head -2 | tr '\n' ' ') (${log})"
+        fi
+    done 3< <(_iphones)
+    [[ ${n} -gt 0 ]] || _err "no iPhone connected by USB (idevice_id -l)"
+    _log "first start on each phone: Settings > General > VPN & Device Management > trust the developer app of team ${team} if iOS asks"
+}
+
+iphone_guide() {   # per-iPhone proxy and certificate steps (task: proxy + mitmproxy CA set by hand on real phones)
+    local ip u slot name; ip="$(_local_ip)"
+    echo "Real iPhones -> mitmproxy on this Mac (${ip:-<no IP>}). On each phone (same network as the Mac):"
+    printf '  %-48s %-26s %-22s %s\n' PHONE UDID "WI-FI PROXY (manual)" "WDA"
+    while IFS='|' read -r u slot name <&3; do
+        printf '  %-48.48s %-26.26s %-22s %s\n' "${name}" "${u}" "${ip}:$((IPHONE_MITM_BASE_PORT + slot))" "$(_iphone_has_wda "$u" && echo installed || echo MISSING)"
+    done 3< <(_iphones | sort -t'|' -k2 -n)
+    cat <<EOF
+
+  1. Start the proxies: bash $0 --start --skip-android --skip-simulator   (one mitmproxy per phone, ports above)
+  2. iPhone: Settings > Wi-Fi > (i) of the connected network > Configure Proxy > Manual
+       Server: ${ip}   Port: <the phone's port above>   Authentication: off   > Save
+  3. iPhone Safari: open http://mitm.it  > "Get mitmproxy-ca-cert.pem" under Apple > Allow (profile downloaded)
+  4. Settings > General > VPN & Device Management > mitmproxy > Install (passcode) > Install > Done
+  5. Settings > General > About > Certificate Trust Settings > switch ON "mitmproxy" > Continue
+  6. Check: Safari https://example.com loads; on the Mac: tail -f ~/logs/farm/mitmproxy-<port>.log shows the request
+  Undo: Configure Proxy > Off; Settings > General > VPN & Device Management > mitmproxy > Remove Profile.
+  Apps that pin certificates (e.g. Google, banking SDKs) still refuse mitmproxy: expected.
+EOF
+}
+
+_proxy_host() {   # _proxy_host <kind> <mac ip>: the proxy host as the device sees it
+    if [[ "$1" == "android" ]]; then echo "${EMULATOR_PROXY_HOST}"; elif [[ "$1" == "iphone" ]]; then echo "$2"; else echo 127.0.0.1; fi
+}
+
 farm_plan() {   # one line per device: kind|name|serial|mitm port|appium port|extra port
     local i=0 a n; n="$(_avd_count)"
     if [[ "${SKIP_ANDROID}" != "true" ]]; then for a in $(_avd_names); do
         echo "android|${a}|emulator-$((5554 + 2*i))|$((MITM_BASE_PORT + i))|$((APPIUM_BASE_PORT + i))|$((8200 + i))"; i=$((i+1))
     done; else n=0; fi
-    if [[ "${SKIP_IOS}" != "true" ]]; then echo "ios|${IOS_SIM_DEVICE}|-|$((MITM_BASE_PORT + n))|$((APPIUM_BASE_PORT + n))|$((8100 + n))"; fi
+    if [[ "${SKIP_IOS}" != "true" && "${SKIP_SIM}" != "true" ]]; then echo "ios|${IOS_SIM_DEVICE}|-|$((MITM_BASE_PORT + n))|$((APPIUM_BASE_PORT + n))|$((8100 + n))"; fi
+    local u slot nm
+    while IFS='|' read -r u slot nm; do
+        [[ -n "${u}" ]] && echo "iphone|${nm}|${u}|$((IPHONE_MITM_BASE_PORT + slot))|$((IPHONE_APPIUM_BASE_PORT + slot))|$((IPHONE_WDA_BASE_PORT + slot))"
+    done < <(_iphones | sort -t'|' -k2 -n)
+    return 0
 }
 
 farm_start() {
     local ip="" hash="" line kind name serial mport aport xport caps udid="" code idx=0 running=""
     _run mkdir -p "${RUN_DIR}" "${FARM_LOG_DIR}"
-    _log "=== Farm start: $(_avd_count) Android emulator(s)$([[ "${SKIP_ANDROID}" == "true" ]] && echo " skipped"), iOS simulator $([[ "${SKIP_IOS}" == "true" ]] && echo skipped || echo "${IOS_SIM_DEVICE}") ==="
+    _log "=== Farm start: $([[ "${SKIP_ANDROID}" == "true" ]] && echo "Android skipped" || echo "$(_avd_count) Android emulator(s)"), iOS simulator $([[ "${SKIP_IOS}" == "true" || "${SKIP_SIM}" == "true" ]] && echo skipped || echo "${IOS_SIM_DEVICE}"), $(farm_plan | grep -c '^iphone|' || true) real iPhone(s) ==="
     if [[ "${DRY_RUN}" != "true" ]]; then
         for c in appium mitmdump curl; do _have "$c" || { _err "$c is not installed: run this script without --start first"; return 0; }; done
         if [[ "${SKIP_ANDROID}" != "true" ]]; then for c in adb emulator avdmanager; do _have "$c" || { _err "$c is not installed: run this script without --start first"; return 0; }; done; fi
@@ -419,7 +573,7 @@ farm_start() {
         done 3< <(farm_plan)
     fi
 
-    if [[ "${SKIP_IOS}" != "true" ]]; then
+    if [[ "${SKIP_IOS}" != "true" && "${SKIP_SIM}" != "true" ]]; then
         _log "--- iOS simulator: boot, CA ---"
         while IFS='|' read -r kind name serial mport aport xport <&3; do
             [[ "${kind}" == "ios" ]] || continue
@@ -438,10 +592,23 @@ farm_start() {
         done 3< <(farm_plan)
     fi
 
+    if _has_line "$(farm_plan)" '^iphone|'; then
+        _log "--- real iPhones: WDA check; Wi-Fi proxy and certificate are set on the phone by hand (--iphone-guide) ---"
+        while IFS='|' read -r kind name serial mport aport xport <&3; do
+            [[ "${kind}" == "iphone" ]] || continue
+            if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: ${name}: WDA check, proxy ${ip}:${mport}"; continue; fi
+            if _iphone_has_wda "${serial}"; then _ok "${name}: WDA ${WDA_BUNDLE_ID}.xctrunner, phone proxy -> ${ip}:${mport}"
+            else _err "${name}: no WDA ${WDA_BUNDLE_ID}.xctrunner: bash $0 --install-wda --iphones ${serial}"; fi
+        done 3< <(farm_plan)
+        _tunnel_start
+    fi
+
     _log "--- Appium: one server per device ---"
     while IFS='|' read -r kind name serial mport aport xport <&3; do
         if [[ "${kind}" == "android" ]]; then
             caps="{\"platformName\":\"Android\",\"appium:automationName\":\"UiAutomator2\",\"appium:udid\":\"${serial}\",\"appium:systemPort\":${xport},\"appium:chromedriverPort\":$((xport + 1315)),\"appium:mjpegServerPort\":$((xport + 1000))}"
+        elif [[ "${kind}" == "iphone" ]]; then
+            caps="{\"platformName\":\"iOS\",\"appium:automationName\":\"XCUITest\",\"appium:udid\":\"${serial}\",\"appium:wdaLocalPort\":${xport},\"appium:mjpegServerPort\":$((xport + 1000)),\"appium:usePreinstalledWDA\":true,\"appium:updatedWDABundleId\":\"${WDA_BUNDLE_ID}\"}"
         else
             [[ -n "${udid}" || "${DRY_RUN}" == "true" ]] || continue
             caps="{\"platformName\":\"iOS\",\"appium:automationName\":\"XCUITest\",\"appium:udid\":\"${udid:-<udid>}\",\"appium:wdaLocalPort\":${xport},\"appium:mjpegServerPort\":$((xport + 1000))}"
@@ -458,7 +625,7 @@ farm_start() {
             [[ ${idx} -eq 0 ]] || echo ","
             if [[ "${kind}" == "ios" ]]; then serial="${udid}"; fi
             printf '  {"platform": "%s", "name": "%s", "udid": "%s", "appium": "http://%s:%s", "mitmproxy_port": %s, "proxy": "%s:%s"}' \
-                "${kind}" "${name}" "${serial}" "127.0.0.1" "${aport}" "${mport}" "$([[ "${kind}" == "android" ]] && echo "${EMULATOR_PROXY_HOST}" || echo 127.0.0.1)" "${mport}"
+                "${kind}" "${name}" "${serial}" "127.0.0.1" "${aport}" "${mport}" "$(_proxy_host "${kind}" "${ip}")" "${mport}"
             idx=$((idx+1))
         done 3< <(farm_plan)
         printf '\n]}\n'
@@ -479,15 +646,17 @@ farm_start() {
 farm_status() {
     local kind name serial mport aport xport state running=""
     running="$(adb devices 2>/dev/null || true)"
-    printf '%-8s %-22s %-16s %-10s %-22s %s\n' PLATFORM NAME SERIAL STATE "MITMPROXY (device proxy)" APPIUM
+    printf '%-8s %-22.22s %-16s %-10s %-22s %s\n' PLATFORM NAME SERIAL STATE "MITMPROXY (device proxy)" APPIUM
     while IFS='|' read -r kind name serial mport aport xport <&3; do
         if [[ "${kind}" == "android" ]]; then
             if _has_line "${running}" -E "^${serial}[[:space:]]+device"; then state="up"; else state="down"; fi
+        elif [[ "${kind}" == "iphone" ]]; then
+            if _has_line "$(idevice_id -l 2>/dev/null || true)" -x "${serial}"; then state="usb"; else state="gone"; fi
         else
             serial="$(cat "${RUN_DIR}/ios_udid" 2>/dev/null || true)"; serial="${serial:--}"
             if _has_line "$(xcrun simctl list devices booted 2>/dev/null || true)" -F "${name} ("; then state="up"; else state="down"; fi
         fi
-        printf '%-8s %-22s %-16.16s %-10s %-22s %s\n' "${kind}" "${name}" "${serial}" "${state}" \
+        printf '%-8s %-22.22s %-16.16s %-10s %-22s %s\n' "${kind}" "${name}" "${serial}" "${state}" \
             ":${mport} $(_port_open "${mport}" && echo up || echo down)" "http://127.0.0.1:${aport} $([[ "$(_http_code "http://127.0.0.1:${aport}/status" 3)" == "200" ]] && echo up || echo down)"
     done 3< <(farm_plan)
     echo "Mac local IP: $(_local_ip)"
@@ -501,7 +670,7 @@ farm_stop() {
         if [[ "${kind}" == "android" ]]; then
             if _has_line "$(adb devices 2>/dev/null || true)" -E "^${serial}[[:space:]]"; then adb -s "${serial}" emu kill &>/dev/null </dev/null || true; _log "stopped ${serial}"; fi
             _kill "emulator-${serial#emulator-}"
-        else
+        elif [[ "${kind}" == "ios" ]]; then
             udid="$(cat "${RUN_DIR}/ios_udid" 2>/dev/null || true)"
             if [[ -n "${udid}" ]]; then xcrun simctl shutdown "${udid}" &>/dev/null </dev/null || true; _log "stopped simulator ${name}"; fi
         fi
@@ -510,9 +679,11 @@ farm_stop() {
     for f in "${RUN_DIR}"/*.pid; do
         [[ -f "$f" ]] || continue
         name="${f##*/}"; name="${name%.pid}"
+        [[ "${name}" == "ios-tunnel" ]] && continue
         if [[ "${name}" == emulator-* ]] && _alive "${name}"; then adb -s "${name}" emu kill &>/dev/null </dev/null || true; fi
         _kill "${name}"
     done
+    _tunnel_stop
     _system_proxy off
 }
 
@@ -520,6 +691,8 @@ case "${MODE}" in
     start)  farm_start; exit $((FAILS > 0)) ;;
     stop)   farm_stop; exit 0 ;;
     status) farm_status; exit 0 ;;
+    install-wda) install_wda; exit $((FAILS > 0)) ;;
+    iphone-guide) iphone_guide; exit 0 ;;
 esac
 
 _log "=== Device farm Mac: software from the public internet ($(id -un), $(sw_vers -productVersion 2>/dev/null || echo ?)) ==="
@@ -549,9 +722,10 @@ if [[ "${ADMIN}" == "true" ]]; then
         _err "Xcode.app is not at /Applications/Xcode.app: install Xcode first (App Store / developer.apple.com, Apple ID)"
     fi
     if id "${AGENT_USER}" &>/dev/null; then
-        TMP="$(mktemp)"; echo "${AGENT_USER} ALL=(root) NOPASSWD: /usr/sbin/networksetup, /sbin/shutdown" > "${TMP}"
+        AGENT_HOME="$(eval echo "~${AGENT_USER}")"; T_SCRIPT="${AGENT_HOME}/${TUNNEL_SCRIPT_REL}"
+        TMP="$(mktemp)"; echo "${AGENT_USER} ALL=(root) NOPASSWD: /usr/sbin/networksetup, /sbin/shutdown, ${NODE_ABS} ${T_SCRIPT}, ${NODE_ABS} ${T_SCRIPT} *, /usr/bin/pkill -f tunnel-creation.mjs" > "${TMP}"
         if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: write /etc/sudoers.d/${SUDOERS_NAME} for ${AGENT_USER}"
-        elif sudo visudo -cf "${TMP}" &>/dev/null && sudo install -m 0440 -o root -g wheel "${TMP}" /etc/sudoers.d/${SUDOERS_NAME}; then _ok "sudoers: ${AGENT_USER} may run networksetup and shutdown without a password (iOS simulator system proxy)"
+        elif sudo visudo -cf "${TMP}" &>/dev/null && sudo install -m 0440 -o root -g wheel "${TMP}" /etc/sudoers.d/${SUDOERS_NAME}; then _ok "sudoers: ${AGENT_USER} may run networksetup, shutdown and the iOS device tunnel without a password"
         else _err "sudoers file not written"; fi
         rm -f "${TMP}"
     else
