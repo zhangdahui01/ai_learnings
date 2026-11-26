@@ -437,7 +437,7 @@ for teams in (d.get('IDEProvisioningTeamByIdentifier') or {}).values():
 # Real iPhones on iOS 17+: Appium starts the preinstalled WDA through RemoteXPC, which needs the device tunnel of the xcuitest
 # driver running as root (without it WDA is launched as a plain app and quits at once: "Failed to start the preinstalled WebDriverAgent").
 TUNNEL_SCRIPT_REL=".appium/node_modules/appium-xcuitest-driver/scripts/tunnel-creation.mjs"; TUNNEL_SCRIPT="${HOME}/${TUNNEL_SCRIPT_REL}"
-TUNNEL_REGISTRY_PORT="${TUNNEL_REGISTRY_PORT:-42314}"
+TUNNEL_REGISTRY_PORT="${TUNNEL_REGISTRY_PORT:-42314}"; CERT_PORT="${CERT_PORT:-8399}"
 NODE_ABS="$(for p in /opt/homebrew /usr/local; do [[ -x "${p}/bin/node" ]] && { echo "${p}/bin/node"; break; }; done)"; NODE_ABS="${NODE_ABS:-/opt/homebrew/bin/node}"
 _tunnel_start() {
     if _port_open "${TUNNEL_REGISTRY_PORT}"; then _ok "iOS device tunnel running (registry :${TUNNEL_REGISTRY_PORT})"; return 0; fi
@@ -529,10 +529,13 @@ iphone_guide() {   # per-iPhone proxy and certificate steps (task: proxy + mitmp
   2. iPhone: Settings > Wi-Fi > (i) of the connected network > Configure Proxy > Manual
        Server: ${ip}   Port: <the phone's port above>   Authentication: off   > Save
   3. iPhone Safari: open http://mitm.it  > "Get mitmproxy-ca-cert.pem" under Apple > Allow (profile downloaded)
+     If Safari turns it into https://mitm.it and fails: open http://${ip}:${CERT_PORT}/mitmproxy-ca-cert.pem instead > Allow
   4. Settings > General > VPN & Device Management > mitmproxy > Install (passcode) > Install > Done
   5. Settings > General > About > Certificate Trust Settings > switch ON "mitmproxy" > Continue
   6. Check: Safari https://example.com loads; on the Mac: tail -f ~/logs/farm/mitmproxy-<port>.log shows the request
   Undo: Configure Proxy > Off; Settings > General > VPN & Device Management > mitmproxy > Remove Profile.
+  Phone shows no internet with the proxy on: Server must be exactly ${ip} (a typo is the usual cause), and the certificate trusted (step 5).
+  Phone with a passcode: unlock it and set Auto-Lock to Never, or Appium cannot open apps ("the device is locked").
   Apps that pin certificates (e.g. Google, banking SDKs) still refuse mitmproxy: expected.
 EOF
 }
@@ -624,6 +627,13 @@ farm_start() {
             else _err "${name}: no WDA ${WDA_BUNDLE_ID}.xctrunner: bash $0 --install-wda --iphones ${serial}"; fi
         done 3< <(farm_plan)
         _tunnel_start
+        # the CA over plain HTTP on the Mac's IP: Safari may open https://mitm.it instead of http://, which an iPhone without the CA
+        # cannot load (the certificate download then fails); an IP address URL is not upgraded to HTTPS
+        if [[ "${DRY_RUN}" != "true" ]]; then
+            mkdir -p "${FARM_DIR}/cert"; cp -f "${CA_PEM}" "${FARM_DIR}/cert/mitmproxy-ca-cert.pem"
+            _spawn "cert-server" /usr/bin/python3 -m http.server "${CERT_PORT}" --bind 0.0.0.0 --directory "${FARM_DIR}/cert"
+            _ok "certificate for iPhones: http://${ip}:${CERT_PORT}/mitmproxy-ca-cert.pem (or http://mitm.it through the proxy)"
+        fi
     fi
 
     _log "--- Appium: one server per device ---"
