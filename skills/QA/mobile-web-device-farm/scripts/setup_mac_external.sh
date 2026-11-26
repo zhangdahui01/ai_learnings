@@ -456,6 +456,17 @@ _tunnel_stop() {
     if sudo -n /usr/bin/pkill -f tunnel-creation.mjs &>/dev/null; then _log "stopped the iOS device tunnel"; else _log "WARNING: could not stop the iOS device tunnel (sudo pkill -f tunnel-creation.mjs)"; fi
     rm -f "${RUN_DIR}/ios-tunnel.pid" "${RUN_DIR}/ios-tunnel.cmd"
 }
+_wda_team_from_phones() {   # team id of a WDA already installed on a connected iPhone (Xcode 27 does not list teams in its prefs)
+    local u t
+    for u in $(idevice_id -l 2>/dev/null | awk '!seen[$1]++'); do
+        t="$(ideviceinstaller -u "$u" list --xml 2>/dev/null | python3 -c "
+import plistlib, sys
+for a in plistlib.loads(sys.stdin.buffer.read()):
+    if a.get('CFBundleIdentifier') == sys.argv[1]:
+        print(a.get('Entitlements', {}).get('com.apple.developer.team-identifier', '')); break" "${WDA_BUNDLE_ID}.xctrunner" 2>/dev/null || true)"
+        if [[ -n "${t}" ]]; then echo "${t}"; return 0; fi
+    done
+}
 _wda_project() { ls -d "${HOME}"/.appium/node_modules/appium-xcuitest-driver/node_modules/appium-webdriveragent/WebDriverAgent.xcodeproj 2>/dev/null | head -1; }
 
 install_wda() {   # build WebDriverAgent signed by the Xcode team and install it on the iPhones that lack it
@@ -465,6 +476,10 @@ install_wda() {   # build WebDriverAgent signed by the Xcode team and install it
     team="${WDA_TEAM_ID}"
     if [[ -z "${team}" ]]; then
         teams="$(_xcode_teams)"
+        if [[ -z "${teams}" ]] && _have ideviceinstaller; then
+            team="$(_wda_team_from_phones)"
+            [[ -n "${team}" ]] && { teams="${team}|from the WDA on a connected iPhone|"; _log "team ${team}: read from the WDA already on a connected iPhone"; }
+        fi
         if [[ -z "${teams}" ]]; then _err "no Apple ID in Xcode: open Xcode > Settings > Accounts > + > Apple ID, sign in with an account of the team that owns ${WDA_BUNDLE_ID}, then re-run"; return 0; fi
         if [[ "$(echo "${teams}" | grep -c .)" -gt 1 ]]; then
             team="$(echo "${teams}" | awk -F'|' '$3=="paid" {print $1; exit}')"

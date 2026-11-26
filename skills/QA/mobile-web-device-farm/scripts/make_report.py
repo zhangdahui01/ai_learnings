@@ -67,6 +67,20 @@ def code(text):
 # ---------------- sections ----------------
 sec = []
 # what is installed
+sim = inv.get("ios_simulator", {})
+def yn(ok, yes="installed", no="MISSING"):
+    return badge(yes if ok else no)
+sim_rows = [
+    ["Xcode", e(sim.get("xcode", "")) or badge("MISSING"), f"<code>{e(sim.get('xcode_select', ''))}</code>"],
+    ["License + first launch", yn(sim.get("first_launch_done"), "PASS", "MISSING"), "sudo xcodebuild -license accept; sudo xcodebuild -runFirstLaunch (--admin)"],
+    ["iOS runtime", yn(bool(sim.get("runtimes"))), e(", ".join(sim.get("runtimes", [])) or "xcodebuild -downloadPlatform iOS (--admin)")],
+    ["Farm simulator", yn(sim.get("exists")), f"{e(sim.get('device', ''))} · <code>{e(sim.get('udid', ''))}</code> · {e(sim.get('runtime', ''))} · {badge('up' if sim.get('state') == 'Booted' else (sim.get('state') or 'not created'), 'ok' if sim.get('state') == 'Booted' else 'mut')}"],
+    ["mitmproxy CA trusted in it", yn(sim.get("ca_trusted"), "PASS", "MISSING"), "simctl keychain add-root-cert (every farm-start)"],
+    ["WebDriverAgent for simulators", yn(sim.get("wda_built"), "installed", "MISSING"), "built by Appium at the first iOS session (a few minutes)"],
+    ["XCUITest driver", yn(any(d.startswith("xcuitest") for d in inv.get("appium_drivers", []))), e(next((d for d in inv.get("appium_drivers", []) if d.startswith("xcuitest")), ""))],
+    ["Window app", e(sim.get("window_app", "")) or "—", "Xcode 27: DeviceHub.app (no Simulator.app); automation works without a window"],
+]
+sim_html = table(["Item", "Status", "Detail"], sim_rows)
 rows = [[e(s["what"]), f"<code>{e(s['name'])}</code>", e(s["version"][:70]) if s.get("installed") else badge("MISSING")] for s in soft]
 sdk = [[f"<code>{e(p['package'])}</code>", e(p["version"]), e(p["description"])] for p in inv.get("android_sdk", [])]
 sims = inv.get("simulators", [])
@@ -74,6 +88,7 @@ sec.append(("installed", "What is installed", f"""
 <p>{len(soft) - len(missing)} of {len(soft)} tools present{(' — missing: ' + ', '.join(missing)) if missing else ''}. Every setting and the
 <code>farm-*</code> commands are in a managed block of <code>~/.zshrc</code> {badge('installed' if inv.get('zshrc_block') else 'MISSING')}.</p>
 {table(['Component', 'Command', 'Version'], rows)}
+<h3>iOS simulator</h3>{sim_html}
 <h3>Android SDK</h3>{table(['Package', 'Version', 'Description'], sdk) if sdk else '<p class=mut>not listed</p>'}
 <p>AVDs: {', '.join(f'<code>{e(a)}</code>' for a in inv.get('avds', [])) or '—'} · Appium drivers: {', '.join(e(d) for d in inv.get('appium_drivers', [])) or '—'}<br>
 iOS simulators: {', '.join(e(s['name']) + ' (' + e(s['runtime']) + ', ' + e(s['state']) + ')' for s in sims[:4]) or '—'}{' …' if len(sims) > 4 else ''}<br>
@@ -89,6 +104,12 @@ for d in devs:
     rows.append([e(kind), e(d["name"]), f"<code>{e(d['udid'])}</code>", f"<code>{e(d['appium'])}</code>",
                  f":{d['mitmproxy_port']}", f"<code>{e(proxy)}</code>", badge(wda) if wda else "—"])
 known = {d["udid"] for d in devs}
+names = {d["name"] for d in devs}
+if sim.get("exists") and sim.get("udid") not in known and sim.get("device") not in names:
+    rows.append(["iOS simulator", e(sim["device"]), f"<code>{e(sim['udid'])}</code>", "not started", "—", "Mac system proxy (--ios-system-proxy)", "—"])
+for a in inv.get("avds", []):
+    if a not in names:
+        rows.append(["Android emulator", e(a), "—", "not started", "—", "10.0.2.2:&lt;port&gt;", "—"])
 for p in iphones:
     if p["udid"] not in known:
         rows.append(["iPhone (USB)", e(p["name"]), f"<code>{e(p['udid'])}</code>", "not started", f":{p['proxy'].rsplit(':', 1)[-1]}",
@@ -149,13 +170,21 @@ d.quit()''')}
 <h3>Stop</h3>{code(stop_txt)}"""))
 
 # real iPhone proxy + certificate
+def seen(p):
+    if not p.get("phone_ips"):
+        return badge("no traffic yet", "warn")
+    ok = p.get("phone_requests", 0) > 0 and not p.get("phone_cert_rejections")
+    return (badge(f"{p['phone_requests']} requests", "ok" if ok else "warn") + f" <span class=mut>from {e(', '.join(p['phone_ips']))}</span>"
+            + (f" {badge(str(p['phone_cert_rejections']) + ' cert rejections', 'bad')}" if p.get("phone_cert_rejections") else ""))
 rows = [[e(p["name"]), f"<code>{e(p['udid'])}</code>", f"<b><code>{e(p['proxy'].rsplit(':', 1)[0])}</code></b>",
-         f"<b><code>{e(p['proxy'].rsplit(':', 1)[-1])}</code></b>", badge(p["wda"])] for p in iphones]
+         f"<b><code>{e(p['proxy'].rsplit(':', 1)[-1])}</code></b>", badge(p["wda"]), seen(p)] for p in iphones]
 sec.append(("iphone-proxy", "Real iPhones: proxy and mitmproxy certificate (by hand)", f"""
 <p>Each iPhone has its own mitmproxy port on this Mac (fixed per phone in <code>~/.device-farm/iphones.txt</code>). The phone must be on a
 network that reaches <code>{e(mac_ip)}</code> (same office Wi-Fi / VLAN). Start the proxies first:
 <code>farm-start --skip-android --skip-simulator</code> (or a full <code>farm-start</code>).</p>
-{table(['iPhone', 'UDID', 'Proxy server', 'Port', 'WDA'], rows) if rows else '<p class=mut>no iPhone connected</p>'}
+{table(['iPhone', 'UDID', 'Proxy server', 'Port', 'WDA', 'Phone traffic seen by its mitmproxy'], rows) if rows else '<p class=mut>no iPhone connected</p>'}
+<p class=mut><b>no traffic yet</b> = nothing but this Mac has used that port: the phone's proxy is not set, or the phone cannot reach
+<code>{e(mac_ip)}</code> (other Wi-Fi / VLAN, client isolation). <b>cert rejections</b> = the profile is installed but not trusted (step 4).</p>
 <ol class=steps>
 <li><b>Set the proxy.</b> iPhone <i>Settings → Wi-Fi</i> → tap <b>ⓘ</b> next to the connected network → scroll down to <i>HTTP Proxy</i> →
 <b>Configure Proxy → Manual</b> → Server <code>{e(mac_ip)}</code>, Port = the phone's port above, Authentication off → <b>Save</b>.</li>
@@ -200,6 +229,7 @@ summary = f"""<div class=verdict>
 <div><span class=k>Farm (Appium + mitmproxy)</span>{badge(v_farm)}</div>
 <div><span class=k>Site (home → search → product)</span>{badge(v_site)}</div>
 <div><span class=k>Software</span>{badge('PASS' if not missing else f'MISSING {len(missing)}')}</div>
+<div><span class=k>iOS simulator</span>{badge('PASS' if sim.get('exists') and sim.get('ca_trusted') and sim.get('first_launch_done') else 'MISSING', 'ok' if sim.get('exists') and sim.get('ca_trusted') and sim.get('first_launch_done') else 'warn')}</div>
 <div><span class=k>Real iPhones</span>{badge(f'{len(iphones) - len(wda_missing)}/{len(iphones)} with WDA', 'ok' if not wda_missing else 'warn')}</div></div>"""
 page = f"""<title>Farm Report</title><meta charset=utf-8>
 <style>
@@ -243,6 +273,10 @@ md += [f"| {d['platform']} | {d['name']} | `{d['udid']}` | {d['appium']} | :{d['
 if tested:
     md += ["", "## Results", "", "| Device | Step | Status | Detail |", "|---|---|---|---|"]
     md += [f"| {r['platform']} {r['name']} | {s['name']} | {s['status']} | {s['detail']} |" for r in results for s in r["steps"]]
+md += ["", "## iOS simulator", "", f"- Xcode: {sim.get('xcode', '')} ({sim.get('xcode_select', '')}), license/first launch: {'yes' if sim.get('first_launch_done') else 'NO'}",
+       f"- Runtimes: {', '.join(sim.get('runtimes', [])) or 'none'}",
+       f"- Farm simulator: {sim.get('device', '')} {sim.get('udid', '')} {sim.get('runtime', '')} ({sim.get('state', 'not created')})",
+       f"- mitmproxy CA trusted: {'yes' if sim.get('ca_trusted') else 'NO'} · WDA for simulators built: {'yes' if sim.get('wda_built') else 'no'}"]
 md += ["", "## Real iPhones: proxy", "", "| iPhone | UDID | Proxy | WDA |", "|---|---|---|---|"]
 md += [f"| {p['name']} | `{p['udid']}` | {p['proxy']} | {p['wda']} |" for p in iphones]
 md += ["", "Steps: Settings > Wi-Fi > (i) > Configure Proxy > Manual (server/port above) > Save; Safari http://mitm.it > iOS > Allow;",
