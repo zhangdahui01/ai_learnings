@@ -96,6 +96,8 @@ changes when phones come and go, so the proxy typed into a phone stays right. `-
 |---|---|
 | `adb` / `appium` / `gh`: command not found | New Terminal or `source ~/.zshrc`. |
 | iPhone: "Failed to start the preinstalled WebDriverAgent" | The device tunnel is not running: `bash setup_mac_external.sh --admin` once, then `farm-start`; or `sudo /opt/homebrew/bin/node ~/.appium/node_modules/appium-xcuitest-driver/scripts/tunnel-creation.mjs` in a Terminal. |
+| iPhone: WDA installed but "Failed to start the preinstalled WebDriverAgent in 120000 ms" (tunnel up) | The WDA on the phone is an older build the current xcuitest driver cannot start: `--install-wda --force --iphones <udid>` (same team / bundle id). |
+| Appium log: "EACCES ... strongbox/tunnelRegistryPort" | A root tunnel created `~/Library/Application Support/appium-xcuitest-driver-nodejs` as root: `sudo chown -R $USER "~/Library/Application Support/appium-xcuitest-driver-nodejs"`. `--start` now creates it as the user first. |
 | iPhone: `--install-wda` "no Apple ID in Xcode" / signing errors | Sign in (step 4 above); the Apple ID must be in the team that owns the bundle id; several teams: `WDA_TEAM_ID=<id>`. |
 | iPhone "Pairing dialog response pending" / unpaired | Unlock the phone, tap **Trust**, enter the passcode. |
 | Phone: `http://mitm.it` says traffic not through mitmproxy | Wrong proxy server / port, or phone not on a network that reaches the Mac. |
@@ -110,5 +112,6 @@ Mac mini (Apple silicon, 24 GB, macOS 27, Xcode 27.2, iOS 27.2 runtime, Android 
 real iPhones on USB (iPhone 14 – 18 Pro Max, iPhone Air):
 - `run_farm_test.sh --install --stop-after`: 1 Android + 1 simulator **farm PASS** (site BLOCKED by Akamai for this Mac's IP); 11 iPhones
   each got their own mitmproxy (8300–8310, reachable on the LAN, `http://mitm.it` serves the CA) and Appium server (4800–4810).
-- WDA present on 7 iPhones; the farm reports the 4 without it (3 × iPhone 18, 1 not yet trusted) and the missing device tunnel.
+- WDA built with the Xcode team (detected from a phone) and installed on all 11 (`--install-wda`, `--force` for the 8 older builds);
+  with the device tunnel up, **an Appium session opened on every one of the 11 iPhones in 1–2 s** (iOS 26.0 / 26.6 / 27.0).
 - `--android-count 2` after a 1+1 start: stale Appium restarted, farm PASS on all 3 devices.
