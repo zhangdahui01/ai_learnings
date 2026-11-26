@@ -15,6 +15,10 @@
 #   bash setup_mac_external.sh --status                # device / mitmproxy / Appium table
 #   bash setup_mac_external.sh --stop                  # stop all of it
 #
+# New Mac, from zero: install Xcode.app (App Store) and open it once, then in a Terminal as an admin user:
+#   bash setup_mac_external.sh --admin                 # Homebrew + all software + Xcode license / iOS runtime (asks the password once)
+#   bash setup_mac_external.sh --start --android-count 1   # small Mac (e.g. Mac mini): 1 Android emulator + 1 iOS simulator
+#
 # Options:
 #   --skip-android          no Android SDK / emulator / chromedriver
 #   --skip-ios              no libimobiledevice / ios-deploy / simulator / ffmpeg
@@ -24,7 +28,8 @@
 #   --admin                 also do the admin steps with sudo (run as an admin user): Homebrew installer, Xcode license / first launch /
 #                           iOS runtime download, sudoers for networksetup + shutdown for --agent-user, no-sleep settings
 #   --agent-user <name>     user of the agent for the sudoers line (default: the user running this script)
-#   --install-homebrew      only the Homebrew installer (implied by --admin)
+#   --install-homebrew      (kept for compatibility) Homebrew is now installed automatically when missing: run as an admin user, the
+#                           password is asked once (or set SUDO_ASKPASS to a helper that prints it, for unattended runs)
 #   --headless              --start: emulators without a window (-no-window), Simulator.app not opened
 #   --ios-system-proxy      --start: point the Mac's own HTTP/HTTPS proxy at the simulator's mitmproxy (the iOS simulator has no proxy
 #                           setting of its own). Changes ALL traffic of this Mac until --stop; needs the sudoers line of --admin
@@ -247,6 +252,10 @@ _write_inject_script() {
 # bind-mounted over the APEX folder inside zygote and every app process, so apps started later inherit it.
 H="$1"; SRC="/data/local/tmp/$H.0"; DST=/system/etc/security/cacerts; APEX=/apex/com.android.conscrypt/cacerts
 [ -f "$SRC" ] || { echo "missing $SRC"; exit 1; }
+# User store too: Chrome (Chrome Root Store) ignores CAs added to the system store and trusts only its own roots + the user-added
+# ones, so without this Chrome / Custom Tabs reject mitmproxy ("certificate unknown"). /data survives reboots.
+U=/data/misc/user/0/cacerts-added
+mkdir -p "$U" && cp "$SRC" "$U/$H.0" && chown system:system "$U" "$U/$H.0" && chmod 755 "$U" && chmod 644 "$U/$H.0" || echo "user store copy failed"
 if [ -f "$DST/$H.0" ]; then echo "already injected $H"; exit 0; fi
 TMP=/data/local/tmp/ca-copy; rm -rf "$TMP"; mkdir -p -m 700 "$TMP"
 if [ -d "$APEX" ]; then cp "$APEX"/* "$TMP"/; else cp "$DST"/* "$TMP"/; fi
@@ -294,6 +303,10 @@ _android_prepare() {   # _android_prepare <serial> <mitm port> <ca hash>: wait f
     else
         _err "$s: adb push of the CA failed"
     fi
+    # Chrome: no first-run / welcome screens, or a test that opens a URL stays on FirstRunActivity and never loads it
+    adb -s "$s" shell 'echo "_ --disable-fre --no-default-browser-check --no-first-run" > /data/local/tmp/chrome-command-line; chmod 644 /data/local/tmp/chrome-command-line' &>/dev/null || true
+    adb -s "$s" shell am set-debug-app --persistent com.android.chrome &>/dev/null || true
+    adb -s "$s" shell am force-stop com.android.chrome &>/dev/null || true
     adb -s "$s" shell settings put global http_proxy "${EMULATOR_PROXY_HOST}:${port}" &>/dev/null || true
     if [[ "$(_adb_out "$s" shell settings get global http_proxy)" == "${EMULATOR_PROXY_HOST}:${port}" ]]; then _ok "$s proxy ${EMULATOR_PROXY_HOST}:${port}"; else _err "$s proxy not set"; fi
 }
@@ -490,10 +503,19 @@ esac
 _log "=== Device farm Mac: software from the public internet ($(id -un), $(sw_vers -productVersion 2>/dev/null || echo ?)) ==="
 cmd_preflight || _log "WARNING: some hosts are blocked, the steps that need them will fail (see above)"
 
+_sudo_prime() {   # ask for the admin password once (Terminal prompt, or the SUDO_ASKPASS helper) and keep sudo cached for this run
+    [[ "${SUDO_PRIMED:-}" == "true" ]] && return 0
+    [[ "${DRY_RUN}" == "true" ]] && return 0
+    if ! id -Gn | tr ' ' '\n' | grep -qx admin; then _log "$(id -un) is not an admin user (needed for sudo)"; return 1; fi
+    if [[ -n "${SUDO_ASKPASS:-}" ]]; then sudo -A -v || return 1; else sudo -v || return 1; fi
+    SUDO_PRIMED=true
+    ( while kill -0 $$ 2>/dev/null; do sudo -n true 2>/dev/null; sleep 50; done ) </dev/null &>/dev/null &
+}
+
 # ---- 0. Admin steps (sudo) ----
 if [[ "${ADMIN}" == "true" ]]; then
     _log "--- 0. Admin steps (sudo) ---"
-    _run sudo -v || _err "this user cannot sudo"
+    _sudo_prime || _err "this user cannot sudo"
     XCODE="/Applications/Xcode.app/Contents/Developer"
     if [[ -d "${XCODE}" ]]; then
         _run sudo xcode-select -s "${XCODE}" && _run sudo xcodebuild -license accept && _run sudo xcodebuild -runFirstLaunch && _ok "Xcode selected, license accepted, first launch done" || _err "Xcode admin steps"
@@ -518,16 +540,15 @@ fi
 
 # ---- 1. Homebrew packages ----
 _log "--- 1. Homebrew ---"
-if ! _have brew; then
-    if [[ "${INSTALL_BREW}" == "true" ]]; then
-        if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: download and run https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
-        elif BREW_INSTALLER="$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && [[ -n "${BREW_INSTALLER}" ]]; then
-            /bin/bash -c "${BREW_INSTALLER}" || _err "Homebrew installer failed"
-        else _err "Homebrew installer could not be downloaded (raw.githubusercontent.com)"; fi
-        for prefix in /opt/homebrew /usr/local; do [[ -x "${prefix}/bin/brew" ]] && eval "$("${prefix}/bin/brew" shellenv)" && break; done
-    else
-        _err "Homebrew is missing: ask IT to install it, or re-run with --install-homebrew (admin password)"
-    fi
+if ! _have brew; then   # installed automatically when missing (needs an admin user: asks for the password once)
+    if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: download and run https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh"
+    elif ! _sudo_prime; then _err "Homebrew needs an admin password: run this script as an admin user in a Terminal"
+    elif BREW_INSTALLER="$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" && [[ -n "${BREW_INSTALLER}" ]]; then
+        _log "installing Homebrew (also installs the Xcode Command Line Tools when missing)..."
+        NONINTERACTIVE=1 /bin/bash -c "${BREW_INSTALLER}" </dev/null || _err "Homebrew installer failed"
+    else _err "Homebrew installer could not be downloaded (raw.githubusercontent.com)"; fi
+    for prefix in /opt/homebrew /usr/local; do [[ -x "${prefix}/bin/brew" ]] && eval "$("${prefix}/bin/brew" shellenv)" && break; done
+    _have brew && _ok "Homebrew $(brew --version 2>/dev/null | head -1)"
 fi
 MISSING_BREW=()
 _brew_pkg() {   # _brew_pkg <name> [cask]   (bash 3.2 of macOS: no empty-array expansion under set -u)
@@ -626,7 +647,15 @@ if [[ "${SKIP_IOS}" == "false" ]]; then
     if [[ "$(xcode-select -p 2>/dev/null)" == *Xcode.app* ]]; then
         _ok "xcode-select $(xcode-select -p)"
         xcodebuild -checkFirstLaunchStatus &>/dev/null || _err "Xcode license / first launch: IT runs 'sudo xcodebuild -license accept && sudo xcodebuild -runFirstLaunch'"
-        runtime="$(xcrun simctl list runtimes -j 2>/dev/null | python3 -c "import sys,json; r=[x['identifier'] for x in json.load(sys.stdin)['runtimes'] if x.get('isAvailable') and 'iOS' in x['identifier']]; print(r[-1] if r else '')" 2>/dev/null || true)"
+        # the newest available iOS runtime that supports the device type (Xcode also ships device-specific runtimes, e.g.
+        # iOS-27-2-iPhone19-4 for one model only: taking simply the last runtime made `simctl create` fail)
+        runtime="$(xcrun simctl list runtimes -j 2>/dev/null | python3 -c "
+import sys, json
+dt = sys.argv[1]
+ok = [x for x in json.load(sys.stdin)['runtimes'] if x.get('isAvailable') and x.get('platform', 'iOS') == 'iOS' and 'iOS' in x['identifier']]
+fit = [x for x in ok if any(d.get('identifier') == dt for d in x.get('supportedDeviceTypes', []))] or [x for x in ok if not x.get('supportedDeviceTypes')]
+fit.sort(key=lambda x: [int(p) for p in x.get('version', '0').split('.') if p.isdigit()])
+print(fit[-1]['identifier'] if fit else '')" "${IOS_SIM_DEVICE_TYPE}" 2>/dev/null || true)"
         if [[ -z "${runtime}" ]]; then
             _err "no iOS simulator runtime: IT runs 'xcodebuild -downloadPlatform iOS' (Apple CDN, admin)"
         elif ! _has_line "$(xcrun simctl list devices 2>/dev/null || true)" -F "${IOS_SIM_DEVICE} ("; then
@@ -661,24 +690,69 @@ else
     _log "skipped (no --repo-dir): copy the agent repo to this Mac, then: bash setup_mac_external.sh --repo-dir <path>"
 fi
 
-# ---- 8. Shell profile ----
-_log "--- 8. Shell profile ---"
-PROFILE="${HOME}/.zprofile"
-_append() {   # --dry-run used to write the profile too
-    if grep -qF "$1" "${PROFILE}" 2>/dev/null; then return 0; fi
-    if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: add the $1 lines to ${PROFILE}"; else printf '%s\n' "$2" >> "${PROFILE}"; fi
-}
-_append "PYENV_ROOT" 'export PYENV_ROOT="${HOME}/.pyenv"
-export PATH="${PYENV_ROOT}/bin:${PATH}"
-command -v pyenv >/dev/null && eval "$(pyenv init -)"'
-_append ".npm-global" 'export PATH="${HOME}/.npm-global/bin:${HOME}/.local/bin:${PATH}"'
-if [[ -n "${NODE_BIN:-}" && -x "${NODE_BIN}/node" && "$(command -v node)" == "${NODE_BIN}/node" ]]; then _append "${NODE_BIN}" "export PATH=\"${NODE_BIN}:\${PATH}\""; fi
-[[ "${SKIP_ANDROID}" == "true" ]] || _append "ANDROID_HOME" 'export ANDROID_HOME="${HOME}/Library/Android/sdk"
-export PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/emulator:${PATH}"'
-[[ "${DRY_RUN}" == "true" ]] || _ok "PATH lines are in ${PROFILE}"
+# ---- 8. Shell environment and farm commands in ~/.zshrc ----
+# One managed block between the markers below, rewritten on every run (never duplicated). Edit the values there, or re-run this
+# script with other options. Login and interactive zsh both read ~/.zshrc.
+_log "--- 8. ~/.zshrc (environment + farm commands) ---"
+ZSHRC="${HOME}/.zshrc"; BEGIN_MARK="# >>> device-farm (managed by setup_mac_external.sh) >>>"; END_MARK="# <<< device-farm <<<"
+FARM_SCRIPT="${FARM_DIR}/setup_mac_external.sh"
+if [[ "${DRY_RUN}" != "true" ]]; then
+    mkdir -p "${FARM_DIR}"
+    # a stable copy of this script for the farm-* commands, wherever this one was copied to
+    if [[ "$(cd "$(dirname "$0")" && pwd)/$(basename "$0")" != "${FARM_SCRIPT}" ]]; then cp -f "$0" "${FARM_SCRIPT}" && chmod +x "${FARM_SCRIPT}"; fi
+fi
+BREW_LINE=""; for prefix in /opt/homebrew /usr/local; do [[ -x "${prefix}/bin/brew" ]] && { BREW_LINE="eval \"\$(${prefix}/bin/brew shellenv)\""; break; }; done
+NODE_LINE=""; if [[ -n "${NODE_BIN:-}" && -x "${NODE_BIN}/node" ]]; then NODE_LINE="export PATH=\"${NODE_BIN}:\${PATH}\""; fi
+FARM_BLOCK_FILE="$(mktemp)"
+cat > "${FARM_BLOCK_FILE}" <<EOF
+${BEGIN_MARK}
+# --- tools ---
+${BREW_LINE}
+export PYENV_ROOT="\${HOME}/.pyenv"
+export PATH="\${PYENV_ROOT}/bin:\${HOME}/.npm-global/bin:\${HOME}/.local/bin:\${PATH}"
+command -v pyenv >/dev/null && eval "\$(pyenv init - zsh)"
+${NODE_LINE}
+export ANDROID_HOME="\${HOME}/Library/Android/sdk"
+export ANDROID_SDK_ROOT="\${ANDROID_HOME}"
+export PATH="\${ANDROID_HOME}/cmdline-tools/latest/bin:\${ANDROID_HOME}/platform-tools:\${ANDROID_HOME}/emulator:\${PATH}"
+/usr/libexec/java_home >/dev/null 2>&1 && export JAVA_HOME="\$(/usr/libexec/java_home)"
+# --- device farm settings (read by setup_mac_external.sh; change them here) ---
+export FARM_SCRIPT="${FARM_SCRIPT}"
+export ANDROID_COUNT="${ANDROID_COUNT}"          # Android emulators started by farm-start
+export ANDROID_API="${ANDROID_API}"
+export IOS_SIM_DEVICE="${IOS_SIM_DEVICE}"
+export MITM_BASE_PORT="${MITM_BASE_PORT}"         # mitmproxy of device i: MITM_BASE_PORT+i (iOS simulator last)
+export APPIUM_BASE_PORT="${APPIUM_BASE_PORT}"     # Appium of device i: APPIUM_BASE_PORT+i
+export MITM_LISTEN_HOST="${MITM_LISTEN_HOST}"
+export APPIUM_ADDRESS="${APPIUM_ADDRESS}"
+export EMULATOR_PROXY_HOST="${EMULATOR_PROXY_HOST}"
+export BOOT_TIMEOUT="${BOOT_TIMEOUT}"
+farm-local-ip() { local i; i="\$(route -n get default 2>/dev/null | awk '/interface:/ {print \$2; exit}')"; ipconfig getifaddr "\${i:-en0}"; }
+export FARM_MAC_IP="\$(farm-local-ip 2>/dev/null)"   # this Mac's LAN IP (proxy host for real devices / other machines)
+# --- farm commands ---
+farm-start()   { bash "\${FARM_SCRIPT}" --start "\$@"; }     # e.g. farm-start --headless / --ios-system-proxy / --skip-ios
+farm-stop()    { bash "\${FARM_SCRIPT}" --stop "\$@"; }
+farm-status()  { bash "\${FARM_SCRIPT}" --status "\$@"; }
+farm-check()   { bash "\${FARM_SCRIPT}" --check "\$@"; }
+farm-install() { bash "\${FARM_SCRIPT}" "\$@"; }              # re-run the installer (idempotent)
+farm-devices() { cat "${FARM_DIR}/devices.json"; }
+farm-logs()    { ls -1t "${FARM_LOG_DIR}"; echo "tail -f ${FARM_LOG_DIR}/<name>.log"; }
+${END_MARK}
+EOF
+if [[ "${DRY_RUN}" == "true" ]]; then
+    _log "dry-run: write the device-farm block to ${ZSHRC}:"; cat "${FARM_BLOCK_FILE}"
+else
+    touch "${ZSHRC}"
+    # drop the old block (if any), then append the new one
+    awk -v b="${BEGIN_MARK}" -v e="${END_MARK}" '$0==b {skip=1; next} $0==e {skip=0; next} !skip' "${ZSHRC}" > "${ZSHRC}.farm-tmp"
+    cat "${FARM_BLOCK_FILE}" >> "${ZSHRC}.farm-tmp"
+    cat "${ZSHRC}.farm-tmp" > "${ZSHRC}" && rm -f "${ZSHRC}.farm-tmp"
+    _ok "environment + farm-start/stop/status/check in ${ZSHRC} (open a new Terminal, or: source ~/.zshrc)"
+fi
+rm -f "${FARM_BLOCK_FILE}"
 
 echo
-_log "=== Summary: ${FAILS} problem(s). Next: bash $0 --start ==="
+_log "=== Summary: ${FAILS} problem(s). Next: source ~/.zshrc && farm-start ==="
 cmd_check | sed 's/^/  /' || true
 [[ "${#MISSING_BREW[@]}" -eq 0 ]] || _log "IT must install: brew install ${MISSING_BREW[*]}"
 cat <<'EOF'
