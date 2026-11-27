@@ -93,6 +93,22 @@ td .nm{display:block;font-size:11.5px;color:var(--muted)}
 .toggle{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer}
 .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
 footer{font-size:12.5px;color:var(--muted)}
+
+.tabs{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--bg);padding:8px 0;margin:-6px 0}
+.tabs button{font:inherit;font-size:14px;padding:9px 4px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--muted);cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--card);font-weight:600}
+.tabs button:focus-visible,.chips button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+section[hidden]{display:none}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px 2px}
+.chips button{font-family:var(--f-num);font-size:12.5px;padding:4px 10px;border:1px solid var(--line);border-radius:999px;background:var(--card);color:var(--ink);cursor:pointer}
+.sub{font-size:12px;font-weight:600;color:var(--accent);letter-spacing:.06em;margin-top:4px}
+.bias{display:inline-block;font-size:12.5px;font-weight:600;padding:2px 9px;border-radius:999px;border:1px solid var(--accent);color:var(--accent);white-space:nowrap}
+.scen{display:flex;flex-direction:column;gap:8px}
+.scen .s{display:grid;grid-template-columns:54px 1fr;gap:10px;align-items:start;border:1px solid var(--line);border-radius:8px;padding:9px 10px;font-size:14px}
+.scen .s .k{font-weight:600;font-size:13px}
+.scen .s .lv{font-family:var(--f-num);font-size:12.5px;color:var(--muted);display:block;margin-top:2px}
+.watch{font-size:13.5px;color:var(--muted)}
+#biasT td:nth-child(n+2),#biasT th:nth-child(n+2){text-align:left}
 </style>
 </head>
 <body>
@@ -103,22 +119,29 @@ footer{font-size:12.5px;color:var(--muted)}
   <div class="meta">行情截至 11 月 25 日（周三）美股收盘。11 月 26 日感恩节休市，今晚为半日交易。生成于首尔时间 22:30。</div>
 </header>
 
-<section class="card lead">
+<nav class="tabs" role="tablist" aria-label="报告分页">
+  <button type="button" role="tab" data-go="overview">总览</button>
+  <button type="button" role="tab" data-go="charts">图表</button>
+  <button type="button" role="tab" data-go="stocks">个股分析</button>
+  <button type="button" role="tab" data-go="outlook">展望预测</button>
+</nav>
+
+<section data-tab="overview" class="card lead">
   <h2>今天最值得知道的 4 件事</h2>
   <ul id="lead"></ul>
 </section>
 
-<section>
+<section data-tab="overview">
   <div class="tiles" id="tiles"></div>
 </section>
 
-<section class="card">
+<section data-tab="overview" class="card">
   <div class="row"><h2>10 只股票总览</h2><button class="toggle" id="updown" type="button">切换为 绿涨红跌</button></div>
   <div class="scroll"><table id="overview"></table></div>
   <p class="small muted" style="margin-top:8px">5 日 = 相对 11/18 收盘；1 个月 = 相对 10/26 收盘；年内 = 相对 2025 年最后一个交易日收盘。带 ≈ 的数字为间接来源推算。</p>
 </section>
 
-<section class="card">
+<section data-tab="charts" class="card">
   <h2>涨跌幅对比</h2>
   <div class="seg" role="group" aria-label="时间范围">
     <button type="button" data-k="d1" aria-pressed="true">1 日</button>
@@ -129,36 +152,54 @@ footer{font-size:12.5px;color:var(--muted)}
   <div class="bars" id="bars"></div>
 </section>
 
-<section class="card">
+<section data-tab="charts" class="card">
   <h2>近一个月走势（10/26 至 11/25 收盘）</h2>
   <div class="grid2" id="sparks"></div>
   <p class="small muted" style="margin-top:8px">每张小图各自缩放，只看形状不比高低。手指按住或鼠标移上去看当日收盘价。</p>
 </section>
 
-<section class="card">
+<section data-tab="charts" class="card">
   <h2>现价在 52 周区间的位置</h2>
   <div id="ranges"></div>
 </section>
 
-<section class="card">
+<section data-tab="charts" class="card">
   <h2>估值与分析师目标价</h2>
   <div class="scroll"><table id="val"></table></div>
   <p class="small muted" style="margin-top:8px">目标价为分析师一致预期均值，只是市场观点的汇总，不代表会到达。PE 取自 StockAnalysis 与 Yahoo Finance，部分按最新收盘价换算。</p>
 </section>
 
-<section>
-  <h2 style="margin-left:2px">逐只情报</h2>
+<section data-tab="stocks">
+  <h2 style="margin-left:2px">逐只情报、分析与预测</h2>
+  <div class="chips" id="chips"></div>
   <div id="stocks" style="display:flex;flex-direction:column;gap:12px"></div>
 </section>
 
-<section class="card">
+<section data-tab="outlook" class="card lead">
+  <h2>整体判断</h2>
+  <ul id="mview"></ul>
+</section>
+
+<section data-tab="outlook" class="card">
+  <h2>未来 1 至 2 周的三种情景</h2>
+  <div id="mscen" class="scen"></div>
+  <p class="small muted" style="margin-top:8px">概率是基于目前公开信息的主观估计，用来表达倾向，不是统计结果。下一期会回看这些判断是否兑现。</p>
+</section>
+
+<section data-tab="outlook" class="card">
+  <h2>10 只股票的短期倾向一览</h2>
+  <div class="scroll"><table id="biasT"></table></div>
+  <p class="small muted" style="margin-top:8px">倾向指未来 1 至 2 周相对现价的方向判断。把握度低表示消息面主导、随时可能反转。</p>
+</section>
+
+<section data-tab="outlook" class="card">
   <h2>接下来看什么</h2>
   <div class="cal" id="cal"></div>
 </section>
 
 <footer class="card">
   <p><strong>数据说明</strong>：收盘价与历史价来自 StockAnalysis（数据源 S&amp;P Global Market Intelligence）、Yahoo Finance；消息来自各条目后的链接。Coupang 11/24、11/25 收盘价未取到直接报价，按 Trefis 报道的涨幅与 MarketBeat 报道的价格推算，标注为 ≈。Salesforce 11/23 收盘价缺失，走势图跳过该日。</p>
-  <p style="margin-top:8px"><strong>免责声明</strong>：本报告只做公开信息整理，不构成投资建议，我不是持牌投资顾问。</p>
+  <p style="margin-top:8px"><strong>免责声明</strong>：本报告整理公开信息并给出情景分析。分析与预测是基于当前信息的判断，可能出错，不构成投资建议，也不是买卖推荐。作者不是持牌投资顾问。</p>
 </footer>
 </main>
 
@@ -261,6 +302,50 @@ const DATA = {
   ]
 };
 
+
+const EXTRA={
+ NVDA:{bias:"震荡",conf:"低",view:"这轮下跌是治理和监管事件驱动的，业绩本身没有变差。远期 PE 只有 10.3 倍，是 10 只里最低的，说明市场在给未来盈利打折：担心东南亚发货暂停变成长期限制。11/23 复职当天的 31% 涨幅两天内回吐了约一成，但仍守在 11/20 低点 125.53 上方。",
+  sc:[["发货暂停被确认为临时合规检查，或拿到出口许可","回补到 165 附近（11/23 收盘）"],["消息来回拉扯，没有定论","125 到 165 宽幅震荡"],["暂停范围扩大，或出现新的管制与调查","回测 125 一带（52 周低点 124.50）"]],
+  watch:"商务部许可进展；标普信用观察的结论。"},
+ CPNG:{bias:"中性",conf:"低",view:"两天涨约 12% 却没有公司消息，时间上与美方为 Coupang 公开施压重合，市场可能在提前押注监管压力缓和。但这只是推断：公司三季度仍亏损，两笔罚单金额很大，State Street 上季度还减持了近一半。年内仍跌约三成。",
+  sc:[["美韩交涉让罚款或监管口径松动","挑战 17.05（11/4 财报后高点）"],["消息停留在口头层面","15 到 17 区间"],["韩方强硬回应，或对韩关税落地冲击消费预期","回到 14 附近"]],
+  watch:"首尔的正式回应；美方关税决定；四季度营收指引是恒定汇率增长 13% 到 14%。"},
+ META:{bias:"偏多",conf:"中低",view:"Muse 是 Meta 当前估值故事的核心。如果与 Amazon 达成协议，购物代理就能进入美国最大的电商平台，这比单纯的下载量更接近变现。PE 20.8 倍在这 10 只里不算贵。风险在于 AI 开支和融资担忧会让整个板块一起跌。",
+  sc:[["与 Amazon 的协议落地","回到 640 一带（11/9 至 11/13 的平台）"],["谈判继续，没有结果","590 到 640"],["谈判破裂，或 AI 抛售再起","回测 560（11/20 收盘）"]],
+  watch:"Amazon 与 Meta 的官方表态；其他云巨头的融资消息。"},
+ TSM:{bias:"中性",conf:"中低",view:"基本面是 10 只里最硬的：月营收同比增近六成。但股价短期跟着 Nvidia 的情绪走，较高点已回撤约三成，远期 PE 16.4 倍。分歧点在于毛利率下滑和管理层对 2027 年的谨慎表态。",
+  sc:[["11 月营收继续强，Nvidia 消息面平息","363 到 375"],["基本面与情绪互相抵消","320 到 365"],["关税波及台湾，或出口管制影响客户下单","回测 318.71（11/20 收盘）"]],
+  watch:"12 月上旬的 11 月营收；Nvidia 发货暂停的走向。"},
+ AMZN:{bias:"中性",conf:"中低",view:"股价被两件与主业关系不大的事拖累：Anthropic 持股的账面波动，以及市场对 AI 融资的担忧。AWS 的合约没有变化。近端真正的基本面信号是黑五和网一的销售数据。",
+  sc:[["假日销售数据强，Anthropic 站稳发行价","255 到 267"],["数据平平","240 到 258"],["Anthropic 继续下跌，AI 抛售扩散","跌破 240（10/30 收盘 240.35）"]],
+  watch:"黑五与网一的线上销售数据；Anthropic 股价相对 83 美元发行价的位置。"},
+ AAPL:{bias:"偏多，空间有限",conf:"中",view:"资金把它当作 AI 抛售里的避风港，所以它在逆势创新高。但现价已高于分析师平均目标价，远期 PE 约 38 倍，容错空间很小。关税提案点名中国和印度，这两处正是它的主要产地。",
+  sc:[["避险资金继续流入","突破 360.83 创 52 周新高"],["高位横盘","345 到 360"],["关税落地，或资金回流 AI 板块","回测 342（11/20 收盘）"]],
+  watch:"关税提案的国别与税率细节；假日季 iPhone 销售的渠道反馈。"},
+ MSFT:{bias:"偏弱",conf:"中低",view:"11/4 冲到 555.80 之后一路走低，三周跌了约 12%，年内涨幅几乎归零。大面积故障伤的是企业客户最看重的可靠性，AI 融资担忧又压着估值。PE 25.6 倍不算贵，但目前没有看到扭转趋势的催化。",
+  sc:[["故障复盘让市场放心，板块反弹","站回 500 到 508"],["弱势整理","480 到 500"],["再出事故，或 AI 融资担忧加重","跌破 484.52（11/20 收盘）后继续下探"]],
+  watch:"故障的官方复盘；Windows 新版本规划的细节。"},
+ TSLA:{bias:"中性，高波动",conf:"低",view:"股价靠叙事支撑：Cybercab、与 SpaceX 的合并传闻、欧洲的辅助驾驶审批。PE 超过 400 倍，对消息极其敏感。11/25 盘中跌 7% 还能收回大半，说明下方有资金承接。12/15 的欧盟审议接近一次二选一事件。",
+  sc:[["合并条款明朗且对 Tesla 股东有利，或欧盟放行预期升温","390 到 400"],["传闻持续，没有定论","357 到 390"],["合并条款不利，或审议再次推迟","回测 345（11/20 收盘）"]],
+  watch:"SpaceX 合并是否有正式公告；12/15 欧盟审议。"},
+ AVGO:{bias:"财报前偏弱",conf:"低",view:"5 个交易日跌了 15%。Google 砍单的说法把客户过于集中这个老问题摆到了台面上。远期 PE 已压到 17.3 倍，坏消息消化了一部分。12/9 的财报几乎决定方向，在那之前股价更多是情绪。",
+  sc:[["财报给出的 AI 收入指引否定了砍单说法","回补到 330 到 346（11/20 的缺口）"],["财报前观望","278 到 315"],["财报证实订单下调","跌破 278"]],
+  watch:"12/9 财报里的 AI 芯片收入指引；Google 自己的表态。"},
+ CRM:{bias:"财报前偏多",conf:"中低",view:"年内跌了四分之一，远期 PE 13.5 倍，市场预期已经压得很低。过去 8 次财报有 7 次每股收益超预期。低预期加上有记录的超预期能力，财报前的风险收益比不差，但结果本身仍是一次二选一。",
+  sc:[["业绩超预期并上调指引","215 到 218（11/13 前的平台）"],["符合预期","185 到 205"],["指引疲软，或 Agentforce 变现不及预期","回测 180（11/20 收盘）"]],
+  watch:"12/2 财报：有机增长、Agentforce 收入、利润率。"}
+};
+const MVIEW=[
+ "AI 行情从普涨进入分化。11/25 这天跌的是硬件链（Nvidia、台积电、Amazon），涨的是应用和避险方向（Meta、Salesforce、Apple）。纳指跌而道指涨，也是同一件事。",
+ "现在压着市场的是三个还没有答案的问题：美国对 14 国加征 15% 到 20% 关税的提案会不会落地；Nvidia 的出口管制会不会进一步收紧；AI 的钱够不够烧，Anthropic 上市几天就在发行价附近挣扎，英格兰银行也在警告融资风险。",
+ "VIX 在 27，属于偏高水平，单日大幅波动会是常态。盘中跌 4.6% 又收回到只跌 0.6%，说明有资金在低位买，但还不足以说明已经见底。",
+ "宏观数据偏强：三季度 GDP 修正到 4.3%，10 月 PCE 同比 3.8%。经济不差但通胀偏高，降息帮忙的空间有限，这是我的判断，不是数据本身。"
+];
+const MSCEN=[
+ ["基准","约 50%","高波动区间震荡。三个问题都没有定论，指数在 11/20 低点和 11/23 反弹高点之间来回。个股分化继续，财报决定 Salesforce 和 Broadcom 的方向。"],
+ ["上行","约 25%","关税提案被搁置或缩水，Nvidia 发货暂停被确认为临时措施。硬件链带头反弹，跌得最多的 Nvidia、Broadcom、台积电弹性最大。"],
+ ["下行","约 25%","关税落地，或 Broadcom 财报证实 AI 订单下调。纳指从回调走向更深的下跌，Apple 这类避险股也可能补跌。"]
+];
 const pct=(a,b)=>(a==null||b==null)?null:(a/b-1)*100;
 const fmtP=(v,ap)=>v==null?"n/a":(ap?"≈":"")+(v>0?"+":"")+v.toFixed(v>-10&&v<10?2:1)+"%";
 const cls=v=>v==null?"muted":(v>=0?"up":"down");
@@ -336,8 +421,31 @@ document.getElementById("val").innerHTML=
  `<thead><tr><th>代码</th><th>市值</th><th>PE(TTM)</th><th>远期 PE</th><th>目标价</th><th>较现价</th></tr></thead><tbody>`+
  DATA.stocks.map(s=>`<tr><td><span class="tk">${s.t}</span></td><td class="num">$${s.cap}</td><td class="num">${f1(s.pe)}</td><td class="num">${s.fpe==null?"n/a":s.fpe.toFixed(1)}</td><td class="num">$${s.tgt.toFixed(2)}</td><td class="num">${fmtP(s.up,s.approx)}</td></tr>`).join("")+`</tbody>`;
 
-// stock notes
-document.getElementById("stocks").innerHTML=DATA.stocks.map(s=>`<article class="card stock"><div class="hd"><h3>${s.n}<span class="tag num">${s.t}</span></h3><span class="px">${s.approx?"≈":""}$${s.close.toFixed(2)} <span class="${cls(s.d1)}">${fmtP(s.d1,s.approx)}</span></span></div><ul>${s.notes.map(n=>`<li>${n[0]} <a class="small" href="${n[1]}" target="_blank" rel="noopener">来源</a></li>`).join("")}</ul></article>`).join("");
+// stock notes + analysis
+const KS=["上行","基准","下行"];
+DATA.stocks.forEach(s=>Object.assign(s,EXTRA[s.t]));
+document.getElementById("stocks").innerHTML=DATA.stocks.map(s=>`<article class="card stock" id="s-${s.t}"><div class="hd"><h3>${s.n}<span class="tag num">${s.t}</span></h3><span class="px">${s.approx?"≈":""}$${s.close.toFixed(2)} <span class="${cls(s.d1)}">${fmtP(s.d1,s.approx)}</span></span></div>
+<div class="sub">情报</div><ul>${s.notes.map(n=>`<li>${n[0]} <a class="small" href="${n[1]}" target="_blank" rel="noopener">来源</a></li>`).join("")}</ul>
+<div class="sub">分析</div><p>${s.view}</p>
+<div class="sub">预测（未来 1 至 2 周）</div><div><span class="bias">${s.bias}</span> <span class="small muted">把握度 ${s.conf}</span></div>
+<div class="scen">${s.sc.map((c,i)=>`<div class="s"><span class="k">${KS[i]}</span><span>${c[0]}<span class="lv">${c[1]}</span></span></div>`).join("")}</div>
+<p class="watch">观察信号：${s.watch}</p></article>`).join("");
+document.getElementById("chips").innerHTML=DATA.stocks.map(s=>`<button type="button" data-t="${s.t}">${s.t}</button>`).join("");
+document.querySelectorAll("#chips button").forEach(b=>b.addEventListener("click",()=>document.getElementById("s-"+b.dataset.t).scrollIntoView({behavior:"smooth",block:"start"})));
+
+// outlook
+document.getElementById("mview").innerHTML=MVIEW.map(x=>`<li>${x}</li>`).join("");
+document.getElementById("mscen").innerHTML=MSCEN.map(c=>`<div class="s"><span class="k">${c[0]}<span class="lv">${c[1]}</span></span><span>${c[2]}</span></div>`).join("");
+document.getElementById("biasT").innerHTML=`<thead><tr><th>代码</th><th>倾向</th><th>把握度</th><th>基准情景下的区间</th></tr></thead><tbody>`+DATA.stocks.map(s=>`<tr><td><span class="tk">${s.t}</span></td><td><span class="bias">${s.bias}</span></td><td>${s.conf}</td><td class="num">${s.sc[1][1]}</td></tr>`).join("")+`</tbody>`;
+
+// tabs
+const TABS=["overview","charts","stocks","outlook"];
+function show(t){ if(!TABS.includes(t))t="overview";
+  document.querySelectorAll("section[data-tab]").forEach(x=>x.hidden=x.dataset.tab!==t);
+  document.querySelectorAll(".tabs button").forEach(b=>b.setAttribute("aria-selected",b.dataset.go===t)); }
+document.querySelectorAll(".tabs button").forEach(b=>b.addEventListener("click",()=>{show(b.dataset.go);try{history.replaceState(null,"","#"+b.dataset.go);}catch(e){location.hash=b.dataset.go;}window.scrollTo(0,0);}));
+window.addEventListener("hashchange",()=>show(location.hash.slice(1)));
+show(location.hash.slice(1));
 
 // calendar
 document.getElementById("cal").innerHTML=DATA.cal.map(c=>`<div class="d">${c[0]}</div><div>${c[1]}</div>`).join("");
