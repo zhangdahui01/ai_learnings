@@ -108,7 +108,7 @@ section[hidden]{display:none}
 .scen .s .k{font-weight:600;font-size:13px}
 .scen .s .lv{font-family:var(--f-num);font-size:12.5px;color:var(--muted);display:block;margin-top:2px}
 .watch{font-size:13.5px;color:var(--muted)}
-#biasT td:nth-child(n+2),#biasT th:nth-child(n+2){text-align:left}
+#biasT td:nth-child(n+2),#biasT th:nth-child(n+2),#reviewT td:nth-child(n+2),#reviewT th:nth-child(n+2){text-align:left}
 </style>
 </head>
 <body>
@@ -138,7 +138,7 @@ section[hidden]{display:none}
 <section data-tab="overview" class="card">
   <div class="row"><h2>10 只股票总览</h2><button class="toggle" id="updown" type="button">切换为 绿涨红跌</button></div>
   <div class="scroll"><table id="overview"></table></div>
-  <p class="small muted" style="margin-top:8px">5 日 = 相对 11/18 收盘；1 个月 = 相对 10/26 收盘；年内 = 相对 2025 年最后一个交易日收盘。带 ≈ 的数字为间接来源推算。</p>
+  <p class="small muted" style="margin-top:8px" id="basis"></p>
 </section>
 
 <section data-tab="charts" class="card">
@@ -153,7 +153,7 @@ section[hidden]{display:none}
 </section>
 
 <section data-tab="charts" class="card">
-  <h2>近一个月走势（10/26 至 11/25 收盘）</h2>
+  <h2 id="sparkH">近一个月走势</h2>
   <div class="grid2" id="sparks"></div>
   <p class="small muted" style="margin-top:8px">每张小图各自缩放，只看形状不比高低。手指按住或鼠标移上去看当日收盘价。</p>
 </section>
@@ -192,6 +192,12 @@ section[hidden]{display:none}
   <p class="small muted" style="margin-top:8px">倾向指未来 1 至 2 周相对现价的方向判断。把握度低表示消息面主导、随时可能反转。</p>
 </section>
 
+<section data-tab="outlook" class="card" id="reviewS" data-empty="1">
+  <h2>上期预测回看</h2>
+  <div class="scroll"><table id="reviewT"></table></div>
+  <p class="small muted" style="margin-top:8px" id="reviewN"></p>
+</section>
+
 <section data-tab="outlook" class="card">
   <h2>接下来看什么</h2>
   <div class="cal" id="cal"></div>
@@ -204,156 +210,15 @@ section[hidden]{display:none}
 </main>
 
 <script>
-const DATA = {
-  dates:["10/26","10/27","10/28","10/29","10/30","11/2","11/3","11/4","11/5","11/6","11/9","11/10","11/11","11/12","11/13","11/16","11/17","11/18","11/19","11/20","11/23","11/24","11/25"],
-  lead:[
-    "AI 硬件链继续承压：11/25 Nvidia 跌 3.91%、台积电跌 1.96%，纳指收跌 0.6%，较历史高点低 14.2%，处于回调区间。盘中一度跌 4.6%，尾盘收回大部分。",
-    "Nvidia 是本月主线：黄仁勋 11/12 辞职、11/23 董事会宣布其复职（当日股价涨 31.48%），随后又连跌两天。11/26 多家媒体报道公司要求合作方暂停向马来西亚、新加坡、泰国、印尼发货。",
-    "Coupang 逆势走强：11/23 涨 3.3%、11/24 涨 8.6%，没有公司公告。同期白宫指责韩国针对 Coupang，美方贸易官员提到对韩国商品最高 25% 关税。",
-    "下周两份财报：Salesforce 12/2 盘后，Broadcom 12/9 盘后。Broadcom 11/20 单日跌 12.19%，11/25 盘中触及 278 美元，为 2025 年 7 月以来最低。"
-  ],
-  market:[
-    {k:"道指",v:"50,182.95",d:0.3},
-    {k:"标普 500",v:"7,182.78",d:-0.3},
-    {k:"纳指",v:"23,585.80",d:-0.6},
-    {k:"VIX 波动率",v:"27.17",d:-4.0}
-  ],
-  stocks:[
-    {t:"NVDA",n:"Nvidia",base:186.50,lo:124.50,hi:243.37,cap:"3.61T",pe:16.0,fpe:10.3,tgt:242.43,
-     px:[216.00,217.94,215.38,213.66,204.64,202.06,206.69,200.13,181.60,186.64,178.67,168.89,173.73,166.19,162.85,156.14,155.46,150.96,145.98,125.53,165.05,155.38,149.30],
-     notes:[
-       ["11/25 收 149.30，跌 3.91%；年内跌约 20%，是七巨头里最差的一只。","https://stockanalysis.com/stocks/nvda/history/"],
-       ["黄仁勋 11/12 因私人关系报道辞职，报道涉及一名前 Megaspeed 高管，部分美国官员怀疑其有情报背景。董事会随后请他复职。美国商务部 11/25 把 Megaspeed 列入实体清单。","https://www.engadget.com/2329200/nvidia-reportedly-halts-chip-shipments-to-southeast-asia/"],
-       ["WSJ 与 FT 报道：Nvidia 让 Dell、Supermicro 等暂停向东南亚四国发运服务器，原因是美国收紧了中国企业远程租用算力的出口管制。是否临时尚不清楚。","https://techcrunch.com/2026/11/26/nvidia-hits-pause-on-chip-shipments-to-southeast-asia/"],
-       ["标普已把 Nvidia 列入信用观察，市场关注点转向公司治理和对单一领导人的依赖。","https://www.varindia.com/news/huang-is-back-but-nvidia-s-china-curbs-and-governance-questions-remain"]
-     ]},
-    {t:"CPNG",n:"Coupang",base:23.59,lo:13.35,hi:28.44,cap:"≈29B",pe:null,fpe:null,tgt:23.39,approx:true,
-     px:[13.75,null,null,null,null,14.70,15.23,17.05,16.42,16.29,16.42,16.33,15.99,15.29,15.19,14.35,14.00,14.28,14.06,14.27,14.74,16.01,16.12],
-     notes:[
-       ["11/24 涨 8.6%，11/23 涨 3.3%，期间没有财报或 SEC 文件。Trefis 追踪的来源都没有给出上涨原因。","https://www.trefis.com/stock/cpng/articles/628983/did-company-news-send-coupang-stock-higher/2026-11-25"],
-       ["白宫指责首尔不公平地针对 Coupang；数小时前美国贸易官员提到对韩国商品征收最高 25% 关税。韩国公平交易委员会此前对 Coupang 与配送民族合计开出 6319 亿韩元罚单。","https://www.kedglobal.com/business-politics/newsView/ked202611260005"],
-       ["三季度营收 99.6 亿美元，同比增 7.5%，但受仁川物流中心火灾与罚款影响录得亏损。","https://stockstory.org/us/stocks/nyse/cpng/news/earnings/coupangs-nysecpng-q3-2026-sales-beat-estimates"],
-       ["13F 显示 State Street 三季度减持 49.1%，期末持有约 2025 万股。","https://www.thecerbatgem.com/2026/11/27/coupang-inc-cpng-shares-sold-by-state-street-corp.html"]
-     ]},
-    {t:"META",n:"Meta",base:660.09,lo:520.26,hi:779.82,cap:"1.56T",pe:20.8,fpe:18.8,tgt:842.54,
-     px:[630.56,620.19,612.49,624.52,614.99,606.73,621.03,630.00,605.08,610.15,641.37,641.39,628.77,623.61,641.69,626.41,618.87,616.38,596.22,560.84,597.60,589.82,609.89],
-     notes:[
-       ["11/25 收 609.89，涨 3.40%，是当天这 10 只里表现最好的。","https://stockanalysis.com/stocks/meta/history/"],
-       ["催化剂：TechCrunch 等报道 Amazon 与 Meta 正在谈判，可能解除对 Meta AI 购物代理 Muse 的封锁。Amazon 9 月起屏蔽 Muse 访问其商城。","https://stockanalysis.com/stocks/meta/"],
-       ["Instagram 创作者现在可以在帖子里加 Amazon 联盟链接。","https://stockanalysis.com/stocks/meta/"]
-     ]},
-    {t:"TSM",n:"台积电 ADR",base:303.89,lo:273.08,hi:487.47,cap:"1.69T",pe:23.1,fpe:16.4,tgt:586.69,
-     px:[424.37,436.87,439.51,431.81,406.13,398.63,404.80,395.75,353.10,375.44,388.62,396.48,413.35,405.49,398.73,373.45,359.69,362.62,352.09,318.71,363.60,349.20,342.34],
-     notes:[
-       ["11/25 收 342.34，跌 1.96%；较高点回撤约 30%，但年内仍涨约 13%。","https://stockanalysis.com/stocks/tsm/history/"],
-       ["基本面没有变差：10 月营收约 5868.9 亿新台币，同比增 59.7%；1 至 10 月累计增 43.3%。","https://pr.tsmc.com/english/news/3349"],
-       ["三季度毛利率降到 66.4%，早期 2nm 产能与海外厂拖累；管理层对 2027 年规划表态谨慎。董事会批准最多各 5 亿美元认购 Anthropic 与 OpenAI 股份。","https://www.tikr.com/blog/tsmc-just-booked-a-record-nt587-billion-month-nvidias-november-17-report-is-the-next-test"]
-     ]},
-    {t:"AMZN",n:"Amazon（AWS）",base:230.82,lo:196.00,hi:287.20,cap:"2.64T",pe:19.8,fpe:24.7,tgt:326.51,
-     px:[249.09,253.10,254.60,243.79,240.35,245.63,250.69,266.03,260.21,259.30,266.93,270.87,266.17,267.44,266.66,257.75,257.89,267.74,257.37,246.82,255.39,252.29,244.43],
-     notes:[
-       ["11/25 收 244.43，跌 3.12%，是当天 10 只里跌幅第二大的。","https://stockanalysis.com/stocks/amzn/history/"],
-       ["拖累因素之一是 Anthropic：其股价跌破 83 美元发行价，Amazon 按招股书持股约 14.7%，账面价值随之缩水。1100 亿美元的 AWS 云合约不受影响。","https://www.ad-hoc-news.de/boerse/news/unternehmensnachrichten/amazon-s-anthropic-stake-slips-below-ipo-price-as-delivery-network-and-ai-search-plans-advance/70551659"],
-       ["Oppenheimer 在 Anthropic 上市后把目标价从 285 上调到 310 美元。","https://stockanalysis.com/stocks/amzn/"]
-     ]},
-    {t:"AAPL",n:"Apple",base:271.86,lo:243.42,hi:360.83,cap:"5.17T",pe:39.6,fpe:37.8,tgt:345.63,
-     px:[343.91,347.10,343.83,348.91,344.63,338.32,331.90,349.51,344.17,342.37,350.69,348.51,355.63,354.88,356.27,352.78,351.91,352.45,349.21,342.56,349.08,354.07,355.58],
-     notes:[
-       ["11/25 收 355.58，涨 0.43%；年内涨 30.8%，领跑七巨头，离 52 周高点 360.83 只差约 1.5%。","https://wisevoter.com/world/2026/11/27/apple-leads-magnificent-seven-nvidia-falls"],
-       ["它在 AI 抛售中充当避风港，但现价已高于分析师平均目标价 345.63，远期 PE 约 38 倍，是这 10 只里除 Tesla 外最贵的。","https://stockanalysis.com/stocks/aapl/"],
-       ["Michael Burry 把 Apple 点名为这轮行情里的领头股之一；招聘信息显示 Apple 计划自研 AI agent。","https://stockanalysis.com/stocks/aapl/"]
-     ]},
-    {t:"MSFT",n:"Microsoft",base:483.62,lo:349.20,hi:559.15,cap:"3.64T",pe:25.6,fpe:23.6,tgt:637.36,
-     px:[532.60,531.33,531.01,530.14,521.91,507.12,520.99,555.80,535.93,530.61,545.18,533.16,521.13,523.00,523.88,517.99,506.24,508.29,498.30,484.52,492.50,496.13,489.93],
-     notes:[
-       ["11/25 收 489.93，跌 1.25%；年内涨幅收窄到约 1%。","https://stockanalysis.com/stocks/msft/"],
-       ["路透称 Microsoft 在一次持续约 24 小时的故障后内部宣布 Code Red。","https://stockanalysis.com/stocks/msft/"],
-       ["英格兰银行警告 AI 融资威胁金融稳定，估算云巨头相关敞口超过 4 万亿美元。","https://stockanalysis.com/stocks/msft/"]
-     ]},
-    {t:"TSLA",n:"Tesla",base:449.72,lo:297.38,hi:498.83,cap:"1.50T",pe:417.7,fpe:178.3,tgt:419.05,
-     px:[391.62,407.46,404.22,403.30,399.81,403.82,398.50,385.19,343.69,358.22,378.05,379.78,390.84,397.45,390.22,379.74,380.11,383.72,374.41,345.82,385.46,384.68,380.14],
-     notes:[
-       ["11/25 收 380.14，跌 1.18%；盘中最低 357.64（跌 7%），收盘前拉回。","https://www.tradingkey.com/analysis/stocks/us-stocks/262325053-tesla-recovers-7-percent-drop-spacex-merger-talks-eu-fsd-delay-388-93-pivot-november-27-2026-tradingkey"],
-       ["两件事同一天落地：欧盟把辅助驾驶系统的审议推迟到 12/15；与 SpaceX 全股票合并的传闻继续发酵，双方都没有公布正式协议。","https://www.heygotrade.com/en/news/tesla-tsla-stock-news-november-26-2026/"],
-       ["此前 Tesla 已向部分客户开放 Cybercab 个人购买，售价 29,990 美元外加每月 299 美元订阅。","https://stockanalysis.com/stocks/tsla/"]
-     ]},
-    {t:"AVGO",n:"Broadcom（Avago）",base:346.10,lo:278.00,hi:495.00,cap:"1.41T",pe:38.4,fpe:17.3,tgt:526.47,
-     px:[329.17,342.33,351.81,345.00,326.08,322.23,332.13,325.48,291.53,293.69,319.48,331.98,345.22,364.36,347.01,333.40,341.60,354.05,346.65,304.41,313.55,301.08,300.86],
-     notes:[
-       ["11/25 收 300.86，几乎平收（-0.07%），但盘中最低 278.00，较 6 月 2 日收盘高点 481.57 低约 37.5%。","https://www.tradingview.com/news/gurufocus:2aceb5c99094b:0-broadcom-stocks-edge-lower-after-rebounding-from-an-intraday-low-of-278/"],
-       ["下跌主因：11/20 有分析师称 Google 把 2027 年 TPU 订单削减 20%，当日股价跌 12.19%。客户集中度是市场最担心的点。","https://stockanalysis.com/stocks/avgo/"],
-       ["12/9 盘后公布财报，将是检验 AI 定制芯片需求的下一个节点。","https://marketchameleon.com/Overview/AVGO/"]
-     ]},
-    {t:"CRM",n:"Salesforce",base:264.91,lo:146.32,hi:269.11,cap:"162B",pe:18.0,fpe:13.5,tgt:284.44,
-     px:[247.61,240.89,242.11,230.90,229.17,226.18,222.20,227.11,222.41,213.65,214.94,213.48,218.01,217.57,217.84,214.83,194.52,190.40,183.31,180.62,null,193.26,197.21],
-     notes:[
-       ["11/25 收 197.21，涨 2.04%，和 IBM 等一起把道指从盘中跌逾 1100 点拉回到收涨。","https://kalkine.com/news/technology/salesforce-nysecrm-stock-software-giant-helps-lift-the-dow-ahead-of-earnings"],
-       ["但年内仍跌约 25.6%。11/17 因新一轮裁员与设定内部 AI 用量预算的消息单日跌 9.45%。","https://finviz.com/stock?t=CRM"],
-       ["12/2 盘后公布 2027 财年第三季度业绩，市场预期 EPS 3.45 美元、营收 114.6 亿美元。","https://stocktwits.com/symbol/CRM"]
-     ]}
-  ],
-  cal:[
-    ["11/27 今晚","美股半日交易（黑色星期五），成交通常清淡"],
-    ["12/2 周三","Salesforce 盘后财报"],
-    ["12/9 周三","Broadcom 盘后财报"],
-    ["12 月上旬","台积电公布 11 月营收"],
-    ["12/15 周二","欧盟审议 Tesla 辅助驾驶系统"],
-    ["待定","Nvidia 东南亚发货暂停是否解除；美国拟对 14 国加征 15% 至 20% 关税的后续"]
-  ]
-};
-
-
-const EXTRA={
- NVDA:{bias:"震荡",conf:"低",view:"这轮下跌是治理和监管事件驱动的，业绩本身没有变差。远期 PE 只有 10.3 倍，是 10 只里最低的，说明市场在给未来盈利打折：担心东南亚发货暂停变成长期限制。11/23 复职当天的 31% 涨幅两天内回吐了约一成，但仍守在 11/20 低点 125.53 上方。",
-  sc:[["发货暂停被确认为临时合规检查，或拿到出口许可","回补到 165 附近（11/23 收盘）"],["消息来回拉扯，没有定论","125 到 165 宽幅震荡"],["暂停范围扩大，或出现新的管制与调查","回测 125 一带（52 周低点 124.50）"]],
-  watch:"商务部许可进展；标普信用观察的结论。"},
- CPNG:{bias:"中性",conf:"低",view:"两天涨约 12% 却没有公司消息，时间上与美方为 Coupang 公开施压重合，市场可能在提前押注监管压力缓和。但这只是推断：公司三季度仍亏损，两笔罚单金额很大，State Street 上季度还减持了近一半。年内仍跌约三成。",
-  sc:[["美韩交涉让罚款或监管口径松动","挑战 17.05（11/4 财报后高点）"],["消息停留在口头层面","15 到 17 区间"],["韩方强硬回应，或对韩关税落地冲击消费预期","回到 14 附近"]],
-  watch:"首尔的正式回应；美方关税决定；四季度营收指引是恒定汇率增长 13% 到 14%。"},
- META:{bias:"偏多",conf:"中低",view:"Muse 是 Meta 当前估值故事的核心。如果与 Amazon 达成协议，购物代理就能进入美国最大的电商平台，这比单纯的下载量更接近变现。PE 20.8 倍在这 10 只里不算贵。风险在于 AI 开支和融资担忧会让整个板块一起跌。",
-  sc:[["与 Amazon 的协议落地","回到 640 一带（11/9 至 11/13 的平台）"],["谈判继续，没有结果","590 到 640"],["谈判破裂，或 AI 抛售再起","回测 560（11/20 收盘）"]],
-  watch:"Amazon 与 Meta 的官方表态；其他云巨头的融资消息。"},
- TSM:{bias:"中性",conf:"中低",view:"基本面是 10 只里最硬的：月营收同比增近六成。但股价短期跟着 Nvidia 的情绪走，较高点已回撤约三成，远期 PE 16.4 倍。分歧点在于毛利率下滑和管理层对 2027 年的谨慎表态。",
-  sc:[["11 月营收继续强，Nvidia 消息面平息","363 到 375"],["基本面与情绪互相抵消","320 到 365"],["关税波及台湾，或出口管制影响客户下单","回测 318.71（11/20 收盘）"]],
-  watch:"12 月上旬的 11 月营收；Nvidia 发货暂停的走向。"},
- AMZN:{bias:"中性",conf:"中低",view:"股价被两件与主业关系不大的事拖累：Anthropic 持股的账面波动，以及市场对 AI 融资的担忧。AWS 的合约没有变化。近端真正的基本面信号是黑五和网一的销售数据。",
-  sc:[["假日销售数据强，Anthropic 站稳发行价","255 到 267"],["数据平平","240 到 258"],["Anthropic 继续下跌，AI 抛售扩散","跌破 240（10/30 收盘 240.35）"]],
-  watch:"黑五与网一的线上销售数据；Anthropic 股价相对 83 美元发行价的位置。"},
- AAPL:{bias:"偏多，空间有限",conf:"中",view:"资金把它当作 AI 抛售里的避风港，所以它在逆势创新高。但现价已高于分析师平均目标价，远期 PE 约 38 倍，容错空间很小。关税提案点名中国和印度，这两处正是它的主要产地。",
-  sc:[["避险资金继续流入","突破 360.83 创 52 周新高"],["高位横盘","345 到 360"],["关税落地，或资金回流 AI 板块","回测 342（11/20 收盘）"]],
-  watch:"关税提案的国别与税率细节；假日季 iPhone 销售的渠道反馈。"},
- MSFT:{bias:"偏弱",conf:"中低",view:"11/4 冲到 555.80 之后一路走低，三周跌了约 12%，年内涨幅几乎归零。大面积故障伤的是企业客户最看重的可靠性，AI 融资担忧又压着估值。PE 25.6 倍不算贵，但目前没有看到扭转趋势的催化。",
-  sc:[["故障复盘让市场放心，板块反弹","站回 500 到 508"],["弱势整理","480 到 500"],["再出事故，或 AI 融资担忧加重","跌破 484.52（11/20 收盘）后继续下探"]],
-  watch:"故障的官方复盘；Windows 新版本规划的细节。"},
- TSLA:{bias:"中性，高波动",conf:"低",view:"股价靠叙事支撑：Cybercab、与 SpaceX 的合并传闻、欧洲的辅助驾驶审批。PE 超过 400 倍，对消息极其敏感。11/25 盘中跌 7% 还能收回大半，说明下方有资金承接。12/15 的欧盟审议接近一次二选一事件。",
-  sc:[["合并条款明朗且对 Tesla 股东有利，或欧盟放行预期升温","390 到 400"],["传闻持续，没有定论","357 到 390"],["合并条款不利，或审议再次推迟","回测 345（11/20 收盘）"]],
-  watch:"SpaceX 合并是否有正式公告；12/15 欧盟审议。"},
- AVGO:{bias:"财报前偏弱",conf:"低",view:"5 个交易日跌了 15%。Google 砍单的说法把客户过于集中这个老问题摆到了台面上。远期 PE 已压到 17.3 倍，坏消息消化了一部分。12/9 的财报几乎决定方向，在那之前股价更多是情绪。",
-  sc:[["财报给出的 AI 收入指引否定了砍单说法","回补到 330 到 346（11/20 的缺口）"],["财报前观望","278 到 315"],["财报证实订单下调","跌破 278"]],
-  watch:"12/9 财报里的 AI 芯片收入指引；Google 自己的表态。"},
- CRM:{bias:"财报前偏多",conf:"中低",view:"年内跌了四分之一，远期 PE 13.5 倍，市场预期已经压得很低。过去 8 次财报有 7 次每股收益超预期。低预期加上有记录的超预期能力，财报前的风险收益比不差，但结果本身仍是一次二选一。",
-  sc:[["业绩超预期并上调指引","215 到 218（11/13 前的平台）"],["符合预期","185 到 205"],["指引疲软，或 Agentforce 变现不及预期","回测 180（11/20 收盘）"]],
-  watch:"12/2 财报：有机增长、Agentforce 收入、利润率。"}
-};
-const MVIEW=[
- "AI 行情从普涨进入分化。11/25 这天跌的是硬件链（Nvidia、台积电、Amazon），涨的是应用和避险方向（Meta、Salesforce、Apple）。纳指跌而道指涨，也是同一件事。",
- "现在压着市场的是三个还没有答案的问题：美国对 14 国加征 15% 到 20% 关税的提案会不会落地；Nvidia 的出口管制会不会进一步收紧；AI 的钱够不够烧，Anthropic 上市几天就在发行价附近挣扎，英格兰银行也在警告融资风险。",
- "VIX 在 27，属于偏高水平，单日大幅波动会是常态。盘中跌 4.6% 又收回到只跌 0.6%，说明有资金在低位买，但还不足以说明已经见底。",
- "宏观数据偏强：三季度 GDP 修正到 4.3%，10 月 PCE 同比 3.8%。经济不差但通胀偏高，降息帮忙的空间有限，这是我的判断，不是数据本身。"
-];
-const MSCEN=[
- ["基准","约 50%","高波动区间震荡。三个问题都没有定论，指数在 11/20 低点和 11/23 反弹高点之间来回。个股分化继续，财报决定 Salesforce 和 Broadcom 的方向。"],
- ["上行","约 25%","关税提案被搁置或缩水，Nvidia 发货暂停被确认为临时措施。硬件链带头反弹，跌得最多的 Nvidia、Broadcom、台积电弹性最大。"],
- ["下行","约 25%","关税落地，或 Broadcom 财报证实 AI 订单下调。纳指从回调走向更深的下跌，Apple 这类避险股也可能补跌。"]
-];
+const DATA = {"date":"2026-11-27","weekday":"周五","headline":"AI 硬件链承压，Nvidia 暂停东南亚发货，Coupang 逆势走强","asof":"行情截至 11 月 25 日（周三）美股收盘。11 月 26 日感恩节休市，今晚为半日交易。生成于首尔时间 22:30。","dataNotes":"收盘价与历史价来自 StockAnalysis（数据源 S&P Global Market Intelligence）、Yahoo Finance；消息来自各条目后的链接。Coupang 11/24、11/25 收盘价未取到直接报价，按 Trefis 报道的涨幅与 MarketBeat 报道的价格推算，标注为 ≈。Salesforce 11/23 收盘价缺失，走势图跳过该日。","dates":["10/26","10/27","10/28","10/29","10/30","11/2","11/3","11/4","11/5","11/6","11/9","11/10","11/11","11/12","11/13","11/16","11/17","11/18","11/19","11/20","11/23","11/24","11/25"],"lead":["AI 硬件链继续承压：11/25 Nvidia 跌 3.91%、台积电跌 1.96%，纳指收跌 0.6%，较历史高点低 14.2%，处于回调区间。盘中一度跌 4.6%，尾盘收回大部分。","Nvidia 是本月主线：黄仁勋 11/12 辞职、11/23 董事会宣布其复职（当日股价涨 31.48%），随后又连跌两天。11/26 多家媒体报道公司要求合作方暂停向马来西亚、新加坡、泰国、印尼发货。","Coupang 逆势走强：11/23 涨 3.3%、11/24 涨 8.6%，没有公司公告。同期白宫指责韩国针对 Coupang，美方贸易官员提到对韩国商品最高 25% 关税。","下周两份财报：Salesforce 12/2 盘后，Broadcom 12/9 盘后。Broadcom 11/20 单日跌 12.19%，11/25 盘中触及 278 美元，为 2025 年 7 月以来最低。"],"market":[{"k":"道指","v":"50,182.95","d":0.3},{"k":"标普 500","v":"7,182.78","d":-0.3},{"k":"纳指","v":"23,585.80","d":-0.6},{"k":"VIX 波动率","v":"27.17","d":-4}],"stocks":[{"t":"NVDA","n":"Nvidia","base":186.5,"lo":124.5,"hi":243.37,"cap":"3.61T","pe":16,"fpe":10.3,"tgt":242.43,"px":[216,217.94,215.38,213.66,204.64,202.06,206.69,200.13,181.6,186.64,178.67,168.89,173.73,166.19,162.85,156.14,155.46,150.96,145.98,125.53,165.05,155.38,149.3],"notes":[["11/25 收 149.30，跌 3.91%；年内跌约 20%，是七巨头里最差的一只。","https://stockanalysis.com/stocks/nvda/history/"],["黄仁勋 11/12 因私人关系报道辞职，报道涉及一名前 Megaspeed 高管，部分美国官员怀疑其有情报背景。董事会随后请他复职。美国商务部 11/25 把 Megaspeed 列入实体清单。","https://www.engadget.com/2329200/nvidia-reportedly-halts-chip-shipments-to-southeast-asia/"],["WSJ 与 FT 报道：Nvidia 让 Dell、Supermicro 等暂停向东南亚四国发运服务器，原因是美国收紧了中国企业远程租用算力的出口管制。是否临时尚不清楚。","https://techcrunch.com/2026/11/26/nvidia-hits-pause-on-chip-shipments-to-southeast-asia/"],["标普已把 Nvidia 列入信用观察，市场关注点转向公司治理和对单一领导人的依赖。","https://www.varindia.com/news/huang-is-back-but-nvidia-s-china-curbs-and-governance-questions-remain"]],"bias":"震荡","conf":"低","view":"这轮下跌是治理和监管事件驱动的，业绩本身没有变差。远期 PE 只有 10.3 倍，是 10 只里最低的，说明市场在给未来盈利打折：担心东南亚发货暂停变成长期限制。11/23 复职当天的 31% 涨幅两天内回吐了约一成，但仍守在 11/20 低点 125.53 上方。","sc":[["发货暂停被确认为临时合规检查，或拿到出口许可","回补到 165 附近（11/23 收盘）"],["消息来回拉扯，没有定论","125 到 165 宽幅震荡"],["暂停范围扩大，或出现新的管制与调查","回测 125 一带（52 周低点 124.50）"]],"watch":"商务部许可进展；标普信用观察的结论。"},{"t":"CPNG","n":"Coupang","base":23.59,"lo":13.35,"hi":28.44,"cap":"≈29B","pe":null,"fpe":null,"tgt":23.39,"approx":true,"px":[13.75,null,null,null,null,14.7,15.23,17.05,16.42,16.29,16.42,16.33,15.99,15.29,15.19,14.35,14,14.28,14.06,14.27,14.74,16.01,16.12],"notes":[["11/24 涨 8.6%，11/23 涨 3.3%，期间没有财报或 SEC 文件。Trefis 追踪的来源都没有给出上涨原因。","https://www.trefis.com/stock/cpng/articles/628983/did-company-news-send-coupang-stock-higher/2026-11-25"],["白宫指责首尔不公平地针对 Coupang；数小时前美国贸易官员提到对韩国商品征收最高 25% 关税。韩国公平交易委员会此前对 Coupang 与配送民族合计开出 6319 亿韩元罚单。","https://www.kedglobal.com/business-politics/newsView/ked202611260005"],["三季度营收 99.6 亿美元，同比增 7.5%，但受仁川物流中心火灾与罚款影响录得亏损。","https://stockstory.org/us/stocks/nyse/cpng/news/earnings/coupangs-nysecpng-q3-2026-sales-beat-estimates"],["13F 显示 State Street 三季度减持 49.1%，期末持有约 2025 万股。","https://www.thecerbatgem.com/2026/11/27/coupang-inc-cpng-shares-sold-by-state-street-corp.html"]],"bias":"中性","conf":"低","view":"两天涨约 12% 却没有公司消息，时间上与美方为 Coupang 公开施压重合，市场可能在提前押注监管压力缓和。但这只是推断：公司三季度仍亏损，两笔罚单金额很大，State Street 上季度还减持了近一半。年内仍跌约三成。","sc":[["美韩交涉让罚款或监管口径松动","挑战 17.05（11/4 财报后高点）"],["消息停留在口头层面","15 到 17 区间"],["韩方强硬回应，或对韩关税落地冲击消费预期","回到 14 附近"]],"watch":"首尔的正式回应；美方关税决定；四季度营收指引是恒定汇率增长 13% 到 14%。"},{"t":"META","n":"Meta","base":660.09,"lo":520.26,"hi":779.82,"cap":"1.56T","pe":20.8,"fpe":18.8,"tgt":842.54,"px":[630.56,620.19,612.49,624.52,614.99,606.73,621.03,630,605.08,610.15,641.37,641.39,628.77,623.61,641.69,626.41,618.87,616.38,596.22,560.84,597.6,589.82,609.89],"notes":[["11/25 收 609.89，涨 3.40%，是当天这 10 只里表现最好的。","https://stockanalysis.com/stocks/meta/history/"],["催化剂：TechCrunch 等报道 Amazon 与 Meta 正在谈判，可能解除对 Meta AI 购物代理 Muse 的封锁。Amazon 9 月起屏蔽 Muse 访问其商城。","https://stockanalysis.com/stocks/meta/"],["Instagram 创作者现在可以在帖子里加 Amazon 联盟链接。","https://stockanalysis.com/stocks/meta/"]],"bias":"偏多","conf":"中低","view":"Muse 是 Meta 当前估值故事的核心。如果与 Amazon 达成协议，购物代理就能进入美国最大的电商平台，这比单纯的下载量更接近变现。PE 20.8 倍在这 10 只里不算贵。风险在于 AI 开支和融资担忧会让整个板块一起跌。","sc":[["与 Amazon 的协议落地","回到 640 一带（11/9 至 11/13 的平台）"],["谈判继续，没有结果","590 到 640"],["谈判破裂，或 AI 抛售再起","回测 560（11/20 收盘）"]],"watch":"Amazon 与 Meta 的官方表态；其他云巨头的融资消息。"},{"t":"TSM","n":"台积电 ADR","base":303.89,"lo":273.08,"hi":487.47,"cap":"1.69T","pe":23.1,"fpe":16.4,"tgt":586.69,"px":[424.37,436.87,439.51,431.81,406.13,398.63,404.8,395.75,353.1,375.44,388.62,396.48,413.35,405.49,398.73,373.45,359.69,362.62,352.09,318.71,363.6,349.2,342.34],"notes":[["11/25 收 342.34，跌 1.96%；较高点回撤约 30%，但年内仍涨约 13%。","https://stockanalysis.com/stocks/tsm/history/"],["基本面没有变差：10 月营收约 5868.9 亿新台币，同比增 59.7%；1 至 10 月累计增 43.3%。","https://pr.tsmc.com/english/news/3349"],["三季度毛利率降到 66.4%，早期 2nm 产能与海外厂拖累；管理层对 2027 年规划表态谨慎。董事会批准最多各 5 亿美元认购 Anthropic 与 OpenAI 股份。","https://www.tikr.com/blog/tsmc-just-booked-a-record-nt587-billion-month-nvidias-november-17-report-is-the-next-test"]],"bias":"中性","conf":"中低","view":"基本面是 10 只里最硬的：月营收同比增近六成。但股价短期跟着 Nvidia 的情绪走，较高点已回撤约三成，远期 PE 16.4 倍。分歧点在于毛利率下滑和管理层对 2027 年的谨慎表态。","sc":[["11 月营收继续强，Nvidia 消息面平息","363 到 375"],["基本面与情绪互相抵消","320 到 365"],["关税波及台湾，或出口管制影响客户下单","回测 318.71（11/20 收盘）"]],"watch":"12 月上旬的 11 月营收；Nvidia 发货暂停的走向。"},{"t":"AMZN","n":"Amazon（AWS）","base":230.82,"lo":196,"hi":287.2,"cap":"2.64T","pe":19.8,"fpe":24.7,"tgt":326.51,"px":[249.09,253.1,254.6,243.79,240.35,245.63,250.69,266.03,260.21,259.3,266.93,270.87,266.17,267.44,266.66,257.75,257.89,267.74,257.37,246.82,255.39,252.29,244.43],"notes":[["11/25 收 244.43，跌 3.12%，是当天 10 只里跌幅第二大的。","https://stockanalysis.com/stocks/amzn/history/"],["拖累因素之一是 Anthropic：其股价跌破 83 美元发行价，Amazon 按招股书持股约 14.7%，账面价值随之缩水。1100 亿美元的 AWS 云合约不受影响。","https://www.ad-hoc-news.de/boerse/news/unternehmensnachrichten/amazon-s-anthropic-stake-slips-below-ipo-price-as-delivery-network-and-ai-search-plans-advance/70551659"],["Oppenheimer 在 Anthropic 上市后把目标价从 285 上调到 310 美元。","https://stockanalysis.com/stocks/amzn/"]],"bias":"中性","conf":"中低","view":"股价被两件与主业关系不大的事拖累：Anthropic 持股的账面波动，以及市场对 AI 融资的担忧。AWS 的合约没有变化。近端真正的基本面信号是黑五和网一的销售数据。","sc":[["假日销售数据强，Anthropic 站稳发行价","255 到 267"],["数据平平","240 到 258"],["Anthropic 继续下跌，AI 抛售扩散","跌破 240（10/30 收盘 240.35）"]],"watch":"黑五与网一的线上销售数据；Anthropic 股价相对 83 美元发行价的位置。"},{"t":"AAPL","n":"Apple","base":271.86,"lo":243.42,"hi":360.83,"cap":"5.17T","pe":39.6,"fpe":37.8,"tgt":345.63,"px":[343.91,347.1,343.83,348.91,344.63,338.32,331.9,349.51,344.17,342.37,350.69,348.51,355.63,354.88,356.27,352.78,351.91,352.45,349.21,342.56,349.08,354.07,355.58],"notes":[["11/25 收 355.58，涨 0.43%；年内涨 30.8%，领跑七巨头，离 52 周高点 360.83 只差约 1.5%。","https://wisevoter.com/world/2026/11/27/apple-leads-magnificent-seven-nvidia-falls"],["它在 AI 抛售中充当避风港，但现价已高于分析师平均目标价 345.63，远期 PE 约 38 倍，是这 10 只里除 Tesla 外最贵的。","https://stockanalysis.com/stocks/aapl/"],["Michael Burry 把 Apple 点名为这轮行情里的领头股之一；招聘信息显示 Apple 计划自研 AI agent。","https://stockanalysis.com/stocks/aapl/"]],"bias":"偏多，空间有限","conf":"中","view":"资金把它当作 AI 抛售里的避风港，所以它在逆势创新高。但现价已高于分析师平均目标价，远期 PE 约 38 倍，容错空间很小。关税提案点名中国和印度，这两处正是它的主要产地。","sc":[["避险资金继续流入","突破 360.83 创 52 周新高"],["高位横盘","345 到 360"],["关税落地，或资金回流 AI 板块","回测 342（11/20 收盘）"]],"watch":"关税提案的国别与税率细节；假日季 iPhone 销售的渠道反馈。"},{"t":"MSFT","n":"Microsoft","base":483.62,"lo":349.2,"hi":559.15,"cap":"3.64T","pe":25.6,"fpe":23.6,"tgt":637.36,"px":[532.6,531.33,531.01,530.14,521.91,507.12,520.99,555.8,535.93,530.61,545.18,533.16,521.13,523,523.88,517.99,506.24,508.29,498.3,484.52,492.5,496.13,489.93],"notes":[["11/25 收 489.93，跌 1.25%；年内涨幅收窄到约 1%。","https://stockanalysis.com/stocks/msft/"],["路透称 Microsoft 在一次持续约 24 小时的故障后内部宣布 Code Red。","https://stockanalysis.com/stocks/msft/"],["英格兰银行警告 AI 融资威胁金融稳定，估算云巨头相关敞口超过 4 万亿美元。","https://stockanalysis.com/stocks/msft/"]],"bias":"偏弱","conf":"中低","view":"11/4 冲到 555.80 之后一路走低，三周跌了约 12%，年内涨幅几乎归零。大面积故障伤的是企业客户最看重的可靠性，AI 融资担忧又压着估值。PE 25.6 倍不算贵，但目前没有看到扭转趋势的催化。","sc":[["故障复盘让市场放心，板块反弹","站回 500 到 508"],["弱势整理","480 到 500"],["再出事故，或 AI 融资担忧加重","跌破 484.52（11/20 收盘）后继续下探"]],"watch":"故障的官方复盘；Windows 新版本规划的细节。"},{"t":"TSLA","n":"Tesla","base":449.72,"lo":297.38,"hi":498.83,"cap":"1.50T","pe":417.7,"fpe":178.3,"tgt":419.05,"px":[391.62,407.46,404.22,403.3,399.81,403.82,398.5,385.19,343.69,358.22,378.05,379.78,390.84,397.45,390.22,379.74,380.11,383.72,374.41,345.82,385.46,384.68,380.14],"notes":[["11/25 收 380.14，跌 1.18%；盘中最低 357.64（跌 7%），收盘前拉回。","https://www.tradingkey.com/analysis/stocks/us-stocks/262325053-tesla-recovers-7-percent-drop-spacex-merger-talks-eu-fsd-delay-388-93-pivot-november-27-2026-tradingkey"],["两件事同一天落地：欧盟把辅助驾驶系统的审议推迟到 12/15；与 SpaceX 全股票合并的传闻继续发酵，双方都没有公布正式协议。","https://www.heygotrade.com/en/news/tesla-tsla-stock-news-november-26-2026/"],["此前 Tesla 已向部分客户开放 Cybercab 个人购买，售价 29,990 美元外加每月 299 美元订阅。","https://stockanalysis.com/stocks/tsla/"]],"bias":"中性，高波动","conf":"低","view":"股价靠叙事支撑：Cybercab、与 SpaceX 的合并传闻、欧洲的辅助驾驶审批。PE 超过 400 倍，对消息极其敏感。11/25 盘中跌 7% 还能收回大半，说明下方有资金承接。12/15 的欧盟审议接近一次二选一事件。","sc":[["合并条款明朗且对 Tesla 股东有利，或欧盟放行预期升温","390 到 400"],["传闻持续，没有定论","357 到 390"],["合并条款不利，或审议再次推迟","回测 345（11/20 收盘）"]],"watch":"SpaceX 合并是否有正式公告；12/15 欧盟审议。"},{"t":"AVGO","n":"Broadcom（Avago）","base":346.1,"lo":278,"hi":495,"cap":"1.41T","pe":38.4,"fpe":17.3,"tgt":526.47,"px":[329.17,342.33,351.81,345,326.08,322.23,332.13,325.48,291.53,293.69,319.48,331.98,345.22,364.36,347.01,333.4,341.6,354.05,346.65,304.41,313.55,301.08,300.86],"notes":[["11/25 收 300.86，几乎平收（-0.07%），但盘中最低 278.00，较 6 月 2 日收盘高点 481.57 低约 37.5%。","https://www.tradingview.com/news/gurufocus:2aceb5c99094b:0-broadcom-stocks-edge-lower-after-rebounding-from-an-intraday-low-of-278/"],["下跌主因：11/20 有分析师称 Google 把 2027 年 TPU 订单削减 20%，当日股价跌 12.19%。客户集中度是市场最担心的点。","https://stockanalysis.com/stocks/avgo/"],["12/9 盘后公布财报，将是检验 AI 定制芯片需求的下一个节点。","https://marketchameleon.com/Overview/AVGO/"]],"bias":"财报前偏弱","conf":"低","view":"5 个交易日跌了 15%。Google 砍单的说法把客户过于集中这个老问题摆到了台面上。远期 PE 已压到 17.3 倍，坏消息消化了一部分。12/9 的财报几乎决定方向，在那之前股价更多是情绪。","sc":[["财报给出的 AI 收入指引否定了砍单说法","回补到 330 到 346（11/20 的缺口）"],["财报前观望","278 到 315"],["财报证实订单下调","跌破 278"]],"watch":"12/9 财报里的 AI 芯片收入指引；Google 自己的表态。"},{"t":"CRM","n":"Salesforce","base":264.91,"lo":146.32,"hi":269.11,"cap":"162B","pe":18,"fpe":13.5,"tgt":284.44,"px":[247.61,240.89,242.11,230.9,229.17,226.18,222.2,227.11,222.41,213.65,214.94,213.48,218.01,217.57,217.84,214.83,194.52,190.4,183.31,180.62,null,193.26,197.21],"notes":[["11/25 收 197.21，涨 2.04%，和 IBM 等一起把道指从盘中跌逾 1100 点拉回到收涨。","https://kalkine.com/news/technology/salesforce-nysecrm-stock-software-giant-helps-lift-the-dow-ahead-of-earnings"],["但年内仍跌约 25.6%。11/17 因新一轮裁员与设定内部 AI 用量预算的消息单日跌 9.45%。","https://finviz.com/stock?t=CRM"],["12/2 盘后公布 2027 财年第三季度业绩，市场预期 EPS 3.45 美元、营收 114.6 亿美元。","https://stocktwits.com/symbol/CRM"]],"bias":"财报前偏多","conf":"中低","view":"年内跌了四分之一，远期 PE 13.5 倍，市场预期已经压得很低。过去 8 次财报有 7 次每股收益超预期。低预期加上有记录的超预期能力，财报前的风险收益比不差，但结果本身仍是一次二选一。","sc":[["业绩超预期并上调指引","215 到 218（11/13 前的平台）"],["符合预期","185 到 205"],["指引疲软，或 Agentforce 变现不及预期","回测 180（11/20 收盘）"]],"watch":"12/2 财报：有机增长、Agentforce 收入、利润率。"}],"mview":["AI 行情从普涨进入分化。11/25 这天跌的是硬件链（Nvidia、台积电、Amazon），涨的是应用和避险方向（Meta、Salesforce、Apple）。纳指跌而道指涨，也是同一件事。","现在压着市场的是三个还没有答案的问题：美国对 14 国加征 15% 到 20% 关税的提案会不会落地；Nvidia 的出口管制会不会进一步收紧；AI 的钱够不够烧，Anthropic 上市几天就在发行价附近挣扎，英格兰银行也在警告融资风险。","VIX 在 27，属于偏高水平，单日大幅波动会是常态。盘中跌 4.6% 又收回到只跌 0.6%，说明有资金在低位买，但还不足以说明已经见底。","宏观数据偏强：三季度 GDP 修正到 4.3%，10 月 PCE 同比 3.8%。经济不差但通胀偏高，降息帮忙的空间有限，这是我的判断，不是数据本身。"],"mscen":[["基准","约 50%","高波动区间震荡。三个问题都没有定论，指数在 11/20 低点和 11/23 反弹高点之间来回。个股分化继续，财报决定 Salesforce 和 Broadcom 的方向。"],["上行","约 25%","关税提案被搁置或缩水，Nvidia 发货暂停被确认为临时措施。硬件链带头反弹，跌得最多的 Nvidia、Broadcom、台积电弹性最大。"],["下行","约 25%","关税落地，或 Broadcom 财报证实 AI 订单下调。纳指从回调走向更深的下跌，Apple 这类避险股也可能补跌。"]],"cal":[["11/27 今晚","美股半日交易（黑色星期五），成交通常清淡"],["12/2 周三","Salesforce 盘后财报"],["12/9 周三","Broadcom 盘后财报"],["12 月上旬","台积电公布 11 月营收"],["12/15 周二","欧盟审议 Tesla 辅助驾驶系统"],["待定","Nvidia 东南亚发货暂停是否解除；美国拟对 14 国加征 15% 至 20% 关税的后续"]],"review":[]};
 const pct=(a,b)=>(a==null||b==null)?null:(a/b-1)*100;
 const fmtP=(v,ap)=>v==null?"n/a":(ap?"≈":"")+(v>0?"+":"")+v.toFixed(v>-10&&v<10?2:1)+"%";
 const cls=v=>v==null?"muted":(v>=0?"up":"down");
 const last=a=>a[a.length-1];
 DATA.stocks.forEach(s=>{
   const p=s.px, n=p.length;
-  s.close=p[n-1];
-  s.d1=pct(p[n-1],p[n-2]); s.d5=pct(p[n-1],p[n-6]); s.m1=pct(p[n-1],p[0]); s.ytd=pct(p[n-1],s.base);
+  s.close=p[n-1]; s.first=p.find(v=>v!=null);
+  s.d1=pct(p[n-1],p[n-2]); s.d5=pct(p[n-1],p[n-6]); s.m1=pct(p[n-1],s.first); s.ytd=pct(p[n-1],s.base);
   s.up=pct(s.tgt,s.close);
 });
 
@@ -379,7 +244,7 @@ document.getElementById("overview").innerHTML=
 
 // bars
 function drawBars(k){
-  const rows=[...DATA.stocks].sort((a,b)=>b[k]-a[k]);
+  const rows=DATA.stocks.filter(r=>r[k]!=null).sort((a,b)=>b[k]-a[k]);
   const vs=rows.map(r=>r[k]), mn=Math.min(0,...vs), mx=Math.max(0,...vs), span=(mx-mn)||1, z=(0-mn)/span*100;
   document.getElementById("bars").innerHTML=rows.map(r=>{
     const v=r[k], w=Math.abs(v)/span*100, left=v>=0?z:z-w;
@@ -394,7 +259,7 @@ document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",(
 
 // sparks
 const sp=document.getElementById("sparks");
-sp.innerHTML=DATA.stocks.map((s,i)=>`<div class="spark" data-i="${i}"><div class="top"><span class="tk">${s.t}</span><span class="num small ${cls(s.m1)}">${fmtP(s.m1,s.approx)}</span></div>${sparkSVG(s)}<div class="read">$${s.px[0].toFixed(2)} → $${s.close.toFixed(2)}</div></div>`).join("");
+sp.innerHTML=DATA.stocks.map((s,i)=>`<div class="spark" data-i="${i}"><div class="top"><span class="tk">${s.t}</span><span class="num small ${cls(s.m1)}">${fmtP(s.m1,s.approx)}</span></div>${sparkSVG(s)}<div class="read">$${s.first.toFixed(2)} → $${s.close.toFixed(2)}</div></div>`).join("");
 sp.querySelectorAll(".spark").forEach(el=>{
   const s=DATA.stocks[+el.dataset.i], svg=el.querySelector("svg"), cur=el.querySelector(".cur"), read=el.querySelector(".read");
   const rest=read.textContent;
@@ -423,7 +288,6 @@ document.getElementById("val").innerHTML=
 
 // stock notes + analysis
 const KS=["上行","基准","下行"];
-DATA.stocks.forEach(s=>Object.assign(s,EXTRA[s.t]));
 document.getElementById("stocks").innerHTML=DATA.stocks.map(s=>`<article class="card stock" id="s-${s.t}"><div class="hd"><h3>${s.n}<span class="tag num">${s.t}</span></h3><span class="px">${s.approx?"≈":""}$${s.close.toFixed(2)} <span class="${cls(s.d1)}">${fmtP(s.d1,s.approx)}</span></span></div>
 <div class="sub">情报</div><ul>${s.notes.map(n=>`<li>${n[0]} <a class="small" href="${n[1]}" target="_blank" rel="noopener">来源</a></li>`).join("")}</ul>
 <div class="sub">分析</div><p>${s.view}</p>
@@ -434,9 +298,19 @@ document.getElementById("chips").innerHTML=DATA.stocks.map(s=>`<button type="but
 document.querySelectorAll("#chips button").forEach(b=>b.addEventListener("click",()=>document.getElementById("s-"+b.dataset.t).scrollIntoView({behavior:"smooth",block:"start"})));
 
 // outlook
-document.getElementById("mview").innerHTML=MVIEW.map(x=>`<li>${x}</li>`).join("");
-document.getElementById("mscen").innerHTML=MSCEN.map(c=>`<div class="s"><span class="k">${c[0]}<span class="lv">${c[1]}</span></span><span>${c[2]}</span></div>`).join("");
+document.getElementById("mview").innerHTML=DATA.mview.map(x=>`<li>${x}</li>`).join("");
+document.getElementById("mscen").innerHTML=DATA.mscen.map(c=>`<div class="s"><span class="k">${c[0]}<span class="lv">${c[1]}</span></span><span>${c[2]}</span></div>`).join("");
 document.getElementById("biasT").innerHTML=`<thead><tr><th>代码</th><th>倾向</th><th>把握度</th><th>基准情景下的区间</th></tr></thead><tbody>`+DATA.stocks.map(s=>`<tr><td><span class="tk">${s.t}</span></td><td><span class="bias">${s.bias}</span></td><td>${s.conf}</td><td class="num">${s.sc[1][1]}</td></tr>`).join("")+`</tbody>`;
+
+// dynamic captions + review
+{const d=DATA.dates,n=d.length;
+ document.getElementById("basis").textContent=`5 日 = 相对 ${d[n-6]} 收盘；1 个月 = 相对 ${d[0]} 收盘；年内 = 相对上一年最后一个交易日收盘。带 ≈ 的数字为间接来源推算。`;
+ document.getElementById("sparkH").textContent=`近一个月走势（${d[0]} 至 ${d[n-1]} 收盘）`;
+ const rv=DATA.review||[], rs=document.getElementById("reviewS");
+ if(rv.length){rs.removeAttribute("data-empty");
+  document.getElementById("reviewT").innerHTML=`<thead><tr><th>代码</th><th>上期倾向</th><th>上期基准区间</th><th>最新收盘</th><th>结果</th></tr></thead><tbody>`+rv.map(r=>`<tr><td><span class="tk">${r.t}</span></td><td>${r.bias}</td><td class="num">${r.range}</td><td class="num">${r.actual}</td><td>${r.result}</td></tr>`).join("")+`</tbody>`;
+  document.getElementById("reviewN").textContent=DATA.reviewNote||"";}
+ else rs.remove();}
 
 // tabs
 const TABS=["overview","charts","stocks","outlook"];
