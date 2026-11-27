@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>美股观察日报 11-27</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* layout idea: one narrow column, a ticker-tape of facts first, then charts, then per-stock notes */
+:root{
+  --bg:#f3f5f7; --card:#ffffff; --ink:#14212e; --muted:#5d6b79; --line:#dde3e9;
+  --accent:#0b5c7a; --track:#e8edf1;
+  --red:#d2383a; --green:#0b8a3c;
+  --up:var(--red); --down:var(--green);
+  --f-body:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Noto Sans SC","Microsoft YaHei",sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#0f161d; --card:#17212b; --ink:#e8eef3; --muted:#93a1ae; --line:#2a3744;
+    --accent:#6cc3e0; --track:#223040; --red:#ee6a6b; --green:#35b866;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f161d; --card:#17212b; --ink:#e8eef3; --muted:#93a1ae; --line:#2a3744;
+  --accent:#6cc3e0; --track:#223040; --red:#ee6a6b; --green:#35b866;
+}
+:root[data-updown="us"]{ --up:var(--green); --down:var(--red); }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+main{max-width:760px;margin:0 auto;padding:20px 16px 48px;display:flex;flex-direction:column;gap:18px}
+h1{font-size:24px;line-height:1.25;margin:0;text-wrap:balance;letter-spacing:.01em}
+h2{font-size:17px;margin:0 0 10px;text-wrap:balance}
+h3{font-size:15px;margin:0}
+p{margin:0}
+a{color:var(--accent);text-underline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:12.5px}
+.up{color:var(--up)} .down{color:var(--down)}
+header .eyebrow{font-family:var(--f-num);font-size:12px;color:var(--accent);letter-spacing:.08em}
+header .meta{margin-top:6px;color:var(--muted);font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px}
+.lead{border-left:4px solid var(--accent)}
+.lead ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:8px}
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.tile .k{font-size:12px;color:var(--muted)}
+.tile .v{font-family:var(--f-num);font-size:16px;font-weight:600}
+.tile .d{font-family:var(--f-num);font-size:12.5px}
+@media (max-width:520px){.tiles{grid-template-columns:repeat(2,1fr)}}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;font-size:13.5px}
+th,td{padding:8px 8px;text-align:right;white-space:nowrap;border-bottom:1px solid var(--line)}
+th{font-weight:500;color:var(--muted);font-size:12px}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+tr:last-child td{border-bottom:0}
+td .tk{font-family:var(--f-num);font-weight:600}
+td .nm{display:block;font-size:11.5px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:12px}
+.seg button{font:inherit;font-size:13px;padding:6px 12px;border:0;background:transparent;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--card);font-weight:600}
+.seg button:focus-visible,.toggle:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.bars{display:flex;flex-direction:column;gap:6px}
+.bar-row{display:grid;grid-template-columns:48px 1fr 64px;align-items:center;gap:8px}
+.bar-row .tk{font-family:var(--f-num);font-size:12.5px;font-weight:600}
+.bar-track{position:relative;height:16px;background:var(--track);border-radius:4px}
+.bar-zero{position:absolute;top:-2px;bottom:-2px;width:1px;background:var(--muted)}
+.bar-fill{position:absolute;top:0;bottom:0;border-radius:3px}
+.bar-val{font-family:var(--f-num);font-size:12.5px;text-align:right}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr 1fr}}
+.spark{border:1px solid var(--line);border-radius:8px;padding:10px;min-width:0}
+.spark .top{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.spark .tk{font-family:var(--f-num);font-weight:600;font-size:13px}
+.spark svg{display:block;width:100%;height:46px;margin-top:4px;touch-action:none}
+.spark .read{font-family:var(--f-num);font-size:11.5px;color:var(--muted);min-height:18px}
+.rng-row{display:grid;grid-template-columns:48px 1fr 86px;align-items:center;gap:8px;margin-bottom:10px}
+.rng-track{position:relative;height:6px;background:var(--track);border-radius:3px}
+.rng-dot{position:absolute;top:50%;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--card);transform:translate(-50%,-50%)}
+.rng-ends{display:flex;justify-content:space-between;font-family:var(--f-num);font-size:11px;color:var(--muted);margin-top:3px}
+.stock{display:flex;flex-direction:column;gap:8px}
+.stock .hd{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.stock .hd .px{font-family:var(--f-num);font-size:14px}
+.stock ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.tag{display:inline-block;font-size:11.5px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--muted);margin-left:6px}
+.cal{display:grid;grid-template-columns:86px 1fr;gap:6px 12px;font-size:14px}
+.cal .d{font-family:var(--f-num);color:var(--accent)}
+.toggle{font:inherit;font-size:12.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:8px;padding:5px 10px;cursor:pointer}
+.row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+footer{font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div class="eyebrow">DAILY STOCK BRIEF</div>
+  <h1>美股观察日报 2026-11-27（周五）</h1>
+  <div class="meta">行情截至 11 月 25 日（周三）美股收盘。11 月 26 日感恩节休市，今晚为半日交易。生成于首尔时间 22:30。</div>
+</header>
+
+<section class="card lead">
+  <h2>今天最值得知道的 4 件事</h2>
+  <ul id="lead"></ul>
+</section>
+
+<section>
+  <div class="tiles" id="tiles"></div>
+</section>
+
+<section class="card">
+  <div class="row"><h2>10 只股票总览</h2><button class="toggle" id="updown" type="button">切换为 绿涨红跌</button></div>
+  <div class="scroll"><table id="overview"></table></div>
+  <p class="small muted" style="margin-top:8px">5 日 = 相对 11/18 收盘；1 个月 = 相对 10/26 收盘；年内 = 相对 2025 年最后一个交易日收盘。带 ≈ 的数字为间接来源推算。</p>
+</section>
+
+<section class="card">
+  <h2>涨跌幅对比</h2>
+  <div class="seg" role="group" aria-label="时间范围">
+    <button type="button" data-k="d1" aria-pressed="true">1 日</button>
+    <button type="button" data-k="d5" aria-pressed="false">5 日</button>
+    <button type="button" data-k="m1" aria-pressed="false">1 个月</button>
+    <button type="button" data-k="ytd" aria-pressed="false">年内</button>
+  </div>
+  <div class="bars" id="bars"></div>
+</section>
+
+<section class="card">
+  <h2>近一个月走势（10/26 至 11/25 收盘）</h2>
+  <div class="grid2" id="sparks"></div>
+  <p class="small muted" style="margin-top:8px">每张小图各自缩放，只看形状不比高低。手指按住或鼠标移上去看当日收盘价。</p>
+</section>
+
+<section class="card">
+  <h2>现价在 52 周区间的位置</h2>
+  <div id="ranges"></div>
+</section>
+
+<section class="card">
+  <h2>估值与分析师目标价</h2>
+  <div class="scroll"><table id="val"></table></div>
+  <p class="small muted" style="margin-top:8px">目标价为分析师一致预期均值，只是市场观点的汇总，不代表会到达。PE 取自 StockAnalysis 与 Yahoo Finance，部分按最新收盘价换算。</p>
+</section>
+
+<section>
+  <h2 style="margin-left:2px">逐只情报</h2>
+  <div id="stocks" style="display:flex;flex-direction:column;gap:12px"></div>
+</section>
+
+<section class="card">
+  <h2>接下来看什么</h2>
+  <div class="cal" id="cal"></div>
+</section>
+
+<footer class="card">
+  <p><strong>数据说明</strong>：收盘价与历史价来自 StockAnalysis（数据源 S&amp;P Global Market Intelligence）、Yahoo Finance；消息来自各条目后的链接。Coupang 11/24、11/25 收盘价未取到直接报价，按 Trefis 报道的涨幅与 MarketBeat 报道的价格推算，标注为 ≈。Salesforce 11/23 收盘价缺失，走势图跳过该日。</p>
+  <p style="margin-top:8px"><strong>免责声明</strong>：本报告只做公开信息整理，不构成投资建议，我不是持牌投资顾问。</p>
+</footer>
+</main>
+
+<script>
+const DATA = {
+  dates:["10/26","10/27","10/28","10/29","10/30","11/2","11/3","11/4","11/5","11/6","11/9","11/10","11/11","11/12","11/13","11/16","11/17","11/18","11/19","11/20","11/23","11/24","11/25"],
+  lead:[
+    "AI 硬件链继续承压：11/25 Nvidia 跌 3.91%、台积电跌 1.96%，纳指收跌 0.6%，较历史高点低 14.2%，处于回调区间。盘中一度跌 4.6%，尾盘收回大部分。",
+    "Nvidia 是本月主线：黄仁勋 11/12 辞职、11/23 董事会宣布其复职（当日股价涨 31.48%），随后又连跌两天。11/26 多家媒体报道公司要求合作方暂停向马来西亚、新加坡、泰国、印尼发货。",
+    "Coupang 逆势走强：11/23 涨 3.3%、11/24 涨 8.6%，没有公司公告。同期白宫指责韩国针对 Coupang，美方贸易官员提到对韩国商品最高 25% 关税。",
+    "下周两份财报：Salesforce 12/2 盘后，Broadcom 12/9 盘后。Broadcom 11/20 单日跌 12.19%，11/25 盘中触及 278 美元，为 2025 年 7 月以来最低。"
+  ],
+  market:[
+    {k:"道指",v:"50,182.95",d:0.3},
+    {k:"标普 500",v:"7,182.78",d:-0.3},
+    {k:"纳指",v:"23,585.80",d:-0.6},
+    {k:"VIX 波动率",v:"27.17",d:-4.0}
+  ],
+  stocks:[
+    {t:"NVDA",n:"Nvidia",base:186.50,lo:124.50,hi:243.37,cap:"3.61T",pe:16.0,fpe:10.3,tgt:242.43,
+     px:[216.00,217.94,215.38,213.66,204.64,202.06,206.69,200.13,181.60,186.64,178.67,168.89,173.73,166.19,162.85,156.14,155.46,150.96,145.98,125.53,165.05,155.38,149.30],
+     notes:[
+       ["11/25 收 149.30，跌 3.91%；年内跌约 20%，是七巨头里最差的一只。","https://stockanalysis.com/stocks/nvda/history/"],
+       ["黄仁勋 11/12 因私人关系报道辞职，报道涉及一名前 Megaspeed 高管，部分美国官员怀疑其有情报背景。董事会随后请他复职。美国商务部 11/25 把 Megaspeed 列入实体清单。","https://www.engadget.com/2329200/nvidia-reportedly-halts-chip-shipments-to-southeast-asia/"],
+       ["WSJ 与 FT 报道：Nvidia 让 Dell、Supermicro 等暂停向东南亚四国发运服务器，原因是美国收紧了中国企业远程租用算力的出口管制。是否临时尚不清楚。","https://techcrunch.com/2026/11/26/nvidia-hits-pause-on-chip-shipments-to-southeast-asia/"],
+       ["标普已把 Nvidia 列入信用观察，市场关注点转向公司治理和对单一领导人的依赖。","https://www.varindia.com/news/huang-is-back-but-nvidia-s-china-curbs-and-governance-questions-remain"]
+     ]},
+    {t:"CPNG",n:"Coupang",base:23.59,lo:13.35,hi:28.44,cap:"≈29B",pe:null,fpe:null,tgt:23.39,approx:true,
+     px:[13.75,null,null,null,null,14.70,15.23,17.05,16.42,16.29,16.42,16.33,15.99,15.29,15.19,14.35,14.00,14.28,14.06,14.27,14.74,16.01,16.12],
+     notes:[
+       ["11/24 涨 8.6%，11/23 涨 3.3%，期间没有财报或 SEC 文件。Trefis 追踪的来源都没有给出上涨原因。","https://www.trefis.com/stock/cpng/articles/628983/did-company-news-send-coupang-stock-higher/2026-11-25"],
+       ["白宫指责首尔不公平地针对 Coupang；数小时前美国贸易官员提到对韩国商品征收最高 25% 关税。韩国公平交易委员会此前对 Coupang 与配送民族合计开出 6319 亿韩元罚单。","https://www.kedglobal.com/business-politics/newsView/ked202611260005"],
+       ["三季度营收 99.6 亿美元，同比增 7.5%，但受仁川物流中心火灾与罚款影响录得亏损。","https://stockstory.org/us/stocks/nyse/cpng/news/earnings/coupangs-nysecpng-q3-2026-sales-beat-estimates"],
+       ["13F 显示 State Street 三季度减持 49.1%，期末持有约 2025 万股。","https://www.thecerbatgem.com/2026/11/27/coupang-inc-cpng-shares-sold-by-state-street-corp.html"]
+     ]},
+    {t:"META",n:"Meta",base:660.09,lo:520.26,hi:779.82,cap:"1.56T",pe:20.8,fpe:18.8,tgt:842.54,
+     px:[630.56,620.19,612.49,624.52,614.99,606.73,621.03,630.00,605.08,610.15,641.37,641.39,628.77,623.61,641.69,626.41,618.87,616.38,596.22,560.84,597.60,589.82,609.89],
+     notes:[
+       ["11/25 收 609.89，涨 3.40%，是当天这 10 只里表现最好的。","https://stockanalysis.com/stocks/meta/history/"],
+       ["催化剂：TechCrunch 等报道 Amazon 与 Meta 正在谈判，可能解除对 Meta AI 购物代理 Muse 的封锁。Amazon 9 月起屏蔽 Muse 访问其商城。","https://stockanalysis.com/stocks/meta/"],
+       ["Instagram 创作者现在可以在帖子里加 Amazon 联盟链接。","https://stockanalysis.com/stocks/meta/"]
+     ]},
+    {t:"TSM",n:"台积电 ADR",base:303.89,lo:273.08,hi:487.47,cap:"1.69T",pe:23.1,fpe:16.4,tgt:586.69,
+     px:[424.37,436.87,439.51,431.81,406.13,398.63,404.80,395.75,353.10,375.44,388.62,396.48,413.35,405.49,398.73,373.45,359.69,362.62,352.09,318.71,363.60,349.20,342.34],
+     notes:[
+       ["11/25 收 342.34，跌 1.96%；较高点回撤约 30%，但年内仍涨约 13%。","https://stockanalysis.com/stocks/tsm/history/"],
+       ["基本面没有变差：10 月营收约 5868.9 亿新台币，同比增 59.7%；1 至 10 月累计增 43.3%。","https://pr.tsmc.com/english/news/3349"],
+       ["三季度毛利率降到 66.4%，早期 2nm 产能与海外厂拖累；管理层对 2027 年规划表态谨慎。董事会批准最多各 5 亿美元认购 Anthropic 与 OpenAI 股份。","https://www.tikr.com/blog/tsmc-just-booked-a-record-nt587-billion-month-nvidias-november-17-report-is-the-next-test"]
+     ]},
+    {t:"AMZN",n:"Amazon（AWS）",base:230.82,lo:196.00,hi:287.20,cap:"2.64T",pe:19.8,fpe:24.7,tgt:326.51,
+     px:[249.09,253.10,254.60,243.79,240.35,245.63,250.69,266.03,260.21,259.30,266.93,270.87,266.17,267.44,266.66,257.75,257.89,267.74,257.37,246.82,255.39,252.29,244.43],
+     notes:[
+       ["11/25 收 244.43，跌 3.12%，是当天 10 只里跌幅第二大的。","https://stockanalysis.com/stocks/amzn/history/"],
+       ["拖累因素之一是 Anthropic：其股价跌破 83 美元发行价，Amazon 按招股书持股约 14.7%，账面价值随之缩水。1100 亿美元的 AWS 云合约不受影响。","https://www.ad-hoc-news.de/boerse/news/unternehmensnachrichten/amazon-s-anthropic-stake-slips-below-ipo-price-as-delivery-network-and-ai-search-plans-advance/70551659"],
+       ["Oppenheimer 在 Anthropic 上市后把目标价从 285 上调到 310 美元。","https://stockanalysis.com/stocks/amzn/"]
+     ]},
+    {t:"AAPL",n:"Apple",base:271.86,lo:243.42,hi:360.83,cap:"5.17T",pe:39.6,fpe:37.8,tgt:345.63,
+     px:[343.91,347.10,343.83,348.91,344.63,338.32,331.90,349.51,344.17,342.37,350.69,348.51,355.63,354.88,356.27,352.78,351.91,352.45,349.21,342.56,349.08,354.07,355.58],
+     notes:[
+       ["11/25 收 355.58，涨 0.43%；年内涨 30.8%，领跑七巨头，离 52 周高点 360.83 只差约 1.5%。","https://wisevoter.com/world/2026/11/27/apple-leads-magnificent-seven-nvidia-falls"],
+       ["它在 AI 抛售中充当避风港，但现价已高于分析师平均目标价 345.63，远期 PE 约 38 倍，是这 10 只里除 Tesla 外最贵的。","https://stockanalysis.com/stocks/aapl/"],
+       ["Michael Burry 把 Apple 点名为这轮行情里的领头股之一；招聘信息显示 Apple 计划自研 AI agent。","https://stockanalysis.com/stocks/aapl/"]
+     ]},
+    {t:"MSFT",n:"Microsoft",base:483.62,lo:349.20,hi:559.15,cap:"3.64T",pe:25.6,fpe:23.6,tgt:637.36,
+     px:[532.60,531.33,531.01,530.14,521.91,507.12,520.99,555.80,535.93,530.61,545.18,533.16,521.13,523.00,523.88,517.99,506.24,508.29,498.30,484.52,492.50,496.13,489.93],
+     notes:[
+       ["11/25 收 489.93，跌 1.25%；年内涨幅收窄到约 1%。","https://stockanalysis.com/stocks/msft/"],
+       ["路透称 Microsoft 在一次持续约 24 小时的故障后内部宣布 Code Red。","https://stockanalysis.com/stocks/msft/"],
+       ["英格兰银行警告 AI 融资威胁金融稳定，估算云巨头相关敞口超过 4 万亿美元。","https://stockanalysis.com/stocks/msft/"]
+     ]},
+    {t:"TSLA",n:"Tesla",base:449.72,lo:297.38,hi:498.83,cap:"1.50T",pe:417.7,fpe:178.3,tgt:419.05,
+     px:[391.62,407.46,404.22,403.30,399.81,403.82,398.50,385.19,343.69,358.22,378.05,379.78,390.84,397.45,390.22,379.74,380.11,383.72,374.41,345.82,385.46,384.68,380.14],
+     notes:[
+       ["11/25 收 380.14，跌 1.18%；盘中最低 357.64（跌 7%），收盘前拉回。","https://www.tradingkey.com/analysis/stocks/us-stocks/262325053-tesla-recovers-7-percent-drop-spacex-merger-talks-eu-fsd-delay-388-93-pivot-november-27-2026-tradingkey"],
+       ["两件事同一天落地：欧盟把辅助驾驶系统的审议推迟到 12/15；与 SpaceX 全股票合并的传闻继续发酵，双方都没有公布正式协议。","https://www.heygotrade.com/en/news/tesla-tsla-stock-news-november-26-2026/"],
+       ["此前 Tesla 已向部分客户开放 Cybercab 个人购买，售价 29,990 美元外加每月 299 美元订阅。","https://stockanalysis.com/stocks/tsla/"]
+     ]},
+    {t:"AVGO",n:"Broadcom（Avago）",base:346.10,lo:278.00,hi:495.00,cap:"1.41T",pe:38.4,fpe:17.3,tgt:526.47,
+     px:[329.17,342.33,351.81,345.00,326.08,322.23,332.13,325.48,291.53,293.69,319.48,331.98,345.22,364.36,347.01,333.40,341.60,354.05,346.65,304.41,313.55,301.08,300.86],
+     notes:[
+       ["11/25 收 300.86，几乎平收（-0.07%），但盘中最低 278.00，较 6 月 2 日收盘高点 481.57 低约 37.5%。","https://www.tradingview.com/news/gurufocus:2aceb5c99094b:0-broadcom-stocks-edge-lower-after-rebounding-from-an-intraday-low-of-278/"],
+       ["下跌主因：11/20 有分析师称 Google 把 2027 年 TPU 订单削减 20%，当日股价跌 12.19%。客户集中度是市场最担心的点。","https://stockanalysis.com/stocks/avgo/"],
+       ["12/9 盘后公布财报，将是检验 AI 定制芯片需求的下一个节点。","https://marketchameleon.com/Overview/AVGO/"]
+     ]},
+    {t:"CRM",n:"Salesforce",base:264.91,lo:146.32,hi:269.11,cap:"162B",pe:18.0,fpe:13.5,tgt:284.44,
+     px:[247.61,240.89,242.11,230.90,229.17,226.18,222.20,227.11,222.41,213.65,214.94,213.48,218.01,217.57,217.84,214.83,194.52,190.40,183.31,180.62,null,193.26,197.21],
+     notes:[
+       ["11/25 收 197.21，涨 2.04%，和 IBM 等一起把道指从盘中跌逾 1100 点拉回到收涨。","https://kalkine.com/news/technology/salesforce-nysecrm-stock-software-giant-helps-lift-the-dow-ahead-of-earnings"],
+       ["但年内仍跌约 25.6%。11/17 因新一轮裁员与设定内部 AI 用量预算的消息单日跌 9.45%。","https://finviz.com/stock?t=CRM"],
+       ["12/2 盘后公布 2027 财年第三季度业绩，市场预期 EPS 3.45 美元、营收 114.6 亿美元。","https://stocktwits.com/symbol/CRM"]
+     ]}
+  ],
+  cal:[
+    ["11/27 今晚","美股半日交易（黑色星期五），成交通常清淡"],
+    ["12/2 周三","Salesforce 盘后财报"],
+    ["12/9 周三","Broadcom 盘后财报"],
+    ["12 月上旬","台积电公布 11 月营收"],
+    ["12/15 周二","欧盟审议 Tesla 辅助驾驶系统"],
+    ["待定","Nvidia 东南亚发货暂停是否解除；美国拟对 14 国加征 15% 至 20% 关税的后续"]
+  ]
+};
+
+const pct=(a,b)=>(a==null||b==null)?null:(a/b-1)*100;
+const fmtP=(v,ap)=>v==null?"n/a":(ap?"≈":"")+(v>0?"+":"")+v.toFixed(v>-10&&v<10?2:1)+"%";
+const cls=v=>v==null?"muted":(v>=0?"up":"down");
+const last=a=>a[a.length-1];
+DATA.stocks.forEach(s=>{
+  const p=s.px, n=p.length;
+  s.close=p[n-1];
+  s.d1=pct(p[n-1],p[n-2]); s.d5=pct(p[n-1],p[n-6]); s.m1=pct(p[n-1],p[0]); s.ytd=pct(p[n-1],s.base);
+  s.up=pct(s.tgt,s.close);
+});
+
+// lead
+document.getElementById("lead").innerHTML=DATA.lead.map(x=>`<li>${x}</li>`).join("");
+// tiles
+document.getElementById("tiles").innerHTML=DATA.market.map(m=>`<div class="tile"><div class="k">${m.k}</div><div class="v">${m.v}</div><div class="d ${cls(m.d)}">${(m.d>0?"+":"")+m.d.toFixed(1)}%</div></div>`).join("");
+
+// sparkline
+function sparkSVG(s,w=160,h=46){
+  const pts=s.px.map((v,i)=>v==null?null:[i,v]).filter(Boolean);
+  const vs=pts.map(p=>p[1]), mn=Math.min(...vs), mx=Math.max(...vs), n=s.px.length-1, pad=5;
+  const X=i=>pad+i/n*(w-2*pad), Y=v=>pad+(1-(v-mn)/(mx-mn||1))*(h-2*pad);
+  const d=pts.map((p,i)=>(i?"L":"M")+X(p[0]).toFixed(1)+" "+Y(p[1]).toFixed(1)).join(" ");
+  const e=last(pts), col=s.m1>=0?"var(--up)":"var(--down)";
+  return `<svg viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" role="img" aria-label="${s.t} 近一个月走势"><path d="${d}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><circle class="end" cx="${X(e[0]).toFixed(1)}" cy="${Y(e[1]).toFixed(1)}" r="3.5" fill="${col}" stroke="var(--card)" stroke-width="1.5"/><line class="cur" x1="0" x2="0" y1="0" y2="${h}" stroke="var(--muted)" stroke-width="1" visibility="hidden" vector-effect="non-scaling-stroke"/></svg>`;
+}
+
+// overview table
+document.getElementById("overview").innerHTML=
+ `<thead><tr><th>代码</th><th>收盘价</th><th>1 日</th><th>5 日</th><th>1 个月</th><th>年内</th></tr></thead><tbody>`+
+ DATA.stocks.map(s=>`<tr><td><span class="tk">${s.t}</span><span class="nm">${s.n}</span></td><td class="num">${s.approx?"≈":""}$${s.close.toFixed(2)}</td><td class="num ${cls(s.d1)}">${fmtP(s.d1,s.approx)}</td><td class="num ${cls(s.d5)}">${fmtP(s.d5,s.approx)}</td><td class="num ${cls(s.m1)}">${fmtP(s.m1,s.approx)}</td><td class="num ${cls(s.ytd)}">${fmtP(s.ytd,s.approx)}</td></tr>`).join("")+`</tbody>`;
+
+// bars
+function drawBars(k){
+  const rows=[...DATA.stocks].sort((a,b)=>b[k]-a[k]);
+  const vs=rows.map(r=>r[k]), mn=Math.min(0,...vs), mx=Math.max(0,...vs), span=(mx-mn)||1, z=(0-mn)/span*100;
+  document.getElementById("bars").innerHTML=rows.map(r=>{
+    const v=r[k], w=Math.abs(v)/span*100, left=v>=0?z:z-w;
+    return `<div class="bar-row" title="${r.n} ${fmtP(v)}"><span class="tk">${r.t}</span><div class="bar-track"><div class="bar-fill" style="left:${left}%;width:${Math.max(w,0.6)}%;background:${v>=0?"var(--up)":"var(--down)"}"></div><div class="bar-zero" style="left:${z}%"></div></div><span class="bar-val ${cls(v)}">${fmtP(v,r.approx)}</span></div>`;
+  }).join("");
+}
+drawBars("d1");
+document.querySelectorAll(".seg button").forEach(b=>b.addEventListener("click",()=>{
+  document.querySelectorAll(".seg button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+  drawBars(b.dataset.k);
+}));
+
+// sparks
+const sp=document.getElementById("sparks");
+sp.innerHTML=DATA.stocks.map((s,i)=>`<div class="spark" data-i="${i}"><div class="top"><span class="tk">${s.t}</span><span class="num small ${cls(s.m1)}">${fmtP(s.m1,s.approx)}</span></div>${sparkSVG(s)}<div class="read">$${s.px[0].toFixed(2)} → $${s.close.toFixed(2)}</div></div>`).join("");
+sp.querySelectorAll(".spark").forEach(el=>{
+  const s=DATA.stocks[+el.dataset.i], svg=el.querySelector("svg"), cur=el.querySelector(".cur"), read=el.querySelector(".read");
+  const rest=read.textContent;
+  const move=ev=>{
+    const r=svg.getBoundingClientRect(), n=s.px.length-1;
+    let i=Math.round(((ev.clientX-r.left)/r.width*160-5)/150*n); i=Math.max(0,Math.min(n,i));
+    while(s.px[i]==null&&i>0)i--;
+    const x=5+i/n*150; cur.setAttribute("x1",x);cur.setAttribute("x2",x);cur.setAttribute("visibility","visible");
+    read.textContent=DATA.dates[i]+" 收 $"+s.px[i].toFixed(2);
+  };
+  svg.addEventListener("pointermove",move); svg.addEventListener("pointerdown",move);
+  svg.addEventListener("pointerleave",()=>{cur.setAttribute("visibility","hidden");read.textContent=rest;});
+});
+
+// ranges
+document.getElementById("ranges").innerHTML=DATA.stocks.map(s=>{
+  const pos=Math.max(0,Math.min(100,(s.close-s.lo)/(s.hi-s.lo)*100)), off=pct(s.close,s.hi);
+  return `<div class="rng-row"><span class="num" style="font-weight:600;font-size:12.5px">${s.t}</span><div><div class="rng-track"><div class="rng-dot" style="left:${pos}%"></div></div><div class="rng-ends"><span>${s.lo.toFixed(2)}</span><span>${s.hi.toFixed(2)}</span></div></div><span class="num small muted" style="text-align:right">距高点 ${off.toFixed(0)}%</span></div>`;
+}).join("");
+
+// valuation
+const f1=v=>v==null?"亏损":v.toFixed(1);
+document.getElementById("val").innerHTML=
+ `<thead><tr><th>代码</th><th>市值</th><th>PE(TTM)</th><th>远期 PE</th><th>目标价</th><th>较现价</th></tr></thead><tbody>`+
+ DATA.stocks.map(s=>`<tr><td><span class="tk">${s.t}</span></td><td class="num">$${s.cap}</td><td class="num">${f1(s.pe)}</td><td class="num">${s.fpe==null?"n/a":s.fpe.toFixed(1)}</td><td class="num">$${s.tgt.toFixed(2)}</td><td class="num">${fmtP(s.up,s.approx)}</td></tr>`).join("")+`</tbody>`;
+
+// stock notes
+document.getElementById("stocks").innerHTML=DATA.stocks.map(s=>`<article class="card stock"><div class="hd"><h3>${s.n}<span class="tag num">${s.t}</span></h3><span class="px">${s.approx?"≈":""}$${s.close.toFixed(2)} <span class="${cls(s.d1)}">${fmtP(s.d1,s.approx)}</span></span></div><ul>${s.notes.map(n=>`<li>${n[0]} <a class="small" href="${n[1]}" target="_blank" rel="noopener">来源</a></li>`).join("")}</ul></article>`).join("");
+
+// calendar
+document.getElementById("cal").innerHTML=DATA.cal.map(c=>`<div class="d">${c[0]}</div><div>${c[1]}</div>`).join("");
+
+// up/down colour convention
+const root=document.documentElement, btn=document.getElementById("updown");
+function setUD(v){root.setAttribute("data-updown",v);btn.textContent=v==="us"?"切换为 红涨绿跌":"切换为 绿涨红跌";}
+let ud="cn"; try{ud=localStorage.getItem("updown")||"cn";}catch(e){}
+setUD(ud);
+btn.addEventListener("click",()=>{ud=ud==="cn"?"us":"cn";setUD(ud);try{localStorage.setItem("updown",ud);}catch(e){}});
+</script>
+</body>
+</html>
