@@ -75,7 +75,7 @@ BREW_FORMULAE=(git xz openssl@3 pyenv "node@${NODE_MAJOR}" mitmproxy)
 BREW_FORMULAE_IOS=(ffmpeg libimobiledevice libusbmuxd ideviceinstaller ios-deploy)
 BREW_CASKS_ANDROID=(temurin android-commandlinetools)
 SUDOERS_NAME="${SUDOERS_NAME:-device-farm-agent}"   # file name in /etc/sudoers.d (--admin)
-WDA_BUNDLE_ID="${WDA_BUNDLE_ID:-com.facebook.WebDriverAgentRunner}"   # real iPhones: bundle id of WDA (installed as <id>.xctrunner)
+WDA_BUNDLE_ID="${WDA_BUNDLE_ID:-com.coupang.coupay.WebDriverAgentRunner}"   # real iPhones: bundle id of WDA (installed as <id>.xctrunner)
 WDA_TEAM_ID="${WDA_TEAM_ID:-}"                                       # Apple developer team that signs WDA (default: the one in Xcode)
 
 ADMIN=false; AGENT_USER="$(id -un)"; SKIP_ANDROID=false; SKIP_IOS=false; AVD_NAMES=""; ANDROID_COUNT="${ANDROID_COUNT:-8}"; HEADLESS=false; IOS_SYSTEM_PROXY=false; REPO_DIR=""; INSTALL_BREW=false; DRY_RUN=false; MODE="install"
@@ -438,7 +438,11 @@ for teams in (d.get('IDEProvisioningTeamByIdentifier') or {}).values():
 # driver running as root (without it WDA is launched as a plain app and quits at once: "Failed to start the preinstalled WebDriverAgent").
 TUNNEL_SCRIPT_REL=".appium/node_modules/appium-xcuitest-driver/scripts/tunnel-creation.mjs"; TUNNEL_SCRIPT="${HOME}/${TUNNEL_SCRIPT_REL}"
 TUNNEL_REGISTRY_PORT="${TUNNEL_REGISTRY_PORT:-42314}"; CERT_PORT="${CERT_PORT:-8399}"
-NODE_ABS="$(for p in /opt/homebrew /usr/local; do [[ -x "${p}/bin/node" ]] && { echo "${p}/bin/node"; break; }; done)"; NODE_ABS="${NODE_ABS:-/opt/homebrew/bin/node}"
+# node@N is keg-only: <prefix>/bin/node exists only when it could be linked, and on a fresh Mac --admin writes the sudoers line
+# (step 0) before Homebrew installs node at all. Use the stable opt path of node@N so the sudoers line and --start agree.
+NODE_ABS=""
+for p in /opt/homebrew /usr/local; do [[ -x "${p}/bin/brew" ]] || continue; NODE_ABS="${p}/opt/node@${NODE_MAJOR}/bin/node"; break; done
+NODE_ABS="${NODE_ABS:-$( [[ "$(uname -m)" == arm64 ]] && echo /opt/homebrew || echo /usr/local )/opt/node@${NODE_MAJOR}/bin/node}"
 _tunnel_start() {
     if _port_open "${TUNNEL_REGISTRY_PORT}"; then _ok "iOS device tunnel running (registry :${TUNNEL_REGISTRY_PORT})"; return 0; fi
     if [[ "${DRY_RUN}" == "true" ]]; then _log "dry-run: sudo -n ${NODE_ABS} ${TUNNEL_SCRIPT}"; return 0; fi
@@ -845,6 +849,10 @@ fi
 # ---- 4. Android SDK, AVDs, chromedriver ----
 if [[ "${SKIP_ANDROID}" == "false" ]]; then
     _log "--- 4. Android SDK ---"
+    # On a fresh Mac Homebrew is installed in this same run, and its `brew shellenv` (step 1) put /opt/homebrew/bin in front of the
+    # SDK's cmdline-tools again: avdmanager then was Homebrew's, which does not see ${ANDROID_HOME} ("Valid system image paths are:
+    # null") and the AVD was not created. Put the SDK's own tools first again.
+    export PATH="${ANDROID_HOME}/cmdline-tools/latest/bin:${ANDROID_HOME}/platform-tools:${ANDROID_HOME}/emulator:${PATH}"
     /usr/libexec/java_home &>/dev/null && { export JAVA_HOME="${JAVA_HOME:-$(/usr/libexec/java_home)}"; _ok "java ${JAVA_HOME}"; } || _err "no JDK (brew cask temurin)"
     _run mkdir -p "${ANDROID_HOME}"
     if _have sdkmanager; then
@@ -956,6 +964,7 @@ export MITM_LISTEN_HOST="${MITM_LISTEN_HOST}"
 export APPIUM_ADDRESS="${APPIUM_ADDRESS}"
 export EMULATOR_PROXY_HOST="${EMULATOR_PROXY_HOST}"
 export BOOT_TIMEOUT="${BOOT_TIMEOUT}"
+export WDA_BUNDLE_ID="${WDA_BUNDLE_ID}"           # real iPhones: WDA installed as <id>.xctrunner (farm-start must check the same id)
 farm-local-ip() { local i; i="\$(route -n get default 2>/dev/null | awk '/interface:/ {print \$2; exit}')"; ipconfig getifaddr "\${i:-en0}"; }
 export FARM_MAC_IP="\$(farm-local-ip 2>/dev/null)"   # this Mac's LAN IP (proxy host for real devices / other machines)
 # --- farm commands ---

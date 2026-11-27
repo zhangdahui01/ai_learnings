@@ -161,7 +161,7 @@ for ph in inv["iphones"]:
     except FileNotFoundError:
         pass
     ph.update(phone_ips=sorted(clients), phone_requests=reqs, phone_cert_rejections=rejects)
-inv["wda_bundle_id"] = os.environ.get("WDA_BUNDLE_ID", "com.facebook.WebDriverAgentRunner")
+inv["wda_bundle_id"] = os.environ.get("WDA_BUNDLE_ID", "com.coupang.coupay.WebDriverAgentRunner")
 inv["ca"] = f"{HOME}/.mitmproxy/mitmproxy-ca-cert.pem"
 inv["zshrc_block"] = "device-farm (managed by setup_mac_external.sh)" in open(f"{HOME}/.zshrc").read() if os.path.exists(f"{HOME}/.zshrc") else False
 json.dump(inv, open(out_file, "w"), ensure_ascii=False, indent=2)

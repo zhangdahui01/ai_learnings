@@ -95,7 +95,7 @@ changes when phones come and go, so the proxy typed into a phone stays right. `-
 | Symptom | Fix |
 |---|---|
 | `adb` / `appium` / `gh`: command not found | New Terminal or `source ~/.zshrc`. |
-| iPhone: "Failed to start the preinstalled WebDriverAgent" | The device tunnel is not running: `bash setup_mac_external.sh --admin` once, then `farm-start`; or `sudo /opt/homebrew/bin/node ~/.appium/node_modules/appium-xcuitest-driver/scripts/tunnel-creation.mjs` in a Terminal. |
+| iPhone: "Failed to start the preinstalled WebDriverAgent" | The device tunnel is not running: `bash setup_mac_external.sh --admin` once, then `farm-start`; or `sudo /opt/homebrew/opt/node@22/bin/node ~/.appium/node_modules/appium-xcuitest-driver/scripts/tunnel-creation.mjs` in a Terminal. |
 | iPhone: WDA installed but "Failed to start the preinstalled WebDriverAgent in 120000 ms" (tunnel up) | The WDA on the phone is an older build the current xcuitest driver cannot start: `--install-wda --force --iphones <udid>` (same team / bundle id). |
 | Appium log: "EACCES ... strongbox/tunnelRegistryPort" | A root tunnel created `~/Library/Application Support/appium-xcuitest-driver-nodejs` as root: `sudo chown -R $USER "~/Library/Application Support/appium-xcuitest-driver-nodejs"`. `--start` now creates it as the user first. |
 | iPhone: `--install-wda` "no Apple ID in Xcode" / signing errors | Sign in (step 4 above); the Apple ID must be in the team that owns the bundle id; several teams: `WDA_TEAM_ID=<id>`. |
@@ -105,6 +105,7 @@ changes when phones come and go, so the proxy typed into a phone stays right. `-
 | iPhone: "Unable to launch … because the device is locked" | Unlock the phone; set *Display & Brightness → Auto-Lock → Never* on farm phones. |
 | Phone: `http://mitm.it` says traffic not through mitmproxy | Wrong proxy server / port, or phone not on a network that reaches the Mac. |
 | No iOS simulator window | Xcode 27 has no Simulator.app: the farm opens `DeviceHub.app`; automation works without a window. |
+| `--install` on a new Mac: "Package path is not valid. Valid system image paths are: null", AVD not created | Homebrew's `avdmanager` ran instead of the SDK's (fixed: step 4 puts `$ANDROID_HOME/cmdline-tools/latest/bin` first again). Older copy: `farm-start` creates the AVD. |
 | `simctl create` fails | `xcodebuild -downloadPlatform iOS`; the newest runtime supporting the device type is used. |
 | pip / curl SSL errors on the Mac during a run | The iOS system proxy: `NO_PROXY='*' <command>` or `farm-stop`. |
 | 8 emulators swap on a 24 GB Mac | `EMULATOR_ARGS="-memory 1536 -cores 2"` or fewer emulators. |
