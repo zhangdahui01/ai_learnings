@@ -34,6 +34,8 @@ ai_learnings/
 
 - [`notes/french-soft-styling`](notes/french-soft-styling/README.md) is a Chinese soft-furnishing plan for a French-style apartment: diagnosis, palette, lighting and styling rules with sources, a phased shopping list, a palette board, and three annotated photos. Published at `docs/reports/french-soft-styling/`.
 
+- [`notes/seoul-medical-aesthetics`](notes/seoul-medical-aesthetics/README.md) is a Chinese beginner's research report on medical aesthetics in Seoul: treatment categories with pros and cons, which to prioritise or avoid, clinic districts and clinic types, 2026 price ranges with sources, and a checklist for choosing a clinic. Published at `docs/reports/seoul-medical-aesthetics/`.
+
 ## Add a new AI module
 
 Create a focused directory under `skills/`, `projects/`, `experiments/`, `notes/`, or `templates/`. Keep module-specific agent instructions, dependencies, and guides inside that module; update this README and `docs/index.html` with a short link.
