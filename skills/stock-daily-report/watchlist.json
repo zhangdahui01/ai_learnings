@@ -1,0 +1,16 @@
+{
+  "note": "默认观察清单。base 是上一年最后一个交易日的收盘价，用来算年内涨跌；每年第一期日报前更新一次。用户点名其他股票时，以用户给的清单为准，并为新股票查到 base。",
+  "base_year_end": "2025-12-31",
+  "stocks": [
+    {"t": "NVDA", "n": "Nvidia", "base": 186.50},
+    {"t": "CPNG", "n": "Coupang", "base": 23.59},
+    {"t": "META", "n": "Meta", "base": 660.09},
+    {"t": "TSM", "n": "台积电 ADR", "base": 303.89},
+    {"t": "AMZN", "n": "Amazon（AWS）", "base": 230.82},
+    {"t": "AAPL", "n": "Apple", "base": 271.86},
+    {"t": "MSFT", "n": "Microsoft", "base": 483.62},
+    {"t": "TSLA", "n": "Tesla", "base": 449.72},
+    {"t": "AVGO", "n": "Broadcom（Avago）", "base": 346.10},
+    {"t": "CRM", "n": "Salesforce", "base": 264.91}
+  ]
+}
