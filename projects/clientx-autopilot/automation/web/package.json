@@ -10,7 +10,8 @@
     "sut": "node sut/serve.mjs",
     "hall:build": "cd ../../../quiet-hall/app && npm install && npx expo export -p web",
     "test:hall": "playwright test -c playwright.hall.config.ts",
-    "test:island": "playwright test -c playwright.island.config.ts"
+    "test:island": "playwright test -c playwright.island.config.ts",
+    "test:seoul": "playwright test -c playwright.seoul.config.ts"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

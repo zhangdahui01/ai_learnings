@@ -12,7 +12,8 @@ ai_learnings/
 ├── projects/                       # Multi-module systems
 │   ├── clientx-autopilot/          # AI-driven UI automation and Device Farm harness
 │   ├── quiet-hall/                 # 静堂: shared meditation hall app (Expo + Node), sample app under test
-│   └── yundeng-island/             # 云灯岛: 3D browser game with accounts and cloud saves, sample app under test
+│   ├── yundeng-island/             # 云灯岛: 3D browser game with accounts and cloud saves, sample app under test
+│   └── seoul-life-app/             # 首尔生活助手: photo-to-translation phone web app (Next.js + Supabase + Claude)
 ├── experiments/                    # Future prototypes and notebooks
 ├── notes/                          # Learning notes and decision records
 ├── templates/                      # Future reusable prompts/templates
@@ -27,6 +28,7 @@ ai_learnings/
 - [`skills/QA/domain-automation-handbook`](skills/QA/domain-automation-handbook/SKILL.md) converts automation pilot designs into operational domain handbooks with onboarding, BDD generation, maintenance, and CI/CD gate guidance.
 - [`projects/quiet-hall`](projects/quiet-hall/README.md) is a shared meditation hall app for Android, iOS and the web (Expo) with a dependency-free Node server; it is the sample app the ClientX Autopilot web and Appium cases run against.
 - [`projects/yundeng-island`](projects/yundeng-island/README.md) is a 3D browser game (three.js) with accounts and cloud saves on Supabase; it is the second sample app, covered by the `island-*` BDD cases in ClientX Autopilot.
+- [`projects/seoul-life-app`](projects/seoul-life-app/README.md) is a phone web app for living in Seoul without Korean: photograph a shelf, menu, cosmetics label or subway sign and get Chinese and English explanations, a recommendation, unit prices and a saved word list (Next.js on Vercel, Supabase, Claude Haiku); covered by the `seoul-*` BDD cases in ClientX Autopilot.
 - `skills/regression-gap-analyzer` analyzes local source and UI-automation repositories, producing code graphs, a knowledge base, CSV backlog, and an accessible HTML report. Read that module's `GUIDELINE.zh-CN.md` or `GUIDELINE.en.md` for installation and use.
 - `skills/local-web-test-recorder` provides a Codex, Claude Code, and Devin-compatible Agent Skill plus a self-hosted Playwright recorder and replay application with test-plan management, assertions, waits, retries, proxy/browser configuration, artifacts, and bilingual beginner documentation. Start with its `SKILL.md`, `guideline.zh-CN.md`, or `guideline.en.md`.
 - [`skills/stock-daily-report`](skills/stock-daily-report/SKILL.md) produces the daily stock report (prices, charts, sourced news, analysis and scenario outlook) for a watchlist: the agent writes one JSON data file per day and `build.py` renders the page and archive under `docs/reports/stock-daily/`.
